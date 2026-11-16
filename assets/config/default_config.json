@@ -1,0 +1,28 @@
+{
+  "appName": "企划星 · 桌面日历清单",
+  "apiBaseUrl": "https://api.planstar.local/v1/",
+  "cloud": {
+    "syncEndpoint": "sync/",
+    "subscriptionEndpoint": "subscriptions/",
+    "autoSyncIntervalMinutes": 30
+  },
+  "reminder": {
+    "defaultAdvanceDays": [0, 1],
+    "defaultHour": 9,
+    "defaultMinute": 0,
+    "maxScheduledPerEvent": 32
+  },
+  "calendar": {
+    "defaultMaxRows": 6,
+    "defaultMaxColumns": 1,
+    "lunarSupportedFromYear": 1900,
+    "lunarSupportedToYear": 2100
+  },
+  "features": {
+    "cloudSync": true,
+    "thirdPartyCalendar": true,
+    "timetable": true,
+    "subscription": true,
+    "multiWindow": true
+  }
+}
