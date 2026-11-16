@@ -189,7 +189,16 @@ lib/
 assets/
 ├── config/default_config.json                # ConfigLoader 的 JSON 配置源
 ├── audio/                                     # 归档中的 5 个提示音
-└── app_icons/                                 # 应用图标（透明底用于托盘）
+├── fonts/                                     # ChillRoundGothic（全局字体）
+└── app_icons/                                 # 应用图标唯一源图（1024 透明底 + 满版）
+    ├── planstar_icon_1024_transparent.png     #   Windows ICO / macOS / Web / 托盘
+    ├── planstar_icon_1024_fullbleed.png       #   Web maskable 图标
+    └── android/                               #   Android 启动器与商店图标
+
+各平台图标均由 `assets/app_icons` 生成：
+`windows/runner/resources/app_icon.ico`（16/24/32/48/64/128/256 多尺寸，
+快捷方式与卸载项共用）、`macos/Runner/Assets.xcassets/AppIcon.appiconset/`、
+`web/favicon.png` 与 `web/icons/`。
 
 windows/runner/flutter_window.cpp              # 多窗口子 engine 插件注册 + 桌面壁纸插件注册
 windows/runner/desktop_wallpaper_plugin.cpp    # WorkerW 嵌入 / SPI_SETDESKWALLPAPER
