@@ -30,6 +30,7 @@ import '../features/settings/application/settings_controller.dart';
 import '../features/settings/domain/app_settings.dart';
 import '../features/subscription/domain/subscription.dart';
 import '../shared/widgets/common.dart';
+import 'popup_layout.dart';
 
 enum _ColorTarget { none, text, cell }
 
@@ -64,6 +65,11 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
   static const double _resizeHit = 6;
   static const double _resizeCorner = 16;
   static const double _cardRadius = 18;
+  // 浮层编辑器：锚定在被编辑格子右侧/左侧，矩形会一并推给 SetWindowRgn。
+  static const double _popupWidth = 268;
+  static const double _popupHeight = 368;
+  static const double _popupGap = 6;
+  static const double _popupRadius = 12;
   static const String _positionKey = 'planstar.desktop.card.v2';
 
   // 尺寸与位置一样是持久化状态；格子由 LayoutBuilder 按可用空间自适应。
@@ -88,6 +94,9 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
   double _x = 96;
   double _y = 96;
   DateKey? _editingDate;
+  // 长按/双击弹出的完整编辑器；_popupRect 是 overlay 窗口坐标系的逻辑像素矩形。
+  DateKey? _popupDate;
+  Rect? _popupRect;
   String? _activeLineId;
   _ColorTarget _paletteTarget = _ColorTarget.none;
   bool _confirmClear = false;
@@ -242,7 +251,11 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
     );
   }
 
-  /// 把卡片的物理像素矩形推给原生层；用签名去重，避免每帧重设区域。
+  /// 把卡片矩形（以及浮层编辑器矩形）推给原生层。
+  ///
+  /// 原生 `SetRegion` 会把多个圆角矩形做 `CombineRgn(RGN_OR)`，因此弹窗即使
+  /// 超出卡片范围也能接收点击，而卡片外仍保持穿透。签名遍历全部矩形去重，
+  /// 避免每帧重设区域。
   void _pushRegion() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -255,10 +268,19 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
           height: _cardHeight * dpr,
           radius: _cardRadius * dpr,
         ),
+        if (_popupRect != null)
+          DesktopCardRect(
+            x: _popupRect!.left * dpr,
+            y: _popupRect!.top * dpr,
+            width: _popupRect!.width * dpr,
+            height: _popupRect!.height * dpr,
+            radius: _popupRadius * dpr,
+          ),
       ];
-      final rect = rects.single;
-      final signature =
-          '${rect.x},${rect.y},${rect.width},${rect.height},${rect.radius}';
+      final signature = rects
+          .map((DesktopCardRect r) =>
+              '${r.x},${r.y},${r.width},${r.height},${r.radius}')
+          .join('|');
       if (signature == _regionSignature) return;
       _regionSignature = signature;
       ref.read(desktopWallpaperGatewayProvider).setRegion(rects: rects);
@@ -266,6 +288,7 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
   }
 
   void _beginDrag(Offset globalPosition) {
+    _closePopup(pushRegion: false);
     _dragging = true;
     _dragOrigin = globalPosition;
     _dragStartX = _x;
@@ -331,6 +354,7 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
 
   void _beginResize(_ResizeEdge edge, Offset globalPosition) {
     if (DateTime.now().isBefore(_resizeEnabledAt)) return;
+    _closePopup(pushRegion: false);
     _resizing = true;
     // 启动/激活窗口时偶尔会带一次孤立的 pointer 事件，必须超过阈值才算
     // 真正开始调整，否则会把随机尺寸写进持久化。
@@ -464,6 +488,59 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
       _cellInput.clear();
     });
     if (_cellFocus.hasFocus) _cellFocus.unfocus();
+  }
+
+  /// 长按 / 双击格子：在该格子旁弹出完整编辑器（方案 C）。
+  /// 原来的「点一下 = 格子内快速编辑」保持不变，两者互补而非替换。
+  void _openPopup(DateKey date, BuildContext cellContext) {
+    final box = cellContext.findRenderObject();
+    if (box is! RenderBox || !box.hasSize) return;
+    // overlay 窗口覆盖整个虚拟屏，view 坐标即窗口坐标（逻辑像素）。
+    final origin = box.localToGlobal(Offset.zero);
+    final cell = Rect.fromLTWH(
+      origin.dx,
+      origin.dy,
+      box.size.width,
+      box.size.height,
+    );
+    final popup = computeDesktopPopupRect(
+      cell,
+      _screenSize,
+      width: _popupWidth,
+      height: _popupHeight,
+      gap: _popupGap,
+    );
+    setState(() {
+      _popupDate = date;
+      _popupRect = popup;
+      // 工具栏 / inlineEditor 仍复用 _editingDate，避免引入第二套编辑状态。
+      _editingDate = date;
+      _activeLineId = null;
+      _paletteTarget = _ColorTarget.none;
+      _confirmClear = false;
+      _cellInput.clear();
+    });
+    _regionSignature = '';
+    _pushRegion();
+    _focusNewLine();
+  }
+
+  void _closePopup({bool pushRegion = true}) {
+    if (_popupDate == null) return;
+    setState(() {
+      _popupDate = null;
+      _popupRect = null;
+      _editingDate = null;
+      _activeLineId = null;
+      _paletteTarget = _ColorTarget.none;
+      _confirmClear = false;
+      _cellInput.clear();
+    });
+    if (_cellFocus.hasFocus) _cellFocus.unfocus();
+    _regionSignature = '';
+    // 拖动/缩放会立刻 setRegion(dragging: true) 放开整窗命中，
+    // 此时若再推一次矩形会把放开状态覆盖掉，故由调用方决定。
+    if (pushRegion) _pushRegion();
   }
 
   void _focusNewLine() {
@@ -611,15 +688,43 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
   }
 
   /// 用户手动设置的单元格颜色可能很亮，默认文字自动取对比色。
-  Color _defaultTextOn(Color background) =>
-      background.computeLuminance() > 0.45
-          ? BasePalette.grayDark1
-          : BasePalette.grayLight1;
+  ///
+  /// 默认格底是半透明白（white7），叠在 black3 深色卡片上实际是暗底；
+  /// 而 [Color.computeLuminance] 忽略 alpha，直接算会把它当成纯白亮底并
+  /// 返回黑字——这正是「桌面深底黑字」的根因。先合成到卡片底色再判亮度。
+  /// 不透明的用户自定义色不受影响，仍保留「亮底黑字」的自动对比。
+  Color _defaultTextOn(Color background) {
+    final effective = background.a < 1.0
+        ? Color.alphaBlend(background, BasePalette.black3)
+        : background;
+    return effective.computeLuminance() > 0.45
+        ? BasePalette.grayDark1
+        : BasePalette.grayLight1;
+  }
 
-  Color _lineColor(RichLine line, Color background) {
+  /// 桌面格子分层底色：今天 / 用户自定义色优先，其余按「本月 + 周末」分级。
+  /// 全部由 BasePalette 派生，不写死十六进制；本月更亮、非本月更暗、
+  /// 周末叠一层低饱和暖色，且绝不覆盖用户手动选的单元格颜色。
+  Color _cellBackground(
+    CalendarDayModel day,
+    EventColor? custom,
+    bool weekend,
+  ) {
+    if (custom != null && !custom.isTransparent) return custom.toColor();
+    if (day.isToday) return BasePalette.themeDark3;
+    final inMonth = day.isCurrentMonth;
+    if (weekend) {
+      return BasePalette.orangeLight3.withValues(
+        alpha: inMonth ? 0.16 : 0.06,
+      );
+    }
+    return BasePalette.white1.withValues(alpha: inMonth ? 0.20 : 0.06);
+  }
+
+  Color _lineColor(RichLine line, Color defaultText) {
     if (line.color.isTransparent ||
         line.color.argb == EventColor.defaultText.argb) {
-      return _defaultTextOn(background);
+      return defaultText;
     }
     return line.color.toColor();
   }
@@ -642,6 +747,12 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
         backgroundColor: Colors.transparent,
         body: Listener(
           behavior: HitTestBehavior.translucent,
+          // 点击浮层之外（卡片空白区 / 桌面穿透区）即关闭编辑器。
+          onPointerDown: (PointerDownEvent e) {
+            if (_popupRect != null && !_popupRect!.contains(e.position)) {
+              _closePopup();
+            }
+          },
           child: Stack(
             fit: StackFit.expand,
             children: <Widget>[
@@ -652,12 +763,138 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
                 height: _cardHeight,
                 child: _card(context, month, settings),
               ),
+              // 放在最外层 Stack 而非 _card 的 ClipRRect 内，
+              // 否则最底行格子的弹窗会被卡片圆角裁掉。
+              if (_popupRect != null && _popupDate != null)
+                Positioned(
+                  left: _popupRect!.left,
+                  top: _popupRect!.top,
+                  width: _popupRect!.width,
+                  height: _popupRect!.height,
+                  child: _popupEditor(),
+                ),
             ],
           ),
         ),
       ),
     );
   }
+
+  /// 浮层编辑器：日期标题 + 逐行编辑 + 内嵌调色板 + 紧凑工具行。
+  /// 复用 `_inlineEditor` / `_paletteStrip` 与现有工具动作，不引入第二套编辑状态。
+  Widget _popupEditor() {
+    final date = _popupDate!;
+    return Material(
+      color: Colors.transparent,
+      child: Container(
+        decoration: BoxDecoration(
+          color: BasePalette.black2,
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          border: Border.all(color: BasePalette.white6),
+          boxShadow: const <BoxShadow>[
+            BoxShadow(
+              color: BasePalette.black5,
+              blurRadius: 18,
+              offset: Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            _popupHeader(date),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.sm,
+                  vertical: AppSpacing.xxs,
+                ),
+                child: _inlineEditor(
+                  date,
+                  BasePalette.black2,
+                  BasePalette.grayLight1,
+                  1.0,
+                ),
+              ),
+            ),
+            if (_paletteTarget != _ColorTarget.none) _paletteStrip(),
+            _popupTools(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _popupHeader(DateKey date) => Container(
+        height: 40,
+        padding: const EdgeInsets.only(
+          left: AppSpacing.sm,
+          right: AppSpacing.xxs,
+        ),
+        decoration: const BoxDecoration(
+          border: Border(bottom: BorderSide(color: BasePalette.white6)),
+        ),
+        child: Row(
+          children: <Widget>[
+            Container(
+              width: 3,
+              height: 16,
+              decoration: BoxDecoration(
+                color: BasePalette.themeDark6,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(width: AppSpacing.xs),
+            Expanded(
+              child: Text(
+                '${date.year}年${date.month}月${date.day}日',
+                style: const TextStyle(
+                  fontSize: AppTypography.body,
+                  color: BasePalette.grayLight1,
+                ),
+              ),
+            ),
+            _popupTool(LucideIcons.check, '完成编辑', _closePopup),
+          ],
+        ),
+      );
+
+  Widget _popupTools() => Container(
+        height: 40,
+        decoration: const BoxDecoration(
+          border: Border(top: BorderSide(color: BasePalette.white6)),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: <Widget>[
+            _popupTool(LucideIcons.plus, '添加一行', _focusNewLine),
+            _popupTool(
+              LucideIcons.type,
+              '文字颜色',
+              () => _openPalette(_ColorTarget.text),
+            ),
+            _popupTool(
+              LucideIcons.paintBucket,
+              '单元格颜色',
+              () => _openPalette(_ColorTarget.cell),
+            ),
+            _popupTool(LucideIcons.checkCheck, '标记完成', _toggleComplete),
+            _popupTool(LucideIcons.eraser, '清空本日', _clearCell),
+          ],
+        ),
+      );
+
+  Widget _popupTool(IconData icon, String tooltip, VoidCallback onPressed) =>
+      Tooltip(
+        message: tooltip,
+        child: IconButton(
+          onPressed: onPressed,
+          icon: Icon(icon, size: 15, color: BasePalette.grayLight4),
+          visualDensity: VisualDensity.compact,
+          padding: EdgeInsets.zero,
+          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+        ),
+      );
 
   Widget _card(
     BuildContext context,
@@ -679,9 +916,11 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: <Widget>[
                     _header(context, month),
-                    _weekdays(context, month),
+                    _weekdays(context, month, settings),
                     Expanded(child: _grid(context, month, settings)),
-                    if (_paletteTarget != _ColorTarget.none) _paletteStrip(),
+                    if (_paletteTarget != _ColorTarget.none &&
+                        _popupDate == null)
+                      _paletteStrip(),
                     _quickInput(context),
                     _toolbar(context),
                   ],
@@ -877,24 +1116,42 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
         onPressed: onPressed,
       );
 
-  Widget _weekdays(BuildContext context, MonthData month) => SizedBox(
+  Widget _weekdays(
+    BuildContext context,
+    MonthData month,
+    AppSettings settings,
+  ) =>
+      SizedBox(
         height: _weekdayHeight,
         child: Row(
           children: <Widget>[
-            for (final label in month.weekdayHeaders)
+            for (int i = 0; i < month.weekdayHeaders.length; i++)
               Expanded(
                 child: Center(
                   child: Text(
-                    label,
-                    style: const TextStyle(
+                    month.weekdayHeaders[i],
+                    style: TextStyle(
                       fontSize: AppTypography.caption,
-                      color: BasePalette.grayLight5,
+                      color: _isWeekendColumn(i, settings)
+                          ? BasePalette.orangeLight3
+                          : BasePalette.grayLight5,
+                      fontWeight: _isWeekendColumn(i, settings)
+                          ? AppTypography.medium
+                          : AppTypography.regular,
                     ),
                   ),
                 ),
               ),
           ],
         ),
+      );
+
+  /// 第 [index] 列表头对应的 weekday（1=周一…7=周日），按用户设置的
+  /// 每周起始日旋转；不要在渲染里硬编码「第 6、7 列」。
+  bool _isWeekendColumn(int index, AppSettings settings) =>
+      settings.showRestDays &&
+      settings.restDays.contains(
+        ((settings.startOfWeek - 1 + index) % 7) + 1,
       );
 
   Widget _grid(
@@ -948,14 +1205,20 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
     // 同时限制上下限避免过窄卡片里文字挤爆或过宽卡片里文字过大。
     final scale =
         (cellWidth / _referenceCellWidth).clamp(0.85, 1.5).toDouble();
-    final editing = _editingDate == day.date;
+    // 浮层编辑器打开时，格子内不再重复显示行内编辑态。
+    final editing = _editingDate == day.date && _popupDate == null;
     final cell = _cellOf(day.date);
     final customColor = cell?.backgroundColor;
-    var background = day.isToday ? BasePalette.themeDark3 : BasePalette.white7;
-    if (customColor != null && !customColor.isTransparent) {
-      background = customColor.toColor();
-    }
+    final inMonth = day.isCurrentMonth;
+    final weekend = settings.showRestDays &&
+        settings.restDays.contains(day.date.weekday);
+    final background = _cellBackground(day, customColor, weekend);
     final defaultText = _defaultTextOn(background);
+    final dimText = defaultText.withValues(alpha: 0.42);
+    final subText = defaultText.withValues(alpha: inMonth ? 0.72 : 0.42);
+    final lineText = defaultText.withValues(alpha: inMonth ? 1.0 : 0.62);
+    final weekendText =
+        Color.lerp(defaultText, BasePalette.orangeLight3, 0.55)!;
     final visibleLines = (cell?.lines ?? const <RichLine>[])
         .where((RichLine l) => settings.showCompleted || !l.completed)
         .where((RichLine l) => l.text.trim().isNotEmpty)
@@ -970,6 +1233,9 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
     ];
     return GestureDetector(
       onTap: () => _select(day.date),
+      // 单击 = 格子内快速编辑；长按 / 双击 = 在格子旁弹出完整编辑器。
+      onDoubleTap: () => _openPopup(day.date, context),
+      onLongPress: () => _openPopup(day.date, context),
       child: Container(
         decoration: BoxDecoration(
           color: background,
@@ -979,7 +1245,9 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
                 ? BasePalette.themeDark6
                 : day.isToday
                     ? BasePalette.themeDark6
-                    : BasePalette.white6,
+                    : weekend
+                        ? BasePalette.orangeLight3.withValues(alpha: 0.42)
+                        : BasePalette.white6,
             width: editing ? 2 : 1,
           ),
         ),
@@ -996,9 +1264,11 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
                   style: TextStyle(
                     fontSize: AppTypography.body * scale,
                     fontWeight: AppTypography.bold,
-                    color: day.isCurrentMonth
-                        ? defaultText
-                        : defaultText.withValues(alpha: 0.45),
+                    color: !inMonth
+                        ? dimText
+                        : weekend
+                            ? weekendText
+                            : defaultText,
                   ),
                 ),
                 const SizedBox(width: AppSpacing.xxs),
@@ -1014,7 +1284,7 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         fontSize: AppTypography.label * scale,
-                        color: defaultText.withValues(alpha: 0.7),
+                        color: subText,
                       ),
                     ),
                   ),
@@ -1035,7 +1305,7 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                                 fontSize: AppTypography.label * scale,
-                                color: _lineColor(visibleLines[i], background),
+                                color: _lineColor(visibleLines[i], lineText),
                                 decoration: visibleLines[i].completed
                                     ? TextDecoration.lineThrough
                                     : null,
@@ -1048,7 +1318,7 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                                 fontSize: AppTypography.label * scale,
-                                color: defaultText.withValues(alpha: 0.6),
+                                color: subText,
                               ),
                             ),
                         ],
