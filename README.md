@@ -362,6 +362,14 @@ test/widget_test.dart                          # 重复规则 / 提醒 / 设置�
 `setRegion(dragging: true)` 放开整窗命中，松手后重推区域，避免逐帧
 `SetWindowRgn` 造成残影（同 Vectra）。
 
+**收起与显隐的状态一致性**：桌面组件标题栏的「收起桌面组件」不能只做本地
+`hideCurrentWindow()`——那样共享设置仍为 `true`，托盘「显示桌面日历窗口」
+改写同一值时会被 `SettingsController.update` 的相等短路吞掉，窗口再也无法
+恢复。因此收起按钮改为写 `desktopWidgetEnabled=false`（经 DataHub 广播让主
+窗口同步状态并保留可复用的 windowId），本地 hide 仅作即时反馈；同时托盘入口
+在设置值未变化时主动补偿一次 `_syncDesktopWidget`，兜住历史遗留的
+「窗口已隐藏但设置仍为 true」状态。
+
 **关闭语义**：主窗口启用 `window_manager.setPreventClose(true)`，
 `WindowListener.onWindowClose` 只把窗口 `hide()` 到托盘，所以点右上角 X /
 Alt+F4 都不会退出进程；托盘右键菜单的「退出企划星」是唯一真正结束应用的
