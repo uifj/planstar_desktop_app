@@ -6,6 +6,7 @@
 #include "flutter/generated_plugin_registrant.h"
 #include "desktop_multi_window/desktop_multi_window_plugin.h"
 #include "desktop_wallpaper_plugin.h"
+#include "data_hub_plugin.h"
 
 FlutterWindow::FlutterWindow(const flutter::DartProject& project)
     : project_(project) {}
@@ -33,6 +34,9 @@ bool FlutterWindow::OnCreate() {
   // transparent overlay (Vectra-style always-on-bottom widget window).
   RegisterDesktopWallpaperPlugin(flutter_controller_->engine()->messenger(),
                                  GetHandle());
+  // Process-wide data hub: one channel pair per engine, shared singleton
+  // behind them. Must be registered for the main engine too.
+  RegisterDataHubPlugin(flutter_controller_->engine()->messenger());
   DesktopMultiWindowSetWindowCreatedCallback([](void *controller) {
     auto *flutter_view_controller =
         reinterpret_cast<flutter::FlutterViewController *>(controller);
@@ -42,6 +46,7 @@ bool FlutterWindow::OnCreate() {
     }
     auto *registry = flutter_view_controller->engine();
     RegisterPlugins(registry);
+    RegisterDataHubPlugin(registry->messenger());
     HWND root = nullptr;
     if (flutter_view_controller->view() != nullptr) {
       root = ::GetAncestor(
