@@ -325,9 +325,16 @@ test/widget_test.dart                          # 重复规则 / 提醒 / 设置�
 > `shared_preferences.json`（去掉 `flutter.` 前缀）一次性迁移到
 > `planstar_data_hub.json`，原文件保留作为回滚备份。
 
-`desktopWidgetEnabled` 默认开启；托盘「显示 / 隐藏桌面可编辑月历」和设置页
-「桌面」页签可切换。拖拽开始时 `setRegion(dragging: true)` 放开整窗命中，
-松手后重推区域，避免逐帧 `SetWindowRgn` 造成残影（同 Vectra）。
+`desktopWidgetEnabled` 默认开启；托盘右键菜单提供「显示桌面日历窗口」/
+「隐藏桌面日历窗口」两个一键项，设置页「桌面」页签也可切换。拖拽开始时
+`setRegion(dragging: true)` 放开整窗命中，松手后重推区域，避免逐帧
+`SetWindowRgn` 造成残影（同 Vectra）。
+
+**关闭语义**：主窗口启用 `window_manager.setPreventClose(true)`，
+`WindowListener.onWindowClose` 只把窗口 `hide()` 到托盘，所以点右上角 X /
+Alt+F4 都不会退出进程；托盘右键菜单的「退出企划星」是唯一真正结束应用的
+入口，走 `WindowGateway.destroy()` 绕过拦截。托盘右键还提供
+「显示主窗口 / 隐藏主窗口」，隐藏后可随时恢复。
 
 **可选降级**：`wallpaperAutoRender` 默认**关闭**，仅作为静态快照备份保留
 （`WallpaperRenderer` / `WallpaperService` 仍在，可由托盘手动生成）。
