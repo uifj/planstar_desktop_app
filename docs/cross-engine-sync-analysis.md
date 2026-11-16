@@ -458,3 +458,32 @@ engine，而是主 engine 的第二个 `FlutterViewController`（同 isolate、�
 根治做法是把真相源上移到**同进程的原生单例**：MethodChannel 串行写入、
 EventChannel 广播单调 revision 增量、Dart 侧保留 `KeyValueStore` 端口但换成
 只读镜像 + 事件驱动更新，并让领域事件随广播在每个 engine 幂等重放。
+
+---
+
+## 11. 验收结果（2026-11-16）
+
+方案 A 已按 P0→P4 落地并覆盖安装运行，用户确认「桌面日历格子编辑后主窗口
+实时同步」已恢复正常。
+
+| 目标 | 结果 |
+|---|---|
+| G1 实时性 | 由 700ms 轮询改为 EventChannel 事件驱动；用户目视确认编辑即时可见 |
+| G2 无丢失更新 | 写操作在原生单例内 `std::mutex` 串行化，消除整表 RMW 的后写覆盖 |
+| G3 状态收敛 | 单调 revision + 按 key 精准重载；写入方只乐观更新镜像、不跳过中间广播 |
+| G4 落盘可靠性 | `tmp + MoveFileExW(REPLACE_EXISTING)` 原子替换，杜绝半截 JSON |
+| G5 副作用一致性 | 新增 `CrossEngineDataChanged`，由 Reminder / Sync 控制器幂等重放；历史留痕仍单次落盘 |
+| G6 生命周期 | 隐藏桌面组件复用同一 engine；子窗口监听在 dispose 取消 |
+| G7 轮询 | Windows 主路径完全移除；仅非 Windows 降级保留 300ms 轮询 |
+| G8 跨平台 | Windows 原生 / Linux+macOS Dart 降级 / Web 单 engine，同一 `DataHubStore` 契约 |
+
+实测记录：
+
+- `flutter analyze` 零问题；`flutter test` 17/17 通过（新增 7 个 DataHub 用例）。
+- `flutter build windows --debug` 与 `--release` 均通过，C++ EventChannel 编译无误。
+- 覆盖安装后应用稳定运行：单进程、2 个 Flutter engine、overlay 命中区域正常。
+- 冷启动迁移成功：`planstar_data_hub.json` 含 5 个键，`planstar.calendar.cells.v1`
+  数据完整；旧 `shared_preferences.json` 保留作回滚备份。
+- DataHub revision 随写入递增，两个 engine 均保持存活且无异常。
+
+相关提交：`0aace41` / `67d91cb` / `cb3ad33` / `3cda7c8` / `67ea00a` / `19ee1eb`。
