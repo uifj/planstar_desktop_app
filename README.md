@@ -192,14 +192,18 @@ assets/
 ├── audio/                                     # 归档中的 5 个提示音
 ├── fonts/                                     # ChillRoundGothic（全局字体）
 └── app_icons/                                 # 应用图标唯一源图（1024 透明底 + 满版）
-    ├── planstar_icon_1024_transparent.png     #   Windows ICO / macOS / Web / 托盘
+    ├── planstar_icon_1024_transparent.png     #   Windows ICO / macOS / Web / 托盘源图
     ├── planstar_icon_1024_fullbleed.png       #   Web maskable 图标
+    ├── tray_icon.ico                          #   托盘专用多尺寸 ICO（16…256）
     └── android/                               #   Android 启动器与商店图标
 
 各平台图标均由 `assets/app_icons` 生成：
 `windows/runner/resources/app_icon.ico`（16/24/32/48/64/128/256 多尺寸，
 快捷方式与卸载项共用）、`macos/Runner/Assets.xcassets/AppIcon.appiconset/`、
 `web/favicon.png` 与 `web/icons/`。
+**托盘图标必须是 `.ico`**：`tray_manager` 的 Windows 实现用
+`LoadImage(IMAGE_ICON, LR_LOADFROMFILE)` 加载，传 PNG 会得到 NULL HICON，
+导致托盘图标与右键菜单都不出现；`tray_icon.ico` 由透明底源图生成。
 
 windows/runner/flutter_window.cpp              # 多窗口子 engine 插件注册 + 桌面壁纸插件注册
 windows/runner/desktop_wallpaper_plugin.cpp    # WorkerW 嵌入 / SPI_SETDESKWALLPAPER
@@ -335,6 +339,13 @@ test/widget_test.dart                          # 重复规则 / 提醒 / 设置�
 Alt+F4 都不会退出进程；托盘右键菜单的「退出企划星」是唯一真正结束应用的
 入口，走 `WindowGateway.destroy()` 绕过拦截。托盘右键还提供
 「显示主窗口 / 隐藏主窗口」，隐藏后可随时恢复。
+
+**托盘可用性细节**（`TrayManagerGateway`）：`tray_manager 0.5.3` 不会自动
+弹出右键菜单，且其 `_methodCallHandler` 把 `MenuItem.onClick` 的分发放在
+`_listeners` 循环内部——所以必须注册 `_TrayEventSink`，在
+`onTrayIconRightMouseDown` / `onTrayIconMouseDown` 里主动调用
+`popUpContextMenu()`；图标、提示与菜单各自独立 try/catch 并写日志，
+避免一步失败导致后续注册全部跳过。
 
 **可选降级**：`wallpaperAutoRender` 默认**关闭**，仅作为静态快照备份保留
 （`WallpaperRenderer` / `WallpaperService` 仍在，可由托盘手动生成）。
