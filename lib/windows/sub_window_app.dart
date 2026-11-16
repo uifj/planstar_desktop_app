@@ -15,6 +15,7 @@ import '../bootstrap/core_providers.dart';
 import '../core/ports.dart';
 import '../core/value_objects.dart';
 import '../features/countdown/application/countdown_controller.dart';
+import '../features/history/application/history_controller.dart';
 import '../features/notes/application/notes_controller.dart';
 import '../features/notes/domain/note.dart';
 import '../features/sync/application/cross_engine_sync_controller.dart';
@@ -37,6 +38,9 @@ final class _SubWindowAppState extends ConsumerState<SubWindowApp> {
   void initState() {
     super.initState();
     ref.read(crossEngineSyncControllerProvider);
+    // 子窗口 engine 也要留痕：便签/倒数日的编辑在此 engine 内分发领域事件，
+    // 不初始化 HistoryController 的话这些改动在主窗口历史页会「静默丢失」。
+    ref.read(historyControllerProvider);
     _commands = ref
         .read(multiWindowGatewayProvider)
         .incoming

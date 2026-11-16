@@ -26,6 +26,7 @@ import '../core/value_objects.dart';
 import '../features/calendar/application/calendar_controllers.dart';
 import '../features/calendar/domain/calendar_event.dart';
 import '../features/calendar/domain/day_cell.dart';
+import '../features/history/application/history_controller.dart';
 import '../features/settings/application/settings_controller.dart';
 import '../features/settings/domain/app_settings.dart';
 import '../features/subscription/domain/subscription.dart';
@@ -139,6 +140,9 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
     WidgetsBinding.instance.addObserver(this);
     // 缓存端口引用，dispose / 生命周期回调里不再依赖 ref。
     _store = ref.read(keyValueStoreProvider);
+    // 桌面格子编辑在此 engine 内分发 DayCellChanged，必须在此 engine 也
+    // 初始化 HistoryController，否则桌面改动不会出现在主窗口历史页。
+    ref.read(historyControllerProvider);
     _loadPosition();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await ref
