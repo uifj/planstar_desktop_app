@@ -61,6 +61,8 @@ final class DesktopController extends Notifier<DesktopState> {
 
   @override
   DesktopState build() {
+    // 仅由应用根 ref.read，需保活以持续接收托盘 / 领域事件。
+    ref.keepAlive();
     ref.read(trayActionsProvider).listen(_onTrayAction);
     ref.read(domainEventBusProvider).on<SettingsChanged>(_onSettingsChanged);
     ref.listen<AppSettings>(

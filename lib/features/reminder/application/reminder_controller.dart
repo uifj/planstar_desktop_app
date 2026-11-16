@@ -59,6 +59,8 @@ final reminderControllerProvider =
 final class ReminderController extends Notifier<ReminderState> {
   @override
   ReminderState build() {
+    // 仅由应用根 ref.read，需保活以持续接收领域事件与通知点击。
+    ref.keepAlive();
     final bus = ref.read(domainEventBusProvider);
     bus.on<CalendarEventCreated>(_onChanged);
     bus.on<CalendarEventChanged>(_onChanged);

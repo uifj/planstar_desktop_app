@@ -37,6 +37,8 @@ final class HistoryController
     extends Notifier<AsyncListState<HistoryEntry>> {
   @override
   AsyncListState<HistoryEntry> build() {
+    // 仅由应用根 ref.read，需保活以持续记录领域事件留痕。
+    ref.keepAlive();
     Future.microtask(load);
     final bus = ref.read(domainEventBusProvider);
     bus.on<DayCellChanged>(_onCellChanged);

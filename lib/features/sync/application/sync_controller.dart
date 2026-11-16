@@ -27,6 +27,8 @@ final syncControllerProvider =
 final class SyncController extends Notifier<SyncState> {
   @override
   SyncState build() {
+    // 仅由应用根 ref.read，需保活以持续统计脏数据并接收领域事件。
+    ref.keepAlive();
     Future.microtask(_restore);
     final bus = ref.read(domainEventBusProvider);
     bus.on<CalendarEventCreated>(_onDirty);
