@@ -281,10 +281,10 @@ test/widget_test.dart                          # 重复规则 / 提醒 / 设置�
 | 通道注册 | `windows/runner/flutter_window.cpp` | 每个 engine 注册一份通道（主窗口 + 每个 `desktop_multi_window` 子窗口，HWND 取 `GetAncestor(view, GA_ROOT)`） |
 | 端口 | `lib/core/ports.dart` | `DesktopWallpaperGateway.setRegion(DesktopCardRect)`、`MultiWindowGateway.openDesktopWidget()`、`CrossEngineSync` / `StorageReloader` |
 | 应用 | `lib/features/desktop/application/desktop_controller.dart` | 设置 → 打开/关闭组件窗口；启动时恢复上一版设置过的系统原壁纸 |
-| 表现 | `lib/windows/desktop_widget_app.dart` | 透明全屏 `Stack` + `Listener(HitTestBehavior.translucent)`；1008×820 月历卡片（格子内直接编辑 + 底部编辑工具栏 + 内嵌调色板） |
+| 表现 | `lib/windows/desktop_widget_app.dart` | 透明全屏 `Stack` + `Listener(HitTestBehavior.translucent)`；可拖动/可缩放的月历卡片（默认 1008×820，格子内直接编辑 + 底部编辑工具栏 + 内嵌调色板 + 8 方向 resize 热区） |
 | 同步 | `lib/infrastructure/data_hub.dart` + `windows/runner/data_hub_plugin.cpp` + `lib/features/sync/application/cross_engine_sync_controller.dart` | 所有 engine 经 MethodChannel 把写操作汇聚到同进程的原生 DataHub 单例（mutex 串行 + 原子落盘 + 单调 revision），成功后用 EventChannel 广播增量；各 engine 按 key 精准重载读模型并幂等重放本地副作用 |
 
-**桌面编辑能力（对齐旧版企划星）**：卡片放大到 1008×820，格子按可用高度
+**桌面编辑能力（对齐旧版企划星）**：卡片默认 1008×820，格子按可用高度
 自适应铺满（约 140×105，比旧版大近一倍）。点击任意日期即**在该格子内**进入
 编辑态：每行一个输入框，可直接改文字、用 Lucide 勾选框标记完成、删除本行，
 底部输入框回车再新增一行；不再弹出独立编辑卡片（弹窗会被 `SetWindowRgn` 裁掉）。
@@ -292,8 +292,15 @@ test/widget_test.dart                          # 重复规则 / 提醒 / 设置�
 标记完成／提升为任务／清空本日／完成编辑），颜色按钮在卡片内嵌一条 23 色调色板
 （含「最近使用」与透明色），支持对当前行或整格文字着色、设置单元格背景色。
 单元格/文字颜色都走 `EventColor` 值对象，默认文字按背景亮度自动取对比色。
-卡片标题栏可拖动，8px 网格吸附并按屏幕尺寸夹紧，位置写入
-`KVStore.planstar.desktop.card.v2`（300ms 去抖）。
+卡片标题栏可拖动；**四条边 + 四个角**各有一条透明 resize 热区（6px / 16px，
+右下角带可见握柄与对应鼠标光标），按住拖动即可调整大小，最小 560×420、
+最大不超过虚拟屏。左/上方向调整会同步修正卡片左上角坐标以保持对侧不动；
+调整期间同拖动一样放开整窗命中，松手后重推 `SetWindowRgn`。
+格子由 `LayoutBuilder` 按新的可用宽高重算 `childAspectRatio`，字号与行内编辑
+行高按格子宽度等比缩放（0.85×–1.5×），因此放大卡片时格子与文字一起变大。
+位置与尺寸都做 8px 网格吸附、按屏幕夹紧，写入
+`KVStore.planstar.desktop.card.v2` 的 `{x, y, width, height}`（300ms 去抖，
+旧数据无 width/height 时回落到默认尺寸）。
 所有写操作都走原有的 `CalendarController.saveCellLines` / `setLineColor` /
 `setCellBackgroundColor` / `toggleLineCompleted` / `removeLine`，
 领域事件、历史留痕、提醒重排、同步标脏与主窗口编辑完全一致。
