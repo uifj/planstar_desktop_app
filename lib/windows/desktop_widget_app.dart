@@ -383,6 +383,7 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
       themeMode: _toMaterialThemeMode(settings.themeMode),
+      builder: AppTheme.withAppFont,
       home: Scaffold(
         backgroundColor: Colors.transparent,
         body: Listener(

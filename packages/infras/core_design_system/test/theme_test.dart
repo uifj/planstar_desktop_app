@@ -85,6 +85,21 @@ void main() {
     });
   });
 
+  testWidgets('MaterialApp 下的默认文本样式使用全局字体', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light(),
+        builder: AppTheme.withAppFont,
+        home: const Text('字体检查'),
+      ),
+    );
+    final context = tester.element(find.text('字体检查'));
+    expect(
+      DefaultTextStyle.of(context).style.fontFamily,
+      AppTypography.fontFamily,
+    );
+  });
+
   testWidgets('context.appColors 能取到语义槽', (WidgetTester tester) async {
     late AppColors resolved;
     await tester.pumpWidget(

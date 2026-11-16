@@ -46,11 +46,14 @@ final class _PlanstarAppState extends ConsumerState<PlanstarApp> {
       darkTheme: AppTheme.dark(),
       themeMode: _toMaterialThemeMode(mode),
       routerConfig: ref.watch(routerProvider),
-      builder: (BuildContext context, Widget? child) => Stack(
-        children: <Widget>[
-          ?child,
-          const ReminderOverlay(),
-        ],
+      builder: (BuildContext context, Widget? child) => AppTheme.withAppFont(
+        context,
+        Stack(
+          children: <Widget>[
+            ?child,
+            const ReminderOverlay(),
+          ],
+        ),
       ),
     );
   }

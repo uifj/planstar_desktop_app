@@ -26,6 +26,21 @@ abstract final class AppTheme {
   /// 暗色主题。
   static ThemeData dark() => _build(AppColors.dark, Brightness.dark);
 
+  /// 供 `MaterialApp.builder` 使用：把全局字体注入 `DefaultTextStyle`。
+  ///
+  /// Flutter 3.41 的 `MaterialApp` 给 `WidgetsApp.textStyle` 传的是固定的
+  /// `monospace` 错误样式，不会把 `ThemeData.textTheme` 注入
+  /// `DefaultTextStyle`；只设置 [ThemeData.textTheme] 时，未显式指定字体的
+  /// 普通 `Text` 仍会回退到等宽字体。三个入口（主窗口 / 桌面 overlay /
+  /// 子窗口）统一挂上这个 builder 才能让字体真正生效。
+  static Widget withAppFont(BuildContext context, Widget? child) =>
+      DefaultTextStyle(
+        style: (Theme.of(context).textTheme.bodyMedium ??
+                const TextStyle(fontSize: AppTypography.body))
+            .copyWith(fontFamily: AppTypography.fontFamily),
+        child: child ?? const SizedBox.shrink(),
+      );
+
   static ThemeData _build(AppColors colors, Brightness brightness) {
     // 刻意**不用** `ColorScheme.fromSeed`：它会把品牌色派生成一套
     // "更协调"的色调，品牌蓝会失真。这里显式给出 ColorScheme。

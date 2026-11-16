@@ -51,6 +51,7 @@ final class _SubWindowAppState extends ConsumerState<SubWindowApp> {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
+      builder: AppTheme.withAppFont,
       home: Scaffold(
         body: Column(
           children: <Widget>[
