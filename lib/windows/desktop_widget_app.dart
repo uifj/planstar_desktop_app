@@ -13,7 +13,6 @@
 library;
 
 import 'dart:async';
-import 'dart:ui' show PlatformDispatcher;
 
 import 'package:core/storage.dart';
 import 'package:core_design_system/core_design_system.dart';
@@ -34,6 +33,18 @@ import '../shared/widgets/common.dart';
 
 enum _ColorTarget { none, text, cell }
 
+/// 卡片八个方向的可拖拽调整区域。
+enum _ResizeEdge {
+  left,
+  right,
+  top,
+  bottom,
+  topLeft,
+  topRight,
+  bottomLeft,
+  bottomRight,
+}
+
 final class DesktopWidgetApp extends ConsumerStatefulWidget {
   const DesktopWidgetApp({super.key});
 
@@ -43,10 +54,26 @@ final class DesktopWidgetApp extends ConsumerStatefulWidget {
 
 final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
     with WidgetsBindingObserver {
-  static const double _cardWidth = 1008;
-  static const double _cardHeight = 820;
+  static const double _defaultCardWidth = 1008;
+  static const double _defaultCardHeight = 820;
+  static const double _minCardWidth = 560;
+  static const double _minCardHeight = 420;
+  // 尺寸上限用固定值，不依赖任何单一来源的屏幕尺寸推断。
+  static const double _maxCardWidth = 3840;
+  static const double _maxCardHeight = 2160;
+  static const double _resizeHit = 6;
+  static const double _resizeCorner = 16;
   static const double _cardRadius = 18;
   static const String _positionKey = 'planstar.desktop.card.v2';
+
+  // 尺寸与位置一样是持久化状态；格子由 LayoutBuilder 按可用空间自适应。
+  double _cardWidth = _defaultCardWidth;
+  double _cardHeight = _defaultCardHeight;
+
+  // 虚拟屏逻辑尺寸由多个来源取最大值：子窗口 engine 的 MediaQuery / view
+  // 尺寸可能随启动时序偏小，原生 GetSystemMetrics 才是权威虚拟屏范围。
+  Size _screen = const Size(1920, 1080);
+  DesktopMetrics _nativeMetrics = DesktopMetrics.fallback;
 
   static const double _headerHeight = 48;
   static const double _weekdayHeight = 28;
@@ -55,6 +82,8 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
   static const double _paletteHeight = 56;
   static const double _gridPadding = 6;
   static const double _gridSpacing = 4;
+  // 默认卡片宽度下单格的宽度，用于把字号随格子尺寸等比缩放。
+  static const double _referenceCellWidth = 140;
 
   double _x = 96;
   double _y = 96;
@@ -66,6 +95,19 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
   Offset _dragOrigin = Offset.zero;
   double _dragStartX = 0;
   double _dragStartY = 0;
+
+  // 窗口创建/激活时 Windows 会投递一次孤立 pointer 事件，落在角手柄上会
+  // 被误判成 resize；启动后短暂冷却，用户无感但能挡掉这类伪拖拽。
+  final DateTime _resizeEnabledAt =
+      DateTime.now().add(const Duration(milliseconds: 1500));
+  bool _resizing = false;
+  bool _resizeActivated = false;
+  _ResizeEdge? _resizeEdge;
+  Offset _resizeOrigin = Offset.zero;
+  double _resizeStartX = 0;
+  double _resizeStartY = 0;
+  double _resizeStartW = 0;
+  double _resizeStartH = 0;
   String _regionSignature = '';
   Timer? _saveTimer;
   final TextEditingController _input = TextEditingController();
@@ -82,6 +124,7 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
       await ref
           .read(desktopWallpaperGatewayProvider)
           .configureOverlay(enable: true);
+      await _loadNativeMetrics();
       _pushRegion();
     });
   }
@@ -98,6 +141,7 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
 
   @override
   void didChangeMetrics() {
+    _screen = MediaQuery.sizeOf(context);
     setState(_clampToScreen);
     _regionSignature = '';
     _pushRegion();
@@ -108,6 +152,8 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
     if (json != null) {
       _x = (json['x'] as num?)?.toDouble() ?? _x;
       _y = (json['y'] as num?)?.toDouble() ?? _y;
+      _cardWidth = (json['width'] as num?)?.toDouble() ?? _cardWidth;
+      _cardHeight = (json['height'] as num?)?.toDouble() ?? _cardHeight;
     }
     if (!mounted) return;
     setState(_clampToScreen);
@@ -115,14 +161,54 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
     _pushRegion();
   }
 
-  /// 放大后的卡片必须留在虚拟屏内，否则命中区域会被裁到屏幕外。
+  Future<void> _loadNativeMetrics() async {
+    try {
+      final metrics =
+          await ref.read(desktopWallpaperGatewayProvider).desktopMetrics();
+      if (!mounted) return;
+      setState(() {
+        _nativeMetrics = metrics;
+        _clampToScreen();
+      });
+      _regionSignature = '';
+      _pushRegion();
+    } on Object {
+      // 原生通道不可用时保留默认 / MediaQuery 值。
+    }
+  }
+
+  /// 卡片尺寸与位置都必须留在虚拟屏内，否则命中区域会被裁到屏幕外。
   void _clampToScreen() {
-    final view = PlatformDispatcher.instance.views.first;
-    final dpr = view.devicePixelRatio;
-    final maxX = view.physicalSize.width / dpr - _cardWidth;
-    final maxY = view.physicalSize.height / dpr - _cardHeight;
+    _cardWidth = _cardWidth.clamp(_minCardWidth, _maxCardWidth).toDouble();
+    _cardHeight = _cardHeight.clamp(_minCardHeight, _maxCardHeight).toDouble();
+    final size = _screenSize;
+    final maxX = size.width - _cardWidth;
+    final maxY = size.height - _cardHeight;
     _x = _x.clamp(0.0, maxX > 0 ? maxX : 0.0).toDouble();
     _y = _y.clamp(0.0, maxY > 0 ? maxY : 0.0).toDouble();
+  }
+
+  /// 取所有可用来源里最大的屏幕范围，避免子窗口 engine 的 view 尺寸偏小
+  /// 导致卡片被错误缩小、位置被压到 (0,0)。
+  Size get _screenSize {
+    // 保底：即便某个来源偏小，也至少留出默认卡片 + 足够的调整余量，
+    // 否则一次 clamp 就不可逆地把位置压到 0 并锁死继续拉大的能力。
+    var width = _screen.width > 1920 ? _screen.width : 1920.0;
+    var height = _screen.height > 1080 ? _screen.height : 1080.0;
+    final views = WidgetsBinding.instance.platformDispatcher.views;
+    for (final view in views) {
+      final dpr = view.devicePixelRatio > 0 ? view.devicePixelRatio : 1.0;
+      final vw = view.physicalSize.width / dpr;
+      final vh = view.physicalSize.height / dpr;
+      if (vw > width) width = vw;
+      if (vh > height) height = vh;
+      // 原生 GetSystemMetrics 返回物理像素，按同一 dpr 换算为逻辑像素。
+      final nw = _nativeMetrics.width / dpr;
+      final nh = _nativeMetrics.height / dpr;
+      if (nw > width) width = nw;
+      if (nh > height) height = nh;
+    }
+    return Size(width, height);
   }
 
   void _scheduleSavePosition() {
@@ -130,7 +216,12 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
     _saveTimer = Timer(const Duration(milliseconds: 300), () async {
       await ref.read(keyValueStoreProvider).writeJson(
             _positionKey,
-            <String, Object?>{'x': _x, 'y': _y},
+            <String, Object?>{
+              'x': _x,
+              'y': _y,
+              'width': _cardWidth,
+              'height': _cardHeight,
+            },
           );
     });
   }
@@ -184,6 +275,151 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
     // 8px 网格吸附（对齐 Vectra 的 snap 思路）。
     _x = (_x / 8).round() * 8.0;
     _y = (_y / 8).round() * 8.0;
+    setState(() {});
+    _regionSignature = '';
+    _pushRegion();
+    _scheduleSavePosition();
+  }
+
+  bool _edgeHasLeft(_ResizeEdge edge) => switch (edge) {
+        _ResizeEdge.left ||
+        _ResizeEdge.topLeft ||
+        _ResizeEdge.bottomLeft =>
+          true,
+        _ => false,
+      };
+
+  bool _edgeHasRight(_ResizeEdge edge) => switch (edge) {
+        _ResizeEdge.right ||
+        _ResizeEdge.topRight ||
+        _ResizeEdge.bottomRight =>
+          true,
+        _ => false,
+      };
+
+  bool _edgeHasTop(_ResizeEdge edge) => switch (edge) {
+        _ResizeEdge.top ||
+        _ResizeEdge.topLeft ||
+        _ResizeEdge.topRight =>
+          true,
+        _ => false,
+      };
+
+  bool _edgeHasBottom(_ResizeEdge edge) => switch (edge) {
+        _ResizeEdge.bottom ||
+        _ResizeEdge.bottomLeft ||
+        _ResizeEdge.bottomRight =>
+          true,
+        _ => false,
+      };
+
+  void _beginResize(_ResizeEdge edge, Offset globalPosition) {
+    if (DateTime.now().isBefore(_resizeEnabledAt)) return;
+    _resizing = true;
+    // 启动/激活窗口时偶尔会带一次孤立的 pointer 事件，必须超过阈值才算
+    // 真正开始调整，否则会把随机尺寸写进持久化。
+    _resizeActivated = false;
+    _resizeEdge = edge;
+    _resizeOrigin = globalPosition;
+    _resizeStartX = _x;
+    _resizeStartY = _y;
+    _resizeStartW = _cardWidth;
+    _resizeStartH = _cardHeight;
+    // 与拖动一样，调整期间放开整窗命中，避免逐帧 SetWindowRgn 造成残影。
+    ref
+        .read(desktopWallpaperGatewayProvider)
+        .setRegion(rects: const <DesktopCardRect>[], dragging: true);
+  }
+
+  void _updateResize(Offset globalPosition) {
+    if (!_resizing || _resizeEdge == null) return;
+    final edge = _resizeEdge!;
+    final dx = globalPosition.dx - _resizeOrigin.dx;
+    final dy = globalPosition.dy - _resizeOrigin.dy;
+    if (!_resizeActivated) {
+      if (dx.abs() < 6 && dy.abs() < 6) return;
+      _resizeActivated = true;
+    }
+    final hasLeft = _edgeHasLeft(edge);
+    final hasTop = _edgeHasTop(edge);
+    var x = _resizeStartX;
+    var y = _resizeStartY;
+    var w = _resizeStartW;
+    var h = _resizeStartH;
+
+    if (hasLeft) {
+      x = _resizeStartX + dx;
+      w = _resizeStartW - dx;
+    } else if (_edgeHasRight(edge)) {
+      w = _resizeStartW + dx;
+    }
+    if (hasTop) {
+      y = _resizeStartY + dy;
+      h = _resizeStartH - dy;
+    } else if (_edgeHasBottom(edge)) {
+      h = _resizeStartH + dy;
+    }
+
+    // 最小尺寸：从左侧/上侧缩小时保持对侧边缘不动。
+    if (w < _minCardWidth) {
+      w = _minCardWidth;
+      if (hasLeft) x = _resizeStartX + _resizeStartW - w;
+    }
+    if (h < _minCardHeight) {
+      h = _minCardHeight;
+      if (hasTop) y = _resizeStartY + _resizeStartH - h;
+    }
+
+    // 不得越过虚拟屏边界。
+    final screen = _screenSize;
+    if (hasLeft) {
+      if (x < 0) {
+        w += x;
+        x = 0;
+      }
+    } else if (x + w > screen.width) {
+      w = screen.width - x;
+    }
+    if (hasTop) {
+      if (y < 0) {
+        h += y;
+        y = 0;
+      }
+    } else if (y + h > screen.height) {
+      h = screen.height - y;
+    }
+    final maxW = screen.width > _minCardWidth ? screen.width : _minCardWidth;
+    final maxH = screen.height > _minCardHeight ? screen.height : _minCardHeight;
+    w = w.clamp(_minCardWidth, maxW).toDouble();
+    h = h.clamp(_minCardHeight, maxH).toDouble();
+
+    setState(() {
+      _x = x;
+      _y = y;
+      _cardWidth = w;
+      _cardHeight = h;
+    });
+  }
+
+  void _endResize() {
+    if (!_resizing) return;
+    final activated = _resizeActivated;
+    _resizing = false;
+    _resizeEdge = null;
+    _resizeActivated = false;
+    if (!activated) {
+      // 没有真正拖动：恢复命中区域，不吸附、不落盘。
+      _regionSignature = '';
+      _pushRegion();
+      return;
+    }
+    _clampToScreen();
+    // 与拖动一致：8px 网格吸附，位置与尺寸都对齐。
+    _x = (_x / 8).round() * 8.0;
+    _y = (_y / 8).round() * 8.0;
+    _cardWidth = (_cardWidth / 8).round() * 8.0;
+    _cardHeight = (_cardHeight / 8).round() * 8.0;
+    _clampToScreen();
     setState(() {});
     _regionSignature = '';
     _pushRegion();
@@ -376,6 +612,8 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
   Widget build(BuildContext context) {
     final month = ref.watch(monthDataProvider);
     final settings = ref.watch(settingsControllerProvider);
+    // overlay 窗口覆盖整个虚拟屏，view 的逻辑尺寸就是可用的屏幕范围。
+    _screen = MediaQuery.sizeOf(context);
     return MaterialApp(
       title: '桌面日历',
       debugShowCheckedModeBanner: false,
@@ -418,19 +656,146 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
             borderRadius: BorderRadius.circular(_cardRadius),
             border: Border.all(color: BasePalette.white6),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+          child: Stack(
             children: <Widget>[
-              _header(context, month),
-              _weekdays(context, month),
-              Expanded(child: _grid(context, month, settings)),
-              if (_paletteTarget != _ColorTarget.none) _paletteStrip(),
-              _quickInput(context),
-              _toolbar(context),
+              Positioned.fill(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: <Widget>[
+                    _header(context, month),
+                    _weekdays(context, month),
+                    Expanded(child: _grid(context, month, settings)),
+                    if (_paletteTarget != _ColorTarget.none) _paletteStrip(),
+                    _quickInput(context),
+                    _toolbar(context),
+                  ],
+                ),
+              ),
+              ..._resizeHandles(),
             ],
           ),
         ),
       );
+
+  /// 四条边 + 四个角的透明热区；右下角显示可见握柄作为操作提示。
+  /// 热区都在卡片矩形内，不会被 `SetWindowRgn` 裁掉。
+  List<Widget> _resizeHandles() => <Widget>[
+        _resizeHandle(
+          _ResizeEdge.left,
+          left: 0,
+          top: _resizeCorner,
+          bottom: _resizeCorner,
+          width: _resizeHit,
+        ),
+        _resizeHandle(
+          _ResizeEdge.right,
+          right: 0,
+          top: _resizeCorner,
+          bottom: _resizeCorner,
+          width: _resizeHit,
+        ),
+        _resizeHandle(
+          _ResizeEdge.top,
+          top: 0,
+          left: _resizeCorner,
+          right: _resizeCorner,
+          height: _resizeHit,
+        ),
+        _resizeHandle(
+          _ResizeEdge.bottom,
+          bottom: 0,
+          left: _resizeCorner,
+          right: _resizeCorner,
+          height: _resizeHit,
+        ),
+        _resizeHandle(
+          _ResizeEdge.topLeft,
+          left: 0,
+          top: 0,
+          width: _resizeCorner,
+          height: _resizeCorner,
+        ),
+        _resizeHandle(
+          _ResizeEdge.topRight,
+          right: 0,
+          top: 0,
+          width: _resizeCorner,
+          height: _resizeCorner,
+        ),
+        _resizeHandle(
+          _ResizeEdge.bottomLeft,
+          left: 0,
+          bottom: 0,
+          width: _resizeCorner,
+          height: _resizeCorner,
+        ),
+        _resizeHandle(
+          _ResizeEdge.bottomRight,
+          right: 0,
+          bottom: 0,
+          width: _resizeCorner,
+          height: _resizeCorner,
+          showGrip: true,
+        ),
+      ];
+
+  Widget _resizeHandle(
+    _ResizeEdge edge, {
+    double? left,
+    double? top,
+    double? right,
+    double? bottom,
+    double? width,
+    double? height,
+    bool showGrip = false,
+  }) =>
+      Positioned(
+        left: left,
+        top: top,
+        right: right,
+        bottom: bottom,
+        width: width,
+        height: height,
+        child: MouseRegion(
+          cursor: _resizeCursor(edge),
+          child: Listener(
+            behavior: HitTestBehavior.opaque,
+            onPointerDown: (PointerDownEvent e) =>
+                _beginResize(edge, e.position),
+            onPointerMove: (PointerMoveEvent e) =>
+                _updateResize(e.position),
+            onPointerUp: (_) => _endResize(),
+            onPointerCancel: (_) => _endResize(),
+            child: showGrip
+                ? Container(
+                    alignment: Alignment.center,
+                    decoration: const BoxDecoration(
+                      color: BasePalette.white6,
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(AppRadius.xs),
+                      ),
+                    ),
+                    child: const Icon(
+                      LucideIcons.grip,
+                      size: 11,
+                      color: BasePalette.grayLight4,
+                    ),
+                  )
+                : const SizedBox.expand(),
+          ),
+        ),
+      );
+
+  MouseCursor _resizeCursor(_ResizeEdge edge) => switch (edge) {
+        _ResizeEdge.left || _ResizeEdge.right =>
+          SystemMouseCursors.resizeLeftRight,
+        _ResizeEdge.top || _ResizeEdge.bottom =>
+          SystemMouseCursors.resizeUpDown,
+        _ResizeEdge.topLeft || _ResizeEdge.bottomRight =>
+          SystemMouseCursors.resizeUpLeftDownRight,
+        _ResizeEdge.topRight || _ResizeEdge.bottomLeft =>
+          SystemMouseCursors.resizeUpRightDownLeft,
+      };
 
   Widget _header(BuildContext context, MonthData month) => Listener(
         onPointerDown: (PointerDownEvent e) => _beginDrag(e.position),
@@ -544,8 +909,13 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
             mainAxisSpacing: _gridSpacing,
           ),
           itemCount: count,
-          itemBuilder: (BuildContext context, int index) =>
-              _dayCell(context, days[index], settings),
+          itemBuilder: (BuildContext context, int index) => _dayCell(
+            context,
+            days[index],
+            settings,
+            cellWidth,
+            cellHeight,
+          ),
         );
       },
     );
@@ -555,7 +925,13 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
     BuildContext context,
     CalendarDayModel day,
     AppSettings settings,
+    double cellWidth,
+    double cellHeight,
   ) {
+    // 卡片被拉大/缩小时，格子本身由 LayoutBuilder 重算；字号同步等比缩放，
+    // 同时限制上下限避免过窄卡片里文字挤爆或过宽卡片里文字过大。
+    final scale =
+        (cellWidth / _referenceCellWidth).clamp(0.85, 1.5).toDouble();
     final editing = _editingDate == day.date;
     final cell = _cellOf(day.date);
     final customColor = cell?.backgroundColor;
@@ -591,7 +967,9 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
             width: editing ? 2 : 1,
           ),
         ),
-        padding: const EdgeInsets.all(AppSpacing.xxs),
+        padding: EdgeInsets.all(
+          AppSpacing.xxs * (cellHeight / 100).clamp(0.8, 1.4).toDouble(),
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
@@ -600,7 +978,7 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
                 Text(
                   '${day.date.day}',
                   style: TextStyle(
-                    fontSize: AppTypography.body,
+                    fontSize: AppTypography.body * scale,
                     fontWeight: AppTypography.bold,
                     color: day.isCurrentMonth
                         ? defaultText
@@ -619,7 +997,7 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        fontSize: AppTypography.label,
+                        fontSize: AppTypography.label * scale,
                         color: defaultText.withValues(alpha: 0.7),
                       ),
                     ),
@@ -628,7 +1006,7 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
             ),
             Expanded(
               child: editing
-                  ? _inlineEditor(day.date, background, defaultText)
+                  ? _inlineEditor(day.date, background, defaultText, scale)
                   : SingleChildScrollView(
                       physics: const NeverScrollableScrollPhysics(),
                       child: Column(
@@ -640,7 +1018,7 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
-                                fontSize: AppTypography.label,
+                                fontSize: AppTypography.label * scale,
                                 color: _lineColor(visibleLines[i], background),
                                 decoration: visibleLines[i].completed
                                     ? TextDecoration.lineThrough
@@ -653,7 +1031,7 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
-                                fontSize: AppTypography.label,
+                                fontSize: AppTypography.label * scale,
                                 color: defaultText.withValues(alpha: 0.6),
                               ),
                             ),
@@ -668,7 +1046,12 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
   }
 
   /// 格子内直接编辑：每行一个输入框 + 完成勾选 + 删除，底部回车新增。
-  Widget _inlineEditor(DateKey date, Color background, Color defaultText) {
+  Widget _inlineEditor(
+    DateKey date,
+    Color background,
+    Color defaultText,
+    double scale,
+  ) {
     final lines = _linesOf(date);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -678,20 +1061,23 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
             padding: EdgeInsets.zero,
             itemCount: lines.length,
             itemBuilder: (BuildContext context, int index) =>
-                _editLineRow(date, lines[index], defaultText),
+                _editLineRow(date, lines[index], defaultText, scale),
           ),
         ),
         SizedBox(
-          height: 26,
+          height: 26 * scale,
           child: TextField(
             controller: _cellInput,
             focusNode: _cellFocus,
-            style: TextStyle(fontSize: AppTypography.label, color: defaultText),
+            style: TextStyle(
+              fontSize: AppTypography.label * scale,
+              color: defaultText,
+            ),
             decoration: InputDecoration(
               isDense: true,
               hintText: '回车新增一行…',
               hintStyle: TextStyle(
-                fontSize: AppTypography.label,
+                fontSize: AppTypography.label * scale,
                 color: defaultText.withValues(alpha: 0.45),
               ),
               border: InputBorder.none,
@@ -704,23 +1090,28 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
     );
   }
 
-  Widget _editLineRow(DateKey date, RichLine line, Color defaultText) =>
+  Widget _editLineRow(
+    DateKey date,
+    RichLine line,
+    Color defaultText,
+    double scale,
+  ) =>
       SizedBox(
         key: ValueKey<String>(line.id),
-        height: 26,
+        height: 26 * scale,
         child: Row(
           children: <Widget>[
             InkWell(
               onTap: () => _toggleLine(date, line.id),
               child: Icon(
                 line.completed ? LucideIcons.squareCheck : LucideIcons.square,
-                size: 14,
+                size: 14 * scale,
                 color: line.completed
                     ? BasePalette.themeDark6
                     : defaultText.withValues(alpha: 0.7),
               ),
             ),
-            const SizedBox(width: 3),
+            SizedBox(width: 3 * scale),
             Expanded(
               child: Focus(
                 onFocusChange: (bool focused) {
@@ -731,7 +1122,7 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
                   initialValue: line.text,
                   maxLines: 1,
                   style: TextStyle(
-                    fontSize: AppTypography.label,
+                    fontSize: AppTypography.label * scale,
                     color: _lineTextColor(line, defaultText),
                     decoration: line.completed
                         ? TextDecoration.lineThrough
@@ -749,8 +1140,8 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
             ),
             InkWell(
               onTap: () => _removeLine(date, line.id),
-              child: const Icon(LucideIcons.x,
-                  size: 12, color: BasePalette.redLight4),
+              child: Icon(LucideIcons.x,
+                  size: 12 * scale, color: BasePalette.redLight4),
             ),
           ],
         ),
