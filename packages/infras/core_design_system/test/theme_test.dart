@@ -53,6 +53,16 @@ void main() {
     test('分隔线是 0.5 逻辑像素（细线风格）', () {
       expect(AppTheme.light().dividerTheme.thickness, 0.5);
     });
+
+    test('全局字体族来自排版令牌，并覆盖所有 TextTheme 条目', () {
+      final theme = AppTheme.light();
+      expect(AppTypography.fontFamily, 'ChillRoundGothic');
+      expect(theme.textTheme.bodyMedium?.fontFamily, AppTypography.fontFamily);
+      expect(theme.textTheme.titleMedium?.fontFamily, AppTypography.fontFamily);
+      expect(theme.textTheme.labelSmall?.fontFamily, AppTypography.fontFamily);
+      expect(AppTheme.dark().textTheme.bodySmall?.fontFamily,
+          AppTypography.fontFamily);
+    });
   });
 
   group('令牌取值（品牌色阶）', () {

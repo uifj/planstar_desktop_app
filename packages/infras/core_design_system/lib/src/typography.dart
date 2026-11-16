@@ -1,17 +1,21 @@
-/// 字号与字重令牌 + 数字字体。
+/// 字号、字重与全局字体族令牌。
 ///
 /// 字号阶梯：
 /// 标题 32/20、小标题 16、正文 14、说明 12、角标 10；字重只保留
 /// bold / medium / regular 三档。
+/// 字体族由根工程 `assets/fonts` 提供，通过 [AppTheme] 注入 ThemeData。
 library;
 
 import 'package:flutter/material.dart';
 
 /// 字号与字重。
 abstract final class AppTypography {
-  /// 数字/价格字体族。使用系统字体，等宽效果由
-  /// [FontFeature.tabularFigures] 保证。
-  static const String? numericFontFamily = null;
+  /// 应用统一字体族：对应根工程 `assets/fonts` 中声明的 ChillRoundGothic。
+  /// Regular(400) / Medium(500) 两个字重；bold(700) 由 Flutter 合成。
+  static const String fontFamily = 'ChillRoundGothic';
+
+  /// 数字/价格沿用全局字体，等宽效果由 [FontFeature.tabularFigures] 保证。
+  static const String numericFontFamily = fontFamily;
 
   /// 超大号：详情页主价格、大数字。
   static const double display = 32;
@@ -43,7 +47,7 @@ abstract final class AppTypography {
   /// 粗体（价格、标题）。
   static const FontWeight bold = FontWeight.bold;
 
-  /// 数字展示样式（系统字体 + 粗体 + 紧行高）。
+  /// 数字展示样式（全局字体 + 粗体 + 紧行高）。
   ///
   /// 价格用 `fontFeatures: tabularFigures` 让数字等宽，
   /// 避免"星币 88"与"星币 188"在列表中左右跳动。

@@ -53,8 +53,10 @@ abstract final class AppTheme {
       scaffoldBackgroundColor: colors.bgPage,
       canvasColor: colors.bgCard,
       dividerColor: colors.divider,
-      fontFamily: null, // 系统字体
-      textTheme: textTheme,
+      // 全局字体族由排版令牌统一给出；apply 确保每个 TextTheme 条目也显式带上，
+      // 避免各窗口（主窗口 / 桌面 overlay / 子窗口）出现系统字体回退。
+      fontFamily: AppTypography.fontFamily,
+      textTheme: textTheme.apply(fontFamily: AppTypography.fontFamily),
       iconTheme: IconThemeData(color: colors.textPrimary),
       primaryIconTheme: IconThemeData(color: colors.onBrand),
       disabledColor: colors.textDisabled,
