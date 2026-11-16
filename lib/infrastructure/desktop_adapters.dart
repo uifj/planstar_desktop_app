@@ -223,7 +223,7 @@ final class TrayManagerGateway implements TrayGateway {
             MenuItem.separator(),
             item(TrayAction.sync, '手动同步'),
             item(TrayAction.settings, '日历设置'),
-            item(TrayAction.timetable, '课程表'),
+            // 课程表 / 订阅暂时隐藏：TrayAction 与模块代码保留，仅不放入菜单。
             item(TrayAction.notes, '便签'),
             item(TrayAction.refreshWallpaper, '生成静态壁纸快照（可选）'),
             MenuItem.separator(),

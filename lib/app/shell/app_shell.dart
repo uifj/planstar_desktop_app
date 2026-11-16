@@ -19,16 +19,18 @@ final class AppShell extends ConsumerWidget {
   final StatefulNavigationShell navigationShell;
 
   static const List<_Destination> _destinations = <_Destination>[
-    _Destination('/calendar', '日历', LucideIcons.calendarDays),
-    _Destination('/notes', '便签', LucideIcons.stickyNote),
-    _Destination('/countdown', '倒数日', LucideIcons.hourglass),
-    _Destination('/timetable', '课程表', LucideIcons.table2),
-    _Destination('/subscription', '订阅', LucideIcons.rss),
-    _Destination('/search', '搜索', LucideIcons.search),
-    _Destination('/history', '历史', LucideIcons.history),
-    _Destination('/transfer', '导入导出', LucideIcons.arrowRightLeft),
-    _Destination('/account', '账号同步', LucideIcons.cloudSync),
-    _Destination('/settings', '设置', LucideIcons.settings),
+    _Destination('/calendar', '日历', LucideIcons.calendarDays, 0),
+    _Destination('/notes', '便签', LucideIcons.stickyNote, 1),
+    _Destination('/countdown', '倒数日', LucideIcons.hourglass, 2),
+    // 课程表 / 订阅暂时隐藏：路由与模块代码保留，仅从导航移除。
+    // 用固定 branch 绑定而非列表下标，隐藏中间项后其余入口仍跳对页面。
+    // _Destination('/timetable', '课程表', LucideIcons.table2, 3),
+    // _Destination('/subscription', '订阅', LucideIcons.rss, 4),
+    _Destination('/search', '搜索', LucideIcons.search, 5),
+    _Destination('/history', '历史', LucideIcons.history, 6),
+    _Destination('/transfer', '导入导出', LucideIcons.arrowRightLeft, 7),
+    _Destination('/account', '账号同步', LucideIcons.cloudSync, 8),
+    _Destination('/settings', '设置', LucideIcons.settings, 9),
   ];
 
   @override
@@ -75,7 +77,7 @@ final class AppShell extends ConsumerWidget {
                         itemBuilder: (BuildContext context, int index) {
                           final item = _destinations[index];
                           final selected =
-                              navigationShell.currentIndex == index;
+                              navigationShell.currentIndex == item.branch;
                           return Padding(
                             padding: const EdgeInsets.symmetric(
                               vertical: AppSpacing.xxs,
@@ -84,7 +86,7 @@ final class AppShell extends ConsumerWidget {
                             child: InkWell(
                               borderRadius:
                                   BorderRadius.circular(AppRadius.sm),
-                              onTap: () => navigationShell.goBranch(index),
+                              onTap: () => navigationShell.goBranch(item.branch),
                               child: Container(
                                 padding: const EdgeInsets.symmetric(
                                   vertical: AppSpacing.sm,
@@ -163,9 +165,13 @@ final class AppShell extends ConsumerWidget {
 }
 
 final class _Destination {
-  const _Destination(this.path, this.label, this.icon);
+  const _Destination(this.path, this.label, this.icon, this.branch);
 
   final String path;
   final String label;
   final IconData icon;
+
+  /// 对应 `router.dart` 中 StatefulShellRoute.branches 的顺序。
+  /// 与导航列表下标解耦，隐藏入口后其余项仍指向正确页面。
+  final int branch;
 }
