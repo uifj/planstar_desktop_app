@@ -299,8 +299,11 @@ test/widget_test.dart                          # 重复规则 / 提醒 / 设置�
 格子由 `LayoutBuilder` 按新的可用宽高重算 `childAspectRatio`，字号与行内编辑
 行高按格子宽度等比缩放（0.85×–1.5×），因此放大卡片时格子与文字一起变大。
 位置与尺寸都做 8px 网格吸附、按屏幕夹紧，写入
-`KVStore.planstar.desktop.card.v2` 的 `{x, y, width, height}`（300ms 去抖，
-旧数据无 width/height 时回落到默认尺寸）。
+`KVStore.planstar.desktop.card.v2` 的 `{x, y, width, height}`。
+写入是**操作结束时立即落盘**（经 DataHub 串行 + 原子替换），并在
+`didChangeAppLifecycleState` / `dispose` 再补一次，避免调整后马上退出进程
+丢失最后一次操作；启动读取完成前禁止写盘，防止 `hiddenAtLaunch` 的生命周期
+回调把默认值覆盖掉已保存的位置。旧数据无 width/height 时回落到默认尺寸。
 所有写操作都走原有的 `CalendarController.saveCellLines` / `setLineColor` /
 `setCellBackgroundColor` / `toggleLineCompleted` / `removeLine`，
 领域事件、历史留痕、提醒重排、同步标脏与主窗口编辑完全一致。
