@@ -15,11 +15,51 @@ abstract interface class StorageReloader {
   Future<void> reload();
 }
 
-/// 跨 engine 的「数据已变更」信号（基于磁盘标记文件 + 轮询）。
+/// 一次跨 engine 的数据变更。
+///
+/// [revision] 由原生单一真相源单调递增，用于丢弃乱序/重复广播；
+/// [origin] 是写入方 engine 标识，用于避免自反馈；
+/// [key] 为空表示「全量重载」（非 Windows 降级路径）。
+final class DataChange {
+  const DataChange({
+    required this.key,
+    required this.revision,
+    required this.origin,
+    this.deleted = false,
+  });
+
+  final String key;
+  final int revision;
+  final String origin;
+  final bool deleted;
+
+  bool get isFullReload => key.isEmpty;
+}
+
+/// 变更的 key 对应需要重载的读模型分组；返回 `null` 表示全量重载。
+/// 放在端口层以便应用层按 key 精准刷新，同时可被单元测试覆盖。
+String? reloadTargetFor(String key) {
+  if (key.startsWith('planstar.calendar.')) return 'calendar';
+  return switch (key) {
+    'planstar.settings.v1' => 'settings',
+    'planstar.notes.v1' => 'notes',
+    'planstar.countdowns.v1' => 'countdown',
+    'planstar.subscriptions.v1' => 'subscription',
+    'planstar.timetables.v1' => 'timetable',
+    'planstar.history.v1' => 'history',
+    'planstar.desktop.card.v2' => 'position',
+    _ => null,
+  };
+}
+
+/// 跨 engine 的「数据已变更」信号。
+///
+/// Windows 走原生 DataHub 的 EventChannel 广播（事件驱动、带 revision）；
+/// 其它平台走文件标记降级（key 为空 → 全量重载）。
 abstract interface class CrossEngineSync {
   Future<void> signalChange();
 
-  Stream<void> get changes;
+  Stream<DataChange> get changes;
 }
 
 /// 时钟端口：让「今天」「提前量」可测，避免聚合直接读 `DateTime.now()`。
@@ -196,7 +236,11 @@ abstract interface class MultiWindowGateway {
 
   Future<List<String>> openWindowIds();
 
+  /// 隐藏指定窗口（不销毁 engine，复用时再 [showWindow]）。
   Future<void> closeWindow(String windowId);
+
+  /// 重新显示已隐藏的窗口，避免反复开关累积多个 engine。
+  Future<void> showWindow(String windowId);
 
   Future<void> sendTo(String windowId, MultiWindowCommand command);
 

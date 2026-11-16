@@ -16,8 +16,8 @@ import '../core/ports.dart';
 final class FileCrossEngineSync implements CrossEngineSync {
   FileCrossEngineSync();
 
-  final StreamController<void> _changes =
-      StreamController<void>.broadcast();
+  final StreamController<DataChange> _changes =
+      StreamController<DataChange>.broadcast();
   Timer? _timer;
   File? _marker;
   String _lastValue = '';
@@ -38,7 +38,7 @@ final class FileCrossEngineSync implements CrossEngineSync {
   }
 
   @override
-  Stream<void> get changes => _changes.stream;
+  Stream<DataChange> get changes => _changes.stream;
 
   @override
   Future<void> signalChange() async {
@@ -63,7 +63,13 @@ final class FileCrossEngineSync implements CrossEngineSync {
       final value = (await file.readAsString()).trim();
       if (value != _lastValue) {
         _lastValue = value;
-        _changes.add(null);
+        _changes.add(
+          DataChange(
+            key: '',
+            revision: int.tryParse(value) ?? 0,
+            origin: '',
+          ),
+        );
       }
     } on Object {
       // ignore transient IO errors
