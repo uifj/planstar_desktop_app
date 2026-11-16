@@ -35,6 +35,52 @@ void main() {
     expect(rect.bottom, lessThanOrEqualTo(screen.height));
   });
 
+  group('桌面双击判定', () {
+    final now = DateTime(2026, 11, 16, 12, 0, 0);
+    const a = '2026-11-16';
+    const b = '2026-11-17';
+
+    test('同一格 200ms 内再次点击算双击', () {
+      expect(
+        isDesktopDoubleTap(
+          now.add(const Duration(milliseconds: 200)),
+          now,
+          a,
+          a,
+        ),
+        isTrue,
+      );
+    });
+
+    test('超过 350ms 不算双击', () {
+      expect(
+        isDesktopDoubleTap(
+          now.add(const Duration(milliseconds: 500)),
+          now,
+          a,
+          a,
+        ),
+        isFalse,
+      );
+    });
+
+    test('不同格子不算双击', () {
+      expect(
+        isDesktopDoubleTap(
+          now.add(const Duration(milliseconds: 100)),
+          now,
+          a,
+          b,
+        ),
+        isFalse,
+      );
+    });
+
+    test('没有上一次点击不算双击', () {
+      expect(isDesktopDoubleTap(now, null, a, a), isFalse);
+    });
+  });
+
   test('负坐标或极小屏幕也返回屏幕内的有效矩形', () {
     final rect = computeDesktopPopupRect(
       const Rect.fromLTWH(-500, -200, 140, 105),
