@@ -1126,6 +1126,18 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
           SystemMouseCursors.resizeUpRightDownLeft,
       };
 
+  /// 收起桌面组件：不能只调本地 hide，否则子窗口隐藏了但共享设置里
+  /// `desktopWidgetEnabled` 仍是 true，托盘「显示桌面日历窗口」改写设置时
+  /// 因值未变化被 `SettingsController.update` 短路，永远不会触发重新显示。
+  /// 这里改为写共享设置（经 DataHub 广播让主窗口同步状态并复用同一 engine）；
+  /// 本地 hide 只作为即时反馈，主窗口随后再 hide 是幂等的。
+  Future<void> _collapseDesktopWidget() async {
+    await ref.read(settingsControllerProvider.notifier).update(
+          (AppSettings s) => s.copyWith(desktopWidgetEnabled: false),
+        );
+    await ref.read(multiWindowGatewayProvider).hideCurrentWindow();
+  }
+
   Widget _header(BuildContext context, MonthData month) => Listener(
         onPointerDown: (PointerDownEvent e) => _beginDrag(e.position),
         onPointerMove: (PointerMoveEvent e) => _updateDrag(e.position),
@@ -1171,9 +1183,7 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
               _iconButton(
                 LucideIcons.x,
                 '收起桌面组件',
-                () => ref
-                    .read(multiWindowGatewayProvider)
-                    .hideCurrentWindow(),
+                _collapseDesktopWidget,
               ),
             ],
           ),

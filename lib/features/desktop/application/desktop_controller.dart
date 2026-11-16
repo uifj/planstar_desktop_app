@@ -223,9 +223,16 @@ final class DesktopController extends Notifier<DesktopState> {
 
   /// 托盘右键的一键显示 / 隐藏：改写设置项后由 applySettings 驱动窗口显隐。
   Future<void> setDesktopWidgetEnabled(bool enabled) async {
+    final current = ref.read(settingsControllerProvider).desktopWidgetEnabled;
     await ref.read(settingsControllerProvider.notifier).update(
           (AppSettings s) => s.copyWith(desktopWidgetEnabled: enabled),
         );
+    // 值相同的时候 update 会短路、不触发 applySettings；但窗口可能已被
+    // 子窗口的「收起桌面组件」按钮隐藏，此时必须主动补偿一次同步，
+    // 否则托盘「显示桌面日历窗口」点了没反应。
+    if (current == enabled) {
+      await _syncDesktopWidget(enabled);
+    }
   }
 
   Future<void> toggleDesktopWidget() async {
