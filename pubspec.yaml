@@ -14,7 +14,10 @@ workspace:
 dependencies:
   flutter:
     sdk: flutter
-  cupertino_icons: ^1.0.8
+
+  # ── 图标：全项目统一使用 Lucide（lucide_icons_flutter）────────────────────
+  # 4.0.3 对应 Lucide 官方图标集，SDK 约束 ^3.0.0，兼容当前 Dart 3.11.5。
+  lucide_icons_flutter: 4.0.3
 
   # ── 已有基建包：零 Flutter 内核 + 三层设计令牌 ────────────────────────────
   core:
