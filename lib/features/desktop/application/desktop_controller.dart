@@ -131,9 +131,29 @@ final class DesktopController extends Notifier<DesktopState> {
     if (enabled) {
       // applySettings 会在首帧微任务、设置加载、跨 engine 同步时并发触发，
       // 必须防重入，否则会开出多个互相重叠的 overlay 窗口。
-      if (_openingWidget || _widgetWindowIds.isNotEmpty) return;
+      if (_openingWidget) return;
       _openingWidget = true;
       try {
+        if (_widgetWindowIds.isNotEmpty) {
+          // 复用已隐藏的窗口：hide 并不销毁 engine，若每次都新建会累积
+          // 多份 DataHub 订阅与存储镜像。
+          var shown = false;
+          for (final id in List<String>.from(_widgetWindowIds)) {
+            try {
+              await multiWindow.showWindow(id);
+              shown = true;
+            } catch (_) {
+              _widgetWindowIds.remove(id);
+            }
+          }
+          if (shown) {
+            state = state.copyWith(
+              widgetActive: true,
+              message: '桌面可编辑月历已显示',
+            );
+            return;
+          }
+        }
         final id = await multiWindow.openDesktopWidget();
         _widgetWindowIds.add(id);
         state = state.copyWith(
@@ -150,11 +170,10 @@ final class DesktopController extends Notifier<DesktopState> {
       }
       return;
     }
-    final ids = List<String>.from(_widgetWindowIds);
-    _widgetWindowIds.clear();
-    for (final id in ids) {
+    for (final id in List<String>.from(_widgetWindowIds)) {
       await multiWindow.closeWindow(id);
     }
+    // 保留 id，下次显示时复用同一个 engine。
     state = state.copyWith(
       widgetActive: false,
       message: '桌面可编辑月历已隐藏',

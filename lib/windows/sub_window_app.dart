@@ -4,6 +4,8 @@
 /// `MultiWindowGateway.incoming` 的 `refresh` 指令触发重新加载。
 library;
 
+import 'dart:async';
+
 import 'package:core_design_system/core_design_system.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter/material.dart';
@@ -29,11 +31,13 @@ final class SubWindowApp extends ConsumerStatefulWidget {
 }
 
 final class _SubWindowAppState extends ConsumerState<SubWindowApp> {
+  StreamSubscription<MultiWindowCommand>? _commands;
+
   @override
   void initState() {
     super.initState();
     ref.read(crossEngineSyncControllerProvider);
-    ref
+    _commands = ref
         .read(multiWindowGatewayProvider)
         .incoming
         .listen((MultiWindowCommand command) {
@@ -41,6 +45,12 @@ final class _SubWindowAppState extends ConsumerState<SubWindowApp> {
       ref.read(notesControllerProvider.notifier).load();
       ref.read(countdownControllerProvider.notifier).load();
     });
+  }
+
+  @override
+  void dispose() {
+    _commands?.cancel();
+    super.dispose();
   }
 
   @override

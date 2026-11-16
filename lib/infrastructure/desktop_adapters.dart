@@ -293,6 +293,11 @@ final class DesktopMultiWindowGateway implements MultiWindowGateway {
   }
 
   @override
+  Future<void> showWindow(String windowId) async {
+    await WindowController.fromWindowId(windowId).show();
+  }
+
+  @override
   Future<void> sendTo(String windowId, MultiWindowCommand command) async {
     await WindowController.fromWindowId(windowId).invokeMethod(
       'command',
