@@ -102,6 +102,7 @@ final class WindowTitleBar extends ConsumerWidget {
               LucideIcons.x,
               () => ref.read(windowGatewayProvider).close(),
               danger: true,
+              tooltip: '隐藏到托盘（托盘右键菜单中可退出）',
             ),
           ],
         ),
@@ -123,12 +124,16 @@ final class WindowTitleBar extends ConsumerWidget {
     IconData icon,
     VoidCallback onTap, {
     bool danger = false,
+    String? tooltip,
   }) {
     final colors = context.appColors;
-    return IconButton(
+    final button = IconButton(
       icon: Icon(icon, size: 16, color: danger ? colors.error : null),
       onPressed: onTap,
       visualDensity: VisualDensity.compact,
     );
+    return tooltip == null
+        ? button
+        : Tooltip(message: tooltip, child: button);
   }
 }

@@ -18,7 +18,9 @@ import 'package:window_manager/window_manager.dart';
 import '../core/ports.dart';
 
 /// [WindowGateway] 的 window_manager 实现。
-final class WindowManagerGateway implements WindowGateway {
+final class WindowManagerGateway
+    with WindowListener
+    implements WindowGateway {
   WindowManagerGateway({required this.logger});
 
   final AppLogger logger;
@@ -36,6 +38,10 @@ final class WindowManagerGateway implements WindowGateway {
   Future<void> initializeMainWindow() async {
     await ensureInitialized();
     if (!_ready) return;
+    // 右上角 X / Alt+F4 不再直接退出：拦截原生关闭信号，改为隐藏到托盘。
+    // 托盘菜单里的「退出」会调用 destroy() 绕过拦截。
+    await windowManager.setPreventClose(true);
+    windowManager.addListener(this);
     const options = WindowOptions(
       size: Size(1320, 860),
       minimumSize: Size(1024, 680),
@@ -139,6 +145,17 @@ final class WindowManagerGateway implements WindowGateway {
   Future<void> close() async {
     if (_ready) await windowManager.close();
   }
+
+  @override
+  Future<void> destroy() async {
+    if (_ready) await windowManager.destroy();
+  }
+
+  /// window_manager 的关闭拦截回调：只隐藏，托盘「退出」才真正结束进程。
+  @override
+  void onWindowClose() {
+    unawaited(hide());
+  }
 }
 
 /// [TrayGateway] 的 tray_manager 实现。
@@ -160,20 +177,22 @@ final class TrayManagerGateway implements TrayGateway {
       await trayManager.setContextMenu(
         Menu(
           items: <MenuItem>[
-            item(TrayAction.show, '显示日历清单'),
-            item(TrayAction.hide, '隐藏日历清单'),
+            item(TrayAction.show, '显示主窗口'),
+            item(TrayAction.hide, '隐藏主窗口'),
+            MenuItem.separator(),
+            // 桌面日历窗口的两个独立一键项，右键即可明确显示或隐藏。
+            item(TrayAction.showDesktopWidget, '显示桌面日历窗口'),
+            item(TrayAction.hideDesktopWidget, '隐藏桌面日历窗口'),
             MenuItem.separator(),
             item(TrayAction.sync, '手动同步'),
             item(TrayAction.settings, '日历设置'),
             item(TrayAction.timetable, '课程表'),
             item(TrayAction.notes, '便签'),
-            MenuItem.separator(),
-            item(TrayAction.toggleDesktopWidget,
-                '显示 / 隐藏桌面可编辑月历'),
             item(TrayAction.refreshWallpaper, '生成静态壁纸快照（可选）'),
             MenuItem.separator(),
             item(TrayAction.about, '关于'),
-            item(TrayAction.exit, '退出'),
+            // 唯一能真正结束进程的入口。
+            item(TrayAction.exit, '退出企划星'),
           ],
         ),
       );

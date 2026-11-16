@@ -221,11 +221,16 @@ final class DesktopController extends Notifier<DesktopState> {
     );
   }
 
+  /// 托盘右键的一键显示 / 隐藏：改写设置项后由 applySettings 驱动窗口显隐。
+  Future<void> setDesktopWidgetEnabled(bool enabled) async {
+    await ref.read(settingsControllerProvider.notifier).update(
+          (AppSettings s) => s.copyWith(desktopWidgetEnabled: enabled),
+        );
+  }
+
   Future<void> toggleDesktopWidget() async {
     final current = ref.read(settingsControllerProvider).desktopWidgetEnabled;
-    await ref.read(settingsControllerProvider.notifier).update(
-          (AppSettings s) => s.copyWith(desktopWidgetEnabled: !current),
-        );
+    await setDesktopWidgetEnabled(!current);
   }
 
   void _onTrayAction(TrayAction action) {
@@ -245,12 +250,16 @@ final class DesktopController extends Notifier<DesktopState> {
       case TrayAction.embedDesktop:
       case TrayAction.toggleDesktopWidget:
         toggleDesktopWidget();
+      case TrayAction.showDesktopWidget:
+        setDesktopWidgetEnabled(true);
+      case TrayAction.hideDesktopWidget:
+        setDesktopWidgetEnabled(false);
       case TrayAction.refreshWallpaper:
         refreshWallpaper();
       case TrayAction.about:
         state = state.copyWith(message: '企划星 · 桌面日历清单');
       case TrayAction.exit:
-        close();
+        destroy();
     }
   }
 
@@ -271,7 +280,11 @@ final class DesktopController extends Notifier<DesktopState> {
     state = state.copyWith(visible: false);
   }
 
+  /// 请求关闭主窗口：因已开启关闭拦截，实际会隐藏到托盘。
   void close() => ref.read(windowGatewayProvider).close();
+
+  /// 托盘「退出」专用：绕过关闭拦截强制结束进程。
+  void destroy() => ref.read(windowGatewayProvider).destroy();
 
   Future<void> openNoteWindow(String noteId) => ref
       .read(multiWindowGatewayProvider)

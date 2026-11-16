@@ -184,7 +184,12 @@ abstract interface class WindowGateway {
 
   Future<void> toggleMaximize();
 
+  /// 请求关闭窗口。主窗口已开启「关闭拦截」，实际行为是隐藏到托盘；
+  /// 真正结束进程请用 [destroy]。
   Future<void> close();
+
+  /// 托盘「退出」专用：绕过关闭拦截强制结束应用。
+  Future<void> destroy();
 
   Future<WindowRect> bounds();
 
@@ -203,6 +208,8 @@ enum TrayAction {
   about,
   embedDesktop,
   toggleDesktopWidget,
+  showDesktopWidget,
+  hideDesktopWidget,
   refreshWallpaper,
   exit,
 }
