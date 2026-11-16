@@ -13,12 +13,11 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../app/planstar_app.dart';
 import '../core/ports.dart';
 import '../features/reminder/infrastructure/local_notification_gateway.dart';
-import '../infrastructure/cross_engine_sync.dart';
+import '../infrastructure/data_hub.dart';
 import '../infrastructure/desktop_adapters.dart';
 import '../infrastructure/desktop_wallpaper_gateway.dart';
 import '../infrastructure/file_gateway.dart';
@@ -48,13 +47,10 @@ final class AppBootstrap {
     final forceDesktopEmbedding =
         args.contains('--planstar-embed-desktop');
 
-    final prefs = await SharedPreferences.getInstance();
-    final crossEngineSync = FileCrossEngineSync();
-    await crossEngineSync.initialize();
-    final keyValueStore = SharedPreferencesStore(
-      prefs,
-      onWrite: crossEngineSync.signalChange,
-    );
+    // 单一真相源：所有 engine 通过原生 DataHub 串行读写，EventChannel 广播。
+    // 不再使用 SharedPreferences —— 它的 Windows 实现每个 isolate 各缓存一份，
+    // 且 legacy reload() 并不会重读磁盘。
+    final dataHub = await DataHubStore.create();
     final secureStore = FlutterSecureStorageAdapter(
       const FlutterSecureStorage(),
     );
@@ -138,9 +134,9 @@ final class AppBootstrap {
 
     final overrides = [
       clockProvider.overrideWithValue(clock),
-      keyValueStoreProvider.overrideWithValue(keyValueStore),
-      storageReloaderProvider.overrideWithValue(keyValueStore),
-      crossEngineSyncProvider.overrideWithValue(crossEngineSync),
+      keyValueStoreProvider.overrideWithValue(dataHub),
+      storageReloaderProvider.overrideWithValue(dataHub),
+      crossEngineSyncProvider.overrideWithValue(dataHub),
       secureStoreProvider.overrideWithValue(secureStore),
       loggerProvider.overrideWithValue(logger),
       configLoaderProvider.overrideWithValue(configLoader),

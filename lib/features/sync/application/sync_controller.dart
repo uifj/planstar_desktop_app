@@ -37,6 +37,7 @@ final class SyncController extends Notifier<SyncState> {
     bus.on<DayCellChanged>(_onDirty);
     bus.on<NoteChanged>(_onDirty);
     bus.on<CountdownChanged>(_onDirty);
+    bus.on<CrossEngineDataChanged>(_onDirty);
     return SyncState.initial;
   }
 

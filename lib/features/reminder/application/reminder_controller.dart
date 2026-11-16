@@ -66,6 +66,7 @@ final class ReminderController extends Notifier<ReminderState> {
     bus.on<CalendarEventChanged>(_onChanged);
     bus.on<CalendarEventRemoved>(_onChanged);
     bus.on<SettingsChanged>(_onChanged);
+    bus.on<CrossEngineDataChanged>(_onChanged);
 
     final gateway = ref.read(notificationGatewayProvider);
     gateway.activations.listen(_onActivation);

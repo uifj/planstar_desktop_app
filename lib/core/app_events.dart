@@ -102,3 +102,20 @@ final class ReminderFired extends AppDomainEvent {
 
   final String title;
 }
+
+/// 另一个 engine 已经提交了一次写入，本 engine 的读模型已刷新。
+///
+/// 用于补齐跨 engine 的**本地副作用**（提醒重排、dirty 计数），
+/// 不用于历史留痕——留痕仍由写入方的 DayCellChanged 单次落盘。
+/// [revision] 同时作为幂等去重键。
+final class CrossEngineDataChanged extends AppDomainEvent {
+  const CrossEngineDataChanged({
+    required super.aggregateId,
+    required super.occurredAt,
+    required this.key,
+    required this.revision,
+  });
+
+  final String key;
+  final int revision;
+}
