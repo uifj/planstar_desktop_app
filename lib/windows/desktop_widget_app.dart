@@ -93,7 +93,13 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
 
   double _x = 96;
   double _y = 96;
+  // 选中态与编辑态分离：单击只选中并高亮格子，编辑只在浮层里进行。
+  DateKey? _selectedDate;
   DateKey? _editingDate;
+  // 桌面鼠标下 GestureDetector 的 onDoubleTap 常与 onTap 竞争失败，
+  // 因此自己按「同一格 + 350ms 内两次点击」判定双击。
+  DateTime? _lastCellTapAt;
+  DateKey? _lastCellTapDate;
   // 长按/双击弹出的完整编辑器；_popupRect 是 overlay 窗口坐标系的逻辑像素矩形。
   DateKey? _popupDate;
   Rect? _popupRect;
@@ -467,17 +473,31 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
     unawaited(_persistPosition());
   }
 
+  /// 单击只选中；同一格 350ms 内第二次单击视为双击，打开浮层编辑器。
+  /// 不依赖 GestureDetector.onDoubleTap —— 桌面鼠标下它常被 onTap 抢先。
+  void _onCellTap(DateKey date, BuildContext cellContext) {
+    final now = DateTime.now();
+    final lastAt = _lastCellTapAt;
+    if (isDesktopDoubleTap(now, lastAt, _lastCellTapDate, date)) {
+      _lastCellTapAt = null;
+      _lastCellTapDate = null;
+      _openPopup(date, cellContext);
+      return;
+    }
+    _lastCellTapAt = now;
+    _lastCellTapDate = date;
+    _select(date);
+  }
+
+  /// 单击只选中格子（高亮 + 作为底部工具栏的作用目标），不进入编辑态。
+  /// 真正的编辑统一通过浮层编辑器，避免格子内输入框遮挡日期与农历。
   void _select(DateKey date) {
-    // 已经在该格子内编辑时不再重置，避免点击输入框时丢焦点或清空待提交内容。
-    if (_editingDate == date) return;
     setState(() {
-      _editingDate = date;
+      _selectedDate = date;
       _activeLineId = null;
       _paletteTarget = _ColorTarget.none;
       _confirmClear = false;
-      _cellInput.clear();
     });
-    _focusNewLine();
   }
 
   void _closeEditor() {
@@ -534,6 +554,7 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
     setState(() {
       _popupDate = date;
       _popupRect = popup;
+      _selectedDate = date;
       // 工具栏 / inlineEditor 仍复用 _editingDate，避免引入第二套编辑状态。
       _editingDate = date;
       _activeLineId = null;
@@ -569,7 +590,8 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
 
   void _focusNewLine() {
     if (_editingDate == null) {
-      _select(DateKey.today(ref.read(clockProvider).now()));
+      // 「添加一行」在只选中状态下也应打开浮层，而不是静默无反应。
+      _openPopupFromToolbar();
       return;
     }
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -585,7 +607,9 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
   }
 
   DateKey get _targetDate =>
-      _editingDate ?? DateKey.today(ref.read(clockProvider).now());
+      _editingDate ??
+      _selectedDate ??
+      DateKey.today(ref.read(clockProvider).now());
 
   DayCell? _cellOf(DateKey date) {
     for (final cell in ref.read(calendarControllerProvider).cells) {
@@ -822,9 +846,10 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
       color: Colors.transparent,
       child: Container(
         decoration: BoxDecoration(
-          color: BasePalette.black2,
+          // 纯白卡片 + 黑字：与浅色输入框形成一致对比，避免白底浅字看不清。
+          color: Colors.white,
           borderRadius: BorderRadius.circular(AppRadius.md),
-          border: Border.all(color: BasePalette.white6),
+          border: Border.all(color: BasePalette.grayLight3),
           boxShadow: const <BoxShadow>[
             BoxShadow(
               color: BasePalette.black5,
@@ -845,13 +870,13 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
                 ),
                 child: _inlineEditor(
                   date,
-                  BasePalette.black2,
-                  BasePalette.grayLight1,
+                  Colors.white,
+                  BasePalette.grayDark1,
                   1.0,
                 ),
               ),
             ),
-            if (_paletteTarget != _ColorTarget.none) _paletteStrip(),
+            if (_paletteTarget != _ColorTarget.none) _paletteStrip(light: true),
             _popupTools(),
           ],
         ),
@@ -866,7 +891,7 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
           right: AppSpacing.xxs,
         ),
         decoration: const BoxDecoration(
-          border: Border(bottom: BorderSide(color: BasePalette.white6)),
+          border: Border(bottom: BorderSide(color: BasePalette.grayLight3)),
         ),
         child: Row(
           children: <Widget>[
@@ -874,7 +899,7 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
               width: 3,
               height: 16,
               decoration: BoxDecoration(
-                color: BasePalette.themeDark6,
+                color: BasePalette.themeLight6,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -884,11 +909,12 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
                 '${date.year}年${date.month}月${date.day}日',
                 style: const TextStyle(
                   fontSize: AppTypography.body,
-                  color: BasePalette.grayLight1,
+                  color: BasePalette.grayDark1,
                 ),
               ),
             ),
-            _popupTool(LucideIcons.check, '完成编辑', _closePopup),
+            _popupTool(LucideIcons.check, '完成编辑', _closePopup,
+                light: true),
           ],
         ),
       );
@@ -896,34 +922,48 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
   Widget _popupTools() => Container(
         height: 40,
         decoration: const BoxDecoration(
-          border: Border(top: BorderSide(color: BasePalette.white6)),
+          border: Border(top: BorderSide(color: BasePalette.grayLight3)),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: <Widget>[
-            _popupTool(LucideIcons.plus, '添加一行', _focusNewLine),
+            _popupTool(LucideIcons.plus, '添加一行', _focusNewLine,
+                light: true),
             _popupTool(
               LucideIcons.type,
               '文字颜色',
               () => _openPalette(_ColorTarget.text),
+              light: true,
             ),
             _popupTool(
               LucideIcons.paintBucket,
               '单元格颜色',
               () => _openPalette(_ColorTarget.cell),
+              light: true,
             ),
-            _popupTool(LucideIcons.checkCheck, '标记完成', _toggleComplete),
-            _popupTool(LucideIcons.eraser, '清空本日', _clearCell),
+            _popupTool(LucideIcons.checkCheck, '标记完成', _toggleComplete,
+                light: true),
+            _popupTool(LucideIcons.eraser, '清空本日', _clearCell,
+                light: true),
           ],
         ),
       );
 
-  Widget _popupTool(IconData icon, String tooltip, VoidCallback onPressed) =>
+  Widget _popupTool(
+    IconData icon,
+    String tooltip,
+    VoidCallback onPressed, {
+    bool light = false,
+  }) =>
       Tooltip(
         message: tooltip,
         child: IconButton(
           onPressed: onPressed,
-          icon: Icon(icon, size: 15, color: BasePalette.grayLight4),
+          icon: Icon(
+            icon,
+            size: 15,
+            color: light ? BasePalette.grayDark4 : BasePalette.grayLight4,
+          ),
           visualDensity: VisualDensity.compact,
           padding: EdgeInsets.zero,
           constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
@@ -1239,8 +1279,8 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
     // 同时限制上下限避免过窄卡片里文字挤爆或过宽卡片里文字过大。
     final scale =
         (cellWidth / _referenceCellWidth).clamp(0.85, 1.5).toDouble();
-    // 浮层编辑器打开时，格子内不再重复显示行内编辑态。
-    final editing = _editingDate == day.date && _popupDate == null;
+    // 单击只高亮选中；编辑态只存在于浮层里，格子内始终只读展示。
+    final selected = _selectedDate == day.date || _editingDate == day.date;
     final cell = _cellOf(day.date);
     final customColor = cell?.backgroundColor;
     final inMonth = day.isCurrentMonth;
@@ -1266,9 +1306,9 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
           .where((String t) => t.isNotEmpty),
     ];
     return GestureDetector(
-      onTap: () => _select(day.date),
-      // 单击 = 格子内快速编辑；长按 / 双击 = 在格子旁弹出完整编辑器。
-      onDoubleTap: () => _openPopup(day.date, context),
+      onTap: () => _onCellTap(day.date, context),
+      // 长按 / 右键也打开浮层；双击由 _onCellTap 自己判定，
+      // 不用 onDoubleTap，避免桌面鼠标下与 onTap 竞争失败。
       onLongPress: () => _openPopup(day.date, context),
       // 桌面端右键最稳定，作为长按/双击之外的第三条触发路径。
       onSecondaryTapDown: (TapDownDetails _) =>
@@ -1278,14 +1318,14 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
           color: background,
           borderRadius: BorderRadius.circular(AppRadius.xs),
           border: Border.all(
-            color: editing
+            color: selected
                 ? BasePalette.themeDark6
                 : day.isToday
                     ? BasePalette.themeDark6
                     : weekend
                         ? BasePalette.orangeLight3.withValues(alpha: 0.42)
                         : BasePalette.white6,
-            width: editing ? 2 : 1,
+            width: selected ? 2 : 1,
           ),
         ),
         padding: EdgeInsets.all(
@@ -1328,9 +1368,7 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
               ],
             ),
             Expanded(
-              child: editing
-                  ? _inlineEditor(day.date, background, defaultText, scale)
-                  : SingleChildScrollView(
+              child: SingleChildScrollView(
                       physics: const NeverScrollableScrollPhysics(),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1651,7 +1689,7 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
       );
 
   /// 调色板内嵌在卡片底部，避免 showDialog 被 SetWindowRgn 裁掉。
-  Widget _paletteStrip() {
+  Widget _paletteStrip({bool light = false}) {
     final swatches = <EventColor>[
       ..._recentColors,
       ...EventColor.palette.where(
@@ -1671,16 +1709,20 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
     return Container(
       height: _paletteHeight,
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
-      decoration: const BoxDecoration(
-        border: Border(top: BorderSide(color: BasePalette.white6)),
+      decoration: BoxDecoration(
+        border: Border(
+          top: BorderSide(
+            color: light ? BasePalette.grayLight3 : BasePalette.white6,
+          ),
+        ),
       ),
       child: Row(
         children: <Widget>[
           Text(
             _paletteTarget == _ColorTarget.cell ? '单元格颜色' : '文字颜色',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: AppTypography.caption,
-              color: BasePalette.grayLight5,
+              color: light ? BasePalette.grayDark4 : BasePalette.grayLight5,
             ),
           ),
           const SizedBox(width: AppSpacing.xs),
@@ -1691,23 +1733,25 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
                 children: swatches
                     .map(
                       (EventColor c) =>
-                          _swatch(c, c.argb == selected.argb),
+                          _swatch(c, c.argb == selected.argb, light: light),
                     )
                     .toList(growable: false),
               ),
             ),
           ),
-          _iconButton(
+          _popupTool(
             LucideIcons.x,
             '关闭调色板',
             () => setState(() => _paletteTarget = _ColorTarget.none),
+            light: light,
           ),
         ],
       ),
     );
   }
 
-  Widget _swatch(EventColor color, bool selected) => Padding(
+  Widget _swatch(EventColor color, bool selected, {bool light = false}) =>
+      Padding(
         padding: const EdgeInsets.only(right: AppSpacing.xxs),
         child: InkWell(
           onTap: () => _applyColor(color),
@@ -1716,18 +1760,25 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
             width: 28,
             height: 28,
             decoration: BoxDecoration(
-              color: color.isTransparent ? BasePalette.white7 : color.toColor(),
+              color: color.isTransparent
+                  ? (light ? BasePalette.grayLight3 : BasePalette.white7)
+                  : color.toColor(),
               borderRadius: BorderRadius.circular(AppRadius.xs),
               border: Border.all(
                 color: selected
-                    ? BasePalette.themeDark6
-                    : BasePalette.white6,
+                    ? (light ? BasePalette.themeLight6 : BasePalette.themeDark6)
+                    : (light ? BasePalette.grayLight3 : BasePalette.white6),
                 width: selected ? 2 : 1,
               ),
             ),
             child: color.isTransparent
-                ? const Icon(LucideIcons.ban,
-                    size: 14, color: BasePalette.grayLight4)
+                ? Icon(
+                    LucideIcons.ban,
+                    size: 14,
+                    color: light
+                        ? BasePalette.grayDark4
+                        : BasePalette.grayLight4,
+                  )
                 : null,
           ),
         ),

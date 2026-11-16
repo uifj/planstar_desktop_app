@@ -26,3 +26,16 @@ Rect computeDesktopPopupRect(
   final y = cell.top.clamp(margin, maxY > margin ? maxY : margin).toDouble();
   return Rect.fromLTWH(x, y, width, height);
 }
+
+/// 桌面鼠标下 `GestureDetector.onDoubleTap` 常与 `onTap` 竞争失败，
+/// 因此由 `_onCellTap` 自己按「同一格 + 短时间内两次点击」判定双击。
+bool isDesktopDoubleTap(
+  DateTime now,
+  DateTime? lastTapAt,
+  Object? lastTapKey,
+  Object? key, {
+  Duration timeout = const Duration(milliseconds: 350),
+}) =>
+    lastTapAt != null &&
+    lastTapKey == key &&
+    now.difference(lastTapAt) < timeout;
