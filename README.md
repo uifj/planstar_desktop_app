@@ -10,7 +10,8 @@
 `flutter_local_notifications` / `window_manager` / `desktop_multi_window` /
 `tray_manager` / `launch_at_startup` / `audioplayers` / `file_picker` /
 `shared_preferences` / `flutter_secure_storage` / `path_provider` / `lunar` /
-`lucide_icons_flutter`（全项目图标统一使用 Lucide，不再使用 Material Icons）。
+`lucide_icons_flutter`（全项目图标统一使用 Lucide，不再使用 Material Icons）；
+字体统一为 `assets/fonts` 中的 ChillRoundGothic。
 
 ---
 
@@ -323,7 +324,12 @@ Z 序   : 23 / 25 可见窗口（仅 Progman 与系统状态窗在其下）
 
 - `pubspec.yaml`：Pub Workspace（`packages/infras/core`、`core_design_system`）、
   全部插件版本、资产声明；`lucide_icons_flutter 4.0.3` 是全项目唯一图标集，
-  `uses-material-design` 仅保留给 `DropdownButton` 等 Material 内置控件的内部图标。
+  `uses-material-design` 仅保留给 DatePicker 等 Material 内置控件的内部图标。
+  `fonts` 声明 `assets/fonts/` 下的 ChillRoundGothic（Regular 400 / Medium 500）。
+- `assets/fonts/`：全局字体 ChillRoundGothic，由 `AppTypography.fontFamily`
+  在 `AppTheme` 中注入 `ThemeData.fontFamily` 与 `TextTheme`；三个入口
+  （主窗口 / 桌面 overlay / 多窗口子窗口）共用同一套字体，数字样式沿用
+  `FontFeature.tabularFigures()` 等宽，bold(700) 由 Flutter 合成。
 - `assets/config/default_config.json`：`ConfigLoader`（幂等、支持 DotKey 访问）。
 - `windows/runner/flutter_window.cpp`：把 `RegisterPlugins` 挂到每个新建子窗口的
   Flutter engine 上，否则子窗口内所有插件都是 no-op。
