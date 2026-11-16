@@ -88,7 +88,7 @@ lib/
 │   └── core_providers.dart                     # 全部端口的 Provider 声明
 ├── app/
 │   ├── planstar_app.dart                       # MaterialApp.router + AppTheme + 提醒浮层
-│   ├── router.dart                            # go_router StatefulShellRoute（10 个页面）
+│   ├── router.dart                            # go_router StatefulShellRoute（10 个页面，课程表/订阅入口暂时隐藏但路由保留）
 │   └── shell/
 │       ├── app_shell.dart                     # 标题栏 + 侧边导航 + 全局快捷键
 │       └── window_title_bar.dart              # 无边框窗口标题栏 / 月份导航 / 同步 / 主题
@@ -151,12 +151,12 @@ lib/
     │   ├── application/countdown_controller.dart
     │   ├── infrastructure/local_countdown_repository.dart
     │   └── presentation/countdown_page.dart
-    ├── timetable/                             # 课程表（单双周、节次、冲突检测）
+    ├── timetable/                             # 课程表（单双周、节次、冲突检测；入口暂时隐藏）
     │   ├── domain/timetable.dart
     │   ├── application/timetable_controller.dart
     │   ├── infrastructure/local_timetable_repository.dart
     │   └── presentation/timetable_page.dart
-    ├── subscription/                          # 本地 / Google / Outlook / iCloud / CalDAV
+    ├── subscription/                          # 本地 / Google / Outlook / iCloud / CalDAV（入口暂时隐藏）
     │   ├── domain/subscription.dart
     │   ├── application/subscription_controller.dart
     │   ├── infrastructure/local_subscription_repository.dart  # ApiClient 远端
@@ -235,7 +235,7 @@ test/widget_test.dart                          # 重复规则 / 提醒 / 设置�
 | `syncControllerProvider` | `Notifier<SyncState>` | 账号、脏数据计数、同步状态机 |
 | `transferControllerProvider` | `Notifier<TransferState>` | 导入导出进度与结果 |
 | `desktopControllerProvider` | `Notifier<DesktopState>` | 托盘动作、窗口透明度、开机自启、多窗口 |
-| `routerProvider` | `Provider<GoRouter>` | `StatefulShellRoute.indexedStack` 保留各页面状态 |
+| `routerProvider` | `Provider<GoRouter>` | `StatefulShellRoute.indexedStack` 保留各页面状态；课程表/订阅的分支与路由仍在，仅从 `AppShell._destinations` 注释掉入口（每项用固定 `branch` 绑定，隐藏中间项不影响其余跳转），恢复时取消注释即可 |
 
 ---
 
