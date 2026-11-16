@@ -104,7 +104,8 @@ lib/
 │   ├── desktop_adapters.dart                  # window_manager / tray / multi_window / 自启 / 音效
 │   ├── desktop_wallpaper_gateway.dart         # 桌面 overlay 通道适配器
 │   ├── wallpaper_image_gateway.dart           # 壁纸 PNG 落盘 / 底图读取
-│   ├── cross_engine_sync.dart                 # 多 engine revision 标记与轮询
+│   ├── data_hub.dart                          # 跨 engine 单一真相源（MethodChannel/EventChannel + 降级）
+│   └── cross_engine_sync.dart                 # 旧文件标记实现（仅作非 Windows 参考）
 │   ├── file_gateway.dart                      # file_picker + dart:io + path_provider
 │   └── json_entity_store.dart                 # 通用 JSON 聚合仓储骨架
 ├── shared/widgets/common.dart                 # AppSectionCard / Setting* / 调色板 / 弹窗骨架
@@ -281,7 +282,7 @@ test/widget_test.dart                          # 重复规则 / 提醒 / 设置�
 | 端口 | `lib/core/ports.dart` | `DesktopWallpaperGateway.setRegion(DesktopCardRect)`、`MultiWindowGateway.openDesktopWidget()`、`CrossEngineSync` / `StorageReloader` |
 | 应用 | `lib/features/desktop/application/desktop_controller.dart` | 设置 → 打开/关闭组件窗口；启动时恢复上一版设置过的系统原壁纸 |
 | 表现 | `lib/windows/desktop_widget_app.dart` | 透明全屏 `Stack` + `Listener(HitTestBehavior.translucent)`；1008×820 月历卡片（格子内直接编辑 + 底部编辑工具栏 + 内嵌调色板） |
-| 同步 | `lib/features/sync/application/cross_engine_sync_controller.dart` + `lib/infrastructure/cross_engine_sync.dart` | 多 engine 的 `SharedPreferences` 缓存互不可见 → 写入时更新磁盘 revision 文件，其它 engine 轮询到变化后 `SharedPreferences.reload()` 并重载聚合 |
+| 同步 | `lib/infrastructure/data_hub.dart` + `windows/runner/data_hub_plugin.cpp` + `lib/features/sync/application/cross_engine_sync_controller.dart` | 所有 engine 经 MethodChannel 把写操作汇聚到同进程的原生 DataHub 单例（mutex 串行 + 原子落盘 + 单调 revision），成功后用 EventChannel 广播增量；各 engine 按 key 精准重载读模型并幂等重放本地副作用 |
 
 **桌面编辑能力（对齐旧版企划星）**：卡片放大到 1008×820，格子按可用高度
 自适应铺满（约 140×105，比旧版大近一倍）。点击任意日期即**在该格子内**进入
@@ -300,9 +301,19 @@ test/widget_test.dart                          # 重复规则 / 提醒 / 设置�
 ```
 桌面点击 → 格子内 TextField / Lucide 勾选框 / 底部颜色工具条
    → CalendarController（用例）→ CalendarRepository → 聚合 + 领域事件
-   → SharedPreferencesStore.write → revision 文件
-   → 主窗口 CrossEngineSync.reload → 月历读模型刷新
+   → DataHubStore.write → MethodChannel('planstar/data_hub')
+   → 原生 DataHub 单例：串行化 → 原子落盘 → revision++
+   → EventChannel('planstar/data_hub_events') 广播给所有 engine
+   → 主窗口按 key 只重载 calendar 读模型 → 月历刷新
 ```
+
+> Windows 上**不能**用 `SharedPreferences.reload()` 做跨 engine 同步：
+> legacy `reload()` 只是重新调用 `getAll()`，而 `shared_preferences_windows`
+> 的 `getAll()` 返回每个 isolate 自己的 `_cachedPreferences`，从不重读磁盘。
+> 非 Windows / 原生通道不可用时，`DataHubStore` 自动降级为原子写 + 300ms
+> 文件轮询（`_LocalBackend`），行为一致但延迟略高。冷启动会把旧的
+> `shared_preferences.json`（去掉 `flutter.` 前缀）一次性迁移到
+> `planstar_data_hub.json`，原文件保留作为回滚备份。
 
 `desktopWidgetEnabled` 默认开启；托盘「显示 / 隐藏桌面可编辑月历」和设置页
 「桌面」页签可切换。拖拽开始时 `setRegion(dragging: true)` 放开整窗命中，
