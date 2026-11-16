@@ -40,10 +40,21 @@ final class DayCellWidget extends StatelessWidget {
     final colors = context.appColors;
     final dimmed = !day.isCurrentMonth;
     final restColor = Color(settings.holidayTextColor);
+    // 周六周日按 weekday 判定（1=周一…7=周日），复用用户已有的休息日设置。
+    final weekend = settings.showRestDays &&
+        settings.restDays.contains(day.date.weekday);
     final cellColor = day.cell?.backgroundColor;
-    final background = (cellColor == null || cellColor.isTransparent)
-        ? Color(settings.calendarBackgroundColor)
-        : cellColor.toColor();
+    final hasCustom = cellColor != null && !cellColor.isTransparent;
+    var background = hasCustom
+        ? cellColor.toColor()
+        : Color(settings.calendarBackgroundColor);
+    // 周末列叠一层低饱和暖色；不覆盖用户自定义底色，也不作用于补位日期。
+    if (weekend && !hasCustom && !dimmed) {
+      background = Color.alphaBlend(
+        BasePalette.orangeLight3.withValues(alpha: 0.10),
+        background,
+      );
+    }
 
     return GestureDetector(
       onTap: onTap,
@@ -56,7 +67,11 @@ final class DayCellWidget extends StatelessWidget {
             alpha: (dimmed ? 0.55 : 1.0) * settings.calendarTransparency,
           ),
           border: Border.all(
-            color: selected ? colors.brand : colors.border,
+            color: selected
+                ? colors.brand
+                : weekend && !hasCustom && !dimmed
+                    ? BasePalette.orangeLight3.withValues(alpha: 0.45)
+                    : colors.border,
             width: selected ? 2 : 0.5,
           ),
           borderRadius: BorderRadius.circular(AppRadius.xs),
@@ -65,7 +80,7 @@ final class DayCellWidget extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            _header(context, colors, restColor, dimmed),
+            _header(context, colors, restColor, dimmed, weekend),
             const SizedBox(height: 2),
             Expanded(
               child: SingleChildScrollView(
@@ -108,6 +123,7 @@ final class DayCellWidget extends StatelessWidget {
     AppColors colors,
     Color restColor,
     bool dimmed,
+    bool weekend,
   ) {
     final subtitle = day.meta.subtitle(
       showLunar: settings.showLunar,
@@ -133,9 +149,11 @@ final class DayCellWidget extends StatelessWidget {
               fontWeight: day.isToday ? AppTypography.bold : AppTypography.regular,
               color: day.isToday
                   ? colors.onBrand
-                  : (settings.showRestDays && day.isRestDay
-                      ? restColor
-                      : Color(settings.calendarFontColor)),
+                  : dimmed
+                      ? colors.textDisabled
+                      : (settings.showRestDays && (day.isRestDay || weekend)
+                          ? restColor
+                          : Color(settings.calendarFontColor)),
             ),
           ),
         ),
