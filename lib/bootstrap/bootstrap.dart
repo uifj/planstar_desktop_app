@@ -88,7 +88,7 @@ final class AppBootstrap {
     await notificationGateway.initialize();
 
     final windowGateway = WindowManagerGateway(logger: logger.child('window'));
-    final trayGateway = TrayManagerGateway();
+    final trayGateway = TrayManagerGateway(logger: logger.child('tray'));
     final multiWindowGateway =
         DesktopMultiWindowGateway(logger: logger.child('multiwindow'));
     final autoStartGateway = LaunchAtStartupGateway();

@@ -158,22 +158,59 @@ final class WindowManagerGateway
   }
 }
 
+/// tray_manager 0.5.3 有两个必须自己补的行为：
+/// 1. `_methodCallHandler` 把菜单点击的 `onClick` 分发放在 `_listeners`
+///    循环**内部**，不注册 listener 时菜单项点击永远到不了 Dart；
+/// 2. Windows 原生层不会自动弹出右键菜单（`TrackPopupMenu` 只在
+///    `popUpContextMenu` 里调用），必须监听托盘点击事件后主动弹出。
+final class _TrayEventSink with TrayListener {
+  @override
+  void onTrayIconMouseDown() {
+    unawaited(trayManager.popUpContextMenu());
+  }
+
+  @override
+  void onTrayIconRightMouseDown() {
+    unawaited(trayManager.popUpContextMenu());
+  }
+}
+
 /// [TrayGateway] 的 tray_manager 实现。
 final class TrayManagerGateway implements TrayGateway {
+  TrayManagerGateway({this.logger});
+
+  final AppLogger? logger;
+  TrayListener? _listener;
+
   @override
   Future<void> initialize(void Function(TrayAction action) onAction) async {
     if (kIsWeb) return;
     if (!(Platform.isWindows || Platform.isLinux || Platform.isMacOS)) return;
+
+    final listener = _TrayEventSink();
+    _listener = listener;
+    trayManager.addListener(listener);
+
+    // Windows 原生层用 LoadImage(IMAGE_ICON, LR_LOADFROMFILE) 加载图标，
+    // 只能识别 .ico；传 PNG 会得到 NULL HICON，托盘图标和右键菜单都不出现。
     try {
-      await trayManager.setIcon(
-        'assets/app_icons/planstar_icon_1024_transparent.png',
-      );
+      await trayManager.setIcon('assets/app_icons/tray_icon.ico');
+    } catch (error) {
+      logger?.warn('设置托盘图标失败', error: error);
+    }
+    try {
       await trayManager.setToolTip('企划星 · 桌面日历清单');
-      MenuItem item(TrayAction action, String label) => MenuItem(
-            key: action.name,
-            label: label,
-            onClick: (MenuItem _) => onAction(action),
-          );
+    } catch (error) {
+      logger?.warn('设置托盘提示失败', error: error);
+    }
+
+    MenuItem item(TrayAction action, String label) => MenuItem(
+          key: action.name,
+          label: label,
+          onClick: (MenuItem _) => onAction(action),
+        );
+    // 菜单注册独立于图标：即使图标能力降级，右键菜单仍应可用。
+    try {
       await trayManager.setContextMenu(
         Menu(
           items: <MenuItem>[
@@ -197,14 +234,18 @@ final class TrayManagerGateway implements TrayGateway {
         ),
       );
     } catch (error) {
-      // 托盘不可用属于能力降级，不影响主流程。
-      return;
+      logger?.warn('设置托盘菜单失败', error: error);
     }
   }
 
   @override
   Future<void> dispose() async {
     if (kIsWeb) return;
+    final listener = _listener;
+    if (listener != null) {
+      trayManager.removeListener(listener);
+      _listener = null;
+    }
     try {
       await trayManager.destroy();
     } catch (_) {
