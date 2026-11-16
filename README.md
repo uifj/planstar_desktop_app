@@ -9,7 +9,8 @@
 技术栈：Clean DDD + 六边形架构 + Riverpod 3 + go_router 17 +
 `flutter_local_notifications` / `window_manager` / `desktop_multi_window` /
 `tray_manager` / `launch_at_startup` / `audioplayers` / `file_picker` /
-`shared_preferences` / `flutter_secure_storage` / `path_provider` / `lunar`。
+`shared_preferences` / `flutter_secure_storage` / `path_provider` / `lunar` /
+`lucide_icons_flutter`（全项目图标统一使用 Lucide，不再使用 Material Icons）。
 
 ---
 
@@ -108,7 +109,7 @@ lib/
 ├── shared/widgets/common.dart                 # AppSectionCard / Setting* / 调色板 / 弹窗骨架
 ├── windows/
 │   ├── sub_window_app.dart                    # 子窗口分发（便签 / 倒数日 / 桌面组件）
-│   └── desktop_widget_app.dart                # 桌面可编辑月历 overlay UI
+│   └── desktop_widget_app.dart                # 桌面可编辑月历 overlay（格子内直接编辑 + 底部工具栏）
 └── features/
     ├── calendar/                              # ★ 核心限界上下文
     │   ├── domain/
@@ -269,17 +270,25 @@ test/widget_test.dart                          # 重复规则 / 提醒 / 设置�
 | 通道注册 | `windows/runner/flutter_window.cpp` | 每个 engine 注册一份通道（主窗口 + 每个 `desktop_multi_window` 子窗口，HWND 取 `GetAncestor(view, GA_ROOT)`） |
 | 端口 | `lib/core/ports.dart` | `DesktopWallpaperGateway.setRegion(DesktopCardRect)`、`MultiWindowGateway.openDesktopWidget()`、`CrossEngineSync` / `StorageReloader` |
 | 应用 | `lib/features/desktop/application/desktop_controller.dart` | 设置 → 打开/关闭组件窗口；启动时恢复上一版设置过的系统原壁纸 |
-| 表现 | `lib/windows/desktop_widget_app.dart` | 透明全屏 `Stack` + `Listener(HitTestBehavior.translucent)`；月历卡片 + 编辑卡片 |
+| 表现 | `lib/windows/desktop_widget_app.dart` | 透明全屏 `Stack` + `Listener(HitTestBehavior.translucent)`；1008×820 月历卡片（格子内直接编辑 + 底部编辑工具栏 + 内嵌调色板） |
 | 同步 | `lib/features/sync/application/cross_engine_sync_controller.dart` + `lib/infrastructure/cross_engine_sync.dart` | 多 engine 的 `SharedPreferences` 缓存互不可见 → 写入时更新磁盘 revision 文件，其它 engine 轮询到变化后 `SharedPreferences.reload()` 并重载聚合 |
 
-**桌面编辑能力**：月历卡片底部常驻输入框，回车即可往选中日期写一行待办；
-点任意日期弹出第二张编辑卡片，可勾选完成、删除、继续输入；卡片标题栏可拖动，
-8px 网格吸附，位置写入 `KVStore.planstar.desktop.card.v1`（300ms 去抖）。
-所有写操作都走原有的 `CalendarController.saveCellLines` / `toggleLineCompleted` /
-`removeLine`，领域事件、历史留痕、提醒重排、同步标脏与主窗口编辑完全一致。
+**桌面编辑能力（对齐旧版企划星）**：卡片放大到 1008×820，格子按可用高度
+自适应铺满（约 140×105，比旧版大近一倍）。点击任意日期即**在该格子内**进入
+编辑态：每行一个输入框，可直接改文字、用 Lucide 勾选框标记完成、删除本行，
+底部输入框回车再新增一行；不再弹出独立编辑卡片（弹窗会被 `SetWindowRgn` 裁掉）。
+底部常驻两排：快速输入框 + 编辑工具栏（添加一行／文字颜色／单元格颜色／
+标记完成／提升为任务／清空本日／完成编辑），颜色按钮在卡片内嵌一条 23 色调色板
+（含「最近使用」与透明色），支持对当前行或整格文字着色、设置单元格背景色。
+单元格/文字颜色都走 `EventColor` 值对象，默认文字按背景亮度自动取对比色。
+卡片标题栏可拖动，8px 网格吸附并按屏幕尺寸夹紧，位置写入
+`KVStore.planstar.desktop.card.v2`（300ms 去抖）。
+所有写操作都走原有的 `CalendarController.saveCellLines` / `setLineColor` /
+`setCellBackgroundColor` / `toggleLineCompleted` / `removeLine`，
+领域事件、历史留痕、提醒重排、同步标脏与主窗口编辑完全一致。
 
 ```
-桌面点击 → Flutter TextField / Checkbox
+桌面点击 → 格子内 TextField / Lucide 勾选框 / 底部颜色工具条
    → CalendarController（用例）→ CalendarRepository → 聚合 + 领域事件
    → SharedPreferencesStore.write → revision 文件
    → 主窗口 CrossEngineSync.reload → 月历读模型刷新
@@ -313,7 +322,8 @@ Z 序   : 23 / 25 可见窗口（仅 Progman 与系统状态窗在其下）
 ## 7. 关键配置文件
 
 - `pubspec.yaml`：Pub Workspace（`packages/infras/core`、`core_design_system`）、
-  全部插件版本、资产声明。
+  全部插件版本、资产声明；`lucide_icons_flutter 4.0.3` 是全项目唯一图标集，
+  `uses-material-design` 仅保留给 `DropdownButton` 等 Material 内置控件的内部图标。
 - `assets/config/default_config.json`：`ConfigLoader`（幂等、支持 DotKey 访问）。
 - `windows/runner/flutter_window.cpp`：把 `RegisterPlugins` 挂到每个新建子窗口的
   Flutter engine 上，否则子窗口内所有插件都是 no-op。
