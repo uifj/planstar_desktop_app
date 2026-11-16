@@ -67,7 +67,7 @@ flutter:
   assets:
     - assets/config/
     - assets/audio/
-    - assets/icons/
+    - assets/app_icons/
   # 全局字体：ChillRoundGothic（圆润无衬线，Regular 400 / Medium 500）
   # 由 core_design_system 的 AppTypography.fontFamily 统一引用。
   fonts:

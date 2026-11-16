@@ -189,7 +189,7 @@ lib/
 assets/
 ├── config/default_config.json                # ConfigLoader 的 JSON 配置源
 ├── audio/                                     # 归档中的 5 个提示音
-└── icons/tray_icon.png                        # 托盘图标
+└── app_icons/                                 # 应用图标（透明底用于托盘）
 
 windows/runner/flutter_window.cpp              # 多窗口子 engine 插件注册 + 桌面壁纸插件注册
 windows/runner/desktop_wallpaper_plugin.cpp    # WorkerW 嵌入 / SPI_SETDESKWALLPAPER
@@ -327,9 +327,11 @@ Z 序   : 23 / 25 可见窗口（仅 Progman 与系统状态窗在其下）
   `uses-material-design` 仅保留给 DatePicker 等 Material 内置控件的内部图标。
   `fonts` 声明 `assets/fonts/` 下的 ChillRoundGothic（Regular 400 / Medium 500）。
 - `assets/fonts/`：全局字体 ChillRoundGothic，由 `AppTypography.fontFamily`
-  在 `AppTheme` 中注入 `ThemeData.fontFamily` 与 `TextTheme`；三个入口
-  （主窗口 / 桌面 overlay / 多窗口子窗口）共用同一套字体，数字样式沿用
-  `FontFeature.tabularFigures()` 等宽，bold(700) 由 Flutter 合成。
+  在 `AppTheme` 中注入 `ThemeData.textTheme`，并通过 `AppTheme.withAppFont`
+  作为三个 `MaterialApp` 的 `builder` 注入 `DefaultTextStyle`——Flutter 3.41
+  的 `MaterialApp` 默认给 `WidgetsApp` 传的是 monospace 错误样式，不补这一层
+  普通 `Text` 会回退到等宽字体。数字样式沿用 `FontFeature.tabularFigures()`
+  等宽，bold(700) 由 Flutter 合成。
 - `assets/config/default_config.json`：`ConfigLoader`（幂等、支持 DotKey 访问）。
 - `windows/runner/flutter_window.cpp`：把 `RegisterPlugins` 挂到每个新建子窗口的
   Flutter engine 上，否则子窗口内所有插件都是 no-op。

@@ -148,7 +148,9 @@ final class TrayManagerGateway implements TrayGateway {
     if (kIsWeb) return;
     if (!(Platform.isWindows || Platform.isLinux || Platform.isMacOS)) return;
     try {
-      await trayManager.setIcon('assets/icons/tray_icon.png');
+      await trayManager.setIcon(
+        'assets/app_icons/planstar_icon_1024_transparent.png',
+      );
       await trayManager.setToolTip('企划星 · 桌面日历清单');
       MenuItem item(TrayAction action, String label) => MenuItem(
             key: action.name,
