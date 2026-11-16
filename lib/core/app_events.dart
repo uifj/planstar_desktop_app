@@ -58,18 +58,28 @@ final class DayCellChanged extends AppDomainEvent {
   final String snapshot;
 }
 
+/// 便签变更。携带标题与正文摘要，供历史页显示可读内容
+/// （原先只有 aggregateId，历史里只剩 "NoteChanged" 技术字符串）。
 final class NoteChanged extends AppDomainEvent {
   const NoteChanged({
     required super.aggregateId,
     required super.occurredAt,
+    required this.title,
+    required this.summary,
   });
+
+  final String title;
+  final String summary;
 }
 
 final class NoteRemoved extends AppDomainEvent {
   const NoteRemoved({
     required super.aggregateId,
     required super.occurredAt,
+    required this.title,
   });
+
+  final String title;
 }
 
 final class CountdownChanged extends AppDomainEvent {

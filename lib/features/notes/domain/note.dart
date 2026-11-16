@@ -46,7 +46,12 @@ final class Note extends AggregateRoot<String> {
       updatedAt: occurredAt,
     );
     note.raiseDomainEvent(
-      NoteChanged(aggregateId: id, occurredAt: occurredAt),
+      NoteChanged(
+        aggregateId: id,
+        occurredAt: occurredAt,
+        title: title,
+        summary: note.summary,
+      ),
     );
     return note;
   }
@@ -65,6 +70,15 @@ final class Note extends AggregateRoot<String> {
       EventColor.palette[backgroundIndex.clamp(0, EventColor.palette.length - 1)];
 
   String get plainText => lines.map((RichLine l) => l.text).join('\n');
+
+  /// 供历史留痕使用的短摘要：首行有内容就取首行，否则用标题。
+  String get summary {
+    for (final line in lines) {
+      final text = line.text.trim();
+      if (text.isNotEmpty) return text;
+    }
+    return title;
+  }
 
   Note changed({
     required DateTime occurredAt,
@@ -89,7 +103,12 @@ final class Note extends AggregateRoot<String> {
       updatedAt: occurredAt,
     );
     next.raiseDomainEvent(
-      NoteChanged(aggregateId: id, occurredAt: occurredAt),
+      NoteChanged(
+        aggregateId: id,
+        occurredAt: occurredAt,
+        title: next.title,
+        summary: next.summary,
+      ),
     );
     return next;
   }

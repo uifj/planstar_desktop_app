@@ -33,6 +33,29 @@ final historyControllerProvider =
   HistoryController.new,
 );
 
+/// 便签留痕的可读文案：用真实标题/摘要，而不是 `NoteChanged` 技术名。
+String noteHistoryContent({
+  required String title,
+  required String summary,
+  bool removed = false,
+}) {
+  if (removed) {
+    return title.isEmpty ? '删除便签' : '删除便签：$title';
+  }
+  if (title.isEmpty) return summary;
+  if (summary.isEmpty || summary == title) return title;
+  return '$title：$summary';
+}
+
+/// 恢复历史快照的结果，供 UI 给出准确反馈。
+enum RevertOutcome {
+  success,
+  /// 当前单元格比这条历史更新，直接恢复会丢失较新内容。
+  newerContent,
+  invalidEntry,
+  failed,
+}
+
 final class HistoryController
     extends Notifier<AsyncListState<HistoryEntry>> {
   @override
@@ -62,10 +85,26 @@ final class HistoryController
 
   Future<void> _onNoteChanged(DomainEvent event) async {
     if (event is! AppDomainEvent) return;
+    // 便签事件携带真实标题/摘要，不再把 "NoteChanged" 这类技术名写进历史。
+    final String content;
+    if (event is NoteChanged) {
+      content = noteHistoryContent(
+        title: event.title,
+        summary: event.summary,
+      );
+    } else if (event is NoteRemoved) {
+      content = noteHistoryContent(
+        title: event.title,
+        summary: '',
+        removed: true,
+      );
+    } else {
+      content = event.eventName;
+    }
     await _append(
       targetId: event.aggregateId,
       kind: HistoryKind.note,
-      content: event.eventName,
+      content: content,
       occurredAt: event.occurredAt,
     );
   }
@@ -76,17 +115,29 @@ final class HistoryController
     required String content,
     required DateTime occurredAt,
   }) async {
-    await _repository.append(
-      HistoryEntry(
-        id: ref.read(idGeneratorProvider).next(),
-        targetId: targetId,
-        kind: kind,
-        content: content,
-        author: '本机',
-        occurredAt: occurredAt,
-      ),
+    final entry = HistoryEntry(
+      id: ref.read(idGeneratorProvider).next(),
+      targetId: targetId,
+      kind: kind,
+      content: content,
+      author: '本机',
+      occurredAt: occurredAt,
     );
-    await load();
+    final result = await _repository.append(entry);
+    switch (result) {
+      case Success<void>():
+        // 就地有序插入，避免每条留痕都全量重读磁盘 + 重排整个列表。
+        final next = <HistoryEntry>[entry, ...state.items]
+          ..sort((HistoryEntry a, HistoryEntry b) =>
+              b.occurredAt.compareTo(a.occurredAt));
+        state = state.copyWith(
+          items: next,
+          loading: false,
+          clearError: true,
+        );
+      case Fail<void>(:final failure):
+        state = state.copyWith(loading: false, error: failure.message);
+    }
   }
 
   Future<void> load() async {
@@ -109,21 +160,56 @@ final class HistoryController
   }
 
   Future<void> remove(String id) async {
-    await _repository.delete(id);
-    await load();
+    final result = await _repository.delete(id);
+    switch (result) {
+      case Success<void>():
+        state = state.copyWith(
+          items: state.items.where((HistoryEntry e) => e.id != id).toList(),
+          clearError: true,
+        );
+      case Fail<void>(:final failure):
+        state = state.copyWith(error: failure.message);
+    }
   }
 
   Future<void> clear() async {
-    await _repository.clear();
-    await load();
+    final result = await _repository.clear();
+    switch (result) {
+      case Success<void>():
+        state = state.copyWith(items: const <HistoryEntry>[], clearError: true);
+      case Fail<void>(:final failure):
+        state = state.copyWith(error: failure.message);
+    }
+  }
+
+  /// 当前单元格是否比这条快照更新（用于恢复前警告，避免覆盖较新内容）。
+  bool hasNewerContent(HistoryEntry entry) {
+    if (entry.kind != HistoryKind.cell) return false;
+    final date = DateKey.parse(entry.targetId);
+    for (final cell in ref.read(calendarControllerProvider).cells) {
+      if (cell.date == date) return cell.updatedAt.isAfter(entry.occurredAt);
+    }
+    return false;
   }
 
   /// 把历史快照「恢复」回单元格（旧版 `IDS_DESKTOPCAL_HISTORY_BUTTON_REVERT`）。
-  Future<void> revertCell(HistoryEntry entry) async {
-    if (entry.kind != HistoryKind.cell) return;
+  /// 带冲突校验：若当前内容更新则拒绝覆盖，UI 需先确认再决定是否强制恢复。
+  Future<RevertOutcome> revertCell(
+    HistoryEntry entry, {
+    bool overwriteNewer = false,
+  }) async {
+    if (entry.kind != HistoryKind.cell) return RevertOutcome.invalidEntry;
     final date = DateKey.parse(entry.targetId);
-    await ref
-        .read(calendarControllerProvider.notifier)
-        .restoreCellFromText(date, entry.content);
+    if (!overwriteNewer && hasNewerContent(entry)) {
+      return RevertOutcome.newerContent;
+    }
+    try {
+      await ref
+          .read(calendarControllerProvider.notifier)
+          .restoreCellFromText(date, entry.content);
+      return RevertOutcome.success;
+    } on Object {
+      return RevertOutcome.failed;
+    }
   }
 }

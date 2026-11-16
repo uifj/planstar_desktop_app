@@ -48,15 +48,24 @@ final class LocalNoteRepository implements NoteRepository {
       );
 
   @override
-  Future<Result<void>> delete(String id) => _store.delete(
-        id,
-        events: <DomainEvent>[
-          NoteRemoved(
-            aggregateId: id,
-            occurredAt: _store.clock.now(),
-          ),
-        ],
-      );
+  Future<Result<void>> delete(String id) async {
+    // 删除前取出标题，历史里才能显示「删除便签：xxx」而非裸 id。
+    String title = '';
+    final found = await byId(id);
+    if (found case Success<Note?>(:final Note? data)) {
+      title = data?.title ?? '';
+    }
+    return _store.delete(
+      id,
+      events: <DomainEvent>[
+        NoteRemoved(
+          aggregateId: id,
+          occurredAt: _store.clock.now(),
+          title: title,
+        ),
+      ],
+    );
+  }
 
   @override
   Future<Result<void>> clear() => _store.deleteAll();
