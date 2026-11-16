@@ -2,6 +2,7 @@
 library;
 
 import 'package:core_design_system/core_design_system.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -32,7 +33,7 @@ final class CountdownBar extends ConsumerWidget {
       ),
       child: Row(
         children: <Widget>[
-          Icon(Icons.hourglass_top, size: 18, color: colors.brand),
+          Icon(LucideIcons.hourglass, size: 18, color: colors.brand),
           const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: ListView.separated(

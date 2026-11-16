@@ -2,6 +2,7 @@
 library;
 
 import 'package:core_design_system/core_design_system.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -153,7 +154,7 @@ final class AccountPage extends ConsumerWidget {
                 alignment: Alignment.centerRight,
                 child: FilledButton.icon(
                   onPressed: controller.syncNow,
-                  icon: const Icon(Icons.cloud_upload_outlined, size: 16),
+                  icon: const Icon(LucideIcons.cloudUpload, size: 16),
                   label: const Text('手动同步'),
                 ),
               ),

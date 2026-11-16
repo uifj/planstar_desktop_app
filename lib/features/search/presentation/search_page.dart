@@ -2,6 +2,7 @@
 library;
 
 import 'package:core_design_system/core_design_system.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -30,9 +31,9 @@ final class SearchPage extends ConsumerWidget {
               labelText: '搜日历清单',
               hintText: '内容、任务、便签、倒数日、订阅、课程',
               border: const OutlineInputBorder(),
-              prefixIcon: const Icon(Icons.search),
+              prefixIcon: const Icon(LucideIcons.search),
               suffixIcon: IconButton(
-                icon: const Icon(Icons.clear),
+                icon: const Icon(LucideIcons.x),
                 onPressed: () {
                   queryController.clear();
                   controller.run('');
@@ -95,7 +96,7 @@ final class SearchPage extends ConsumerWidget {
         Expanded(
           child: state.hits.isEmpty
               ? const EmptyState(
-                  icon: Icons.search_off_outlined,
+                  icon: LucideIcons.searchX,
                   title: '没有匹配内容',
                   hint: '输入关键词后即时检索全部模块',
                 )

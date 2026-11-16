@@ -2,6 +2,7 @@
 library;
 
 import 'package:core_design_system/core_design_system.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -35,7 +36,7 @@ final class ReminderOverlay extends ConsumerWidget {
             children: <Widget>[
               Row(
                 children: <Widget>[
-                  Icon(Icons.alarm, size: 18, color: colors.brand),
+                  Icon(LucideIcons.alarmClock, size: 18, color: colors.brand),
                   const SizedBox(width: AppSpacing.xs),
                   Text(
                     '任务提醒',
@@ -47,7 +48,7 @@ final class ReminderOverlay extends ConsumerWidget {
                   ),
                   const Spacer(),
                   IconButton(
-                    icon: const Icon(Icons.close, size: 16),
+                    icon: const Icon(LucideIcons.x, size: 16),
                     onPressed: () => ref
                         .read(reminderControllerProvider.notifier)
                         .dismiss(),

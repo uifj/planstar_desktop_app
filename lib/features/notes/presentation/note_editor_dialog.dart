@@ -2,6 +2,7 @@
 library;
 
 import 'package:core_design_system/core_design_system.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -137,7 +138,7 @@ final class _NoteEditorDialogState extends ConsumerState<NoteEditorDialog> {
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.palette_outlined, size: 16),
+                  icon: const Icon(LucideIcons.palette, size: 16),
                   onPressed: () async {
                     final color = await showColorPickerDialog(
                       context,
@@ -157,7 +158,7 @@ final class _NoteEditorDialogState extends ConsumerState<NoteEditorDialog> {
                   },
                 ),
                 IconButton(
-                  icon: const Icon(Icons.close, size: 16),
+                  icon: const Icon(LucideIcons.x, size: 16),
                   onPressed: () => controller.saveLines(
                     note!.id,
                     note.lines
@@ -182,12 +183,12 @@ final class _NoteEditorDialogState extends ConsumerState<NoteEditorDialog> {
                     ),
                   ],
                 ),
-                icon: const Icon(Icons.add, size: 16),
+                icon: const Icon(LucideIcons.plus, size: 16),
                 label: const Text('添加一行'),
               ),
               OutlinedButton.icon(
                 onPressed: () => controller.openDesktopWindow(note!.id),
-                icon: const Icon(Icons.open_in_new, size: 16),
+                icon: const Icon(LucideIcons.externalLink, size: 16),
                 label: const Text('独立窗口'),
               ),
             ],

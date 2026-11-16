@@ -2,6 +2,7 @@
 library;
 
 import 'package:core_design_system/core_design_system.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -40,7 +41,7 @@ final class NotesPage extends ConsumerWidget {
                     await showNoteEditorDialog(context, note.id);
                   }
                 },
-                icon: const Icon(Icons.add, size: 16),
+                icon: const Icon(LucideIcons.plus, size: 16),
                 label: const Text('新建便签'),
               ),
             ],
@@ -51,7 +52,7 @@ final class NotesPage extends ConsumerWidget {
               ? const Center(child: CircularProgressIndicator())
               : state.items.isEmpty
                   ? const EmptyState(
-                      icon: Icons.sticky_note_2_outlined,
+                      icon: LucideIcons.stickyNote,
                       title: '暂无便签',
                       hint: '点击右上角新建，便签可以独立窗口置顶显示',
                     )
@@ -130,24 +131,24 @@ final class _NoteCard extends ConsumerWidget {
                 IconButton(
                   tooltip: note.visible ? '隐藏' : '显示',
                   icon: Icon(
-                    note.visible ? Icons.visibility : Icons.visibility_off,
+                    note.visible ? LucideIcons.eye : LucideIcons.eyeOff,
                     size: 16,
                   ),
                   onPressed: () => controller.toggleVisible(note.id),
                 ),
                 IconButton(
                   tooltip: '窗口置顶',
-                  icon: const Icon(Icons.push_pin_outlined, size: 16),
+                  icon: const Icon(LucideIcons.pin, size: 16),
                   onPressed: () => controller.toggleTopMost(note.id),
                 ),
                 IconButton(
                   tooltip: '打开独立窗口',
-                  icon: const Icon(Icons.open_in_new, size: 16),
+                  icon: const Icon(LucideIcons.externalLink, size: 16),
                   onPressed: () => controller.openDesktopWindow(note.id),
                 ),
                 IconButton(
                   tooltip: '删除',
-                  icon: Icon(Icons.delete_outline,
+                  icon: Icon(LucideIcons.trash2,
                       size: 16, color: colors.error),
                   onPressed: () => controller.remove(note.id),
                 ),

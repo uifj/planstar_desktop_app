@@ -2,6 +2,7 @@
 library;
 
 import 'package:core_design_system/core_design_system.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../core/value_objects.dart';
@@ -232,8 +233,8 @@ final class DayCellWidget extends StatelessWidget {
             children: <Widget>[
               Icon(
                 occurrence.completed
-                    ? Icons.check_box
-                    : Icons.check_box_outline_blank,
+                    ? LucideIcons.squareCheck
+                    : LucideIcons.square,
                 size: 12,
                 color: occurrence.event.color.toColor(),
               ),

@@ -2,6 +2,7 @@
 library;
 
 import 'package:core_design_system/core_design_system.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -599,7 +600,7 @@ final class SettingsPage extends ConsumerWidget {
                               const SizedBox(width: AppSpacing.xs),
                               IconButton(
                                 tooltip: '清除图片目录',
-                                icon: const Icon(Icons.close, size: 16),
+                                icon: const Icon(LucideIcons.x, size: 16),
                                 onPressed: () => update(
                                   (AppSettings s) => s.copyWith(
                                     wallpaperImageDirectory: '',
@@ -616,14 +617,14 @@ final class SettingsPage extends ConsumerWidget {
                                 onPressed: () => ref
                                     .read(desktopControllerProvider.notifier)
                                     .refreshWallpaper(),
-                                icon: const Icon(Icons.wallpaper, size: 16),
+                                icon: const Icon(LucideIcons.image, size: 16),
                                 label: const Text('立即应用到桌面'),
                               ),
                               OutlinedButton.icon(
                                 onPressed: () => ref
                                     .read(desktopControllerProvider.notifier)
                                     .restoreSystemWallpaper(),
-                                icon: const Icon(Icons.undo, size: 16),
+                                icon: const Icon(LucideIcons.undo2, size: 16),
                                 label: const Text('恢复系统原壁纸'),
                               ),
                             ],
@@ -676,14 +677,14 @@ final class SettingsPage extends ConsumerWidget {
                         mainAxisSize: MainAxisSize.min,
                         children: <Widget>[
                           ListTile(
-                            leading: const Icon(Icons.info_outline),
+                            leading: const Icon(LucideIcons.info),
                             title: const Text('企划星 · 桌面日历清单 1.0.0'),
                             subtitle: Text(
                               'Clean DDD + Riverpod · 本地存储：${ref.watch(appConfigProvider).getString('appName') ?? '默认'}',
                             ),
                           ),
                           ListTile(
-                            leading: const Icon(Icons.notifications_none),
+                            leading: const Icon(LucideIcons.bell),
                             title: Text(
                               '已排程提醒 ${ref.watch(reminderControllerProvider).scheduled} 条',
                             ),
@@ -695,7 +696,7 @@ final class SettingsPage extends ConsumerWidget {
                             ),
                           ),
                           ListTile(
-                            leading: const Icon(Icons.cloud_sync_outlined),
+                            leading: const Icon(LucideIcons.cloudSync),
                             title: const Text('云同步'),
                             trailing: OutlinedButton(
                               onPressed: () => ref

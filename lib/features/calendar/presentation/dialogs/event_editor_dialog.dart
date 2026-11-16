@@ -2,6 +2,7 @@
 library;
 
 import 'package:core_design_system/core_design_system.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../core/value_objects.dart';
@@ -136,6 +137,7 @@ final class _EventEditorDialogState extends State<EventEditorDialog> {
               Expanded(
                 child: DropdownButtonFormField<CalendarEventType>(
                   initialValue: _type,
+                  icon: const Icon(LucideIcons.chevronDown, size: 16),
                   decoration: const InputDecoration(labelText: '类型'),
                   items: CalendarEventType.values
                       .map(
@@ -154,7 +156,7 @@ final class _EventEditorDialogState extends State<EventEditorDialog> {
               Expanded(
                 child: OutlinedButton.icon(
                   onPressed: _pickDate,
-                  icon: const Icon(Icons.event, size: 16),
+                  icon: const Icon(LucideIcons.calendarClock, size: 16),
                   label: Text(_startDate.cnFull),
                 ),
               ),
@@ -169,6 +171,7 @@ final class _EventEditorDialogState extends State<EventEditorDialog> {
                 width: 240,
                 child: DropdownButton<RecurrenceKind>(
                   value: _recurrence.kind,
+                  icon: const Icon(LucideIcons.chevronDown, size: 16),
                   isExpanded: true,
                   underline: const SizedBox.shrink(),
                   items: RecurrenceKind.values
@@ -281,7 +284,7 @@ final class _EventEditorDialogState extends State<EventEditorDialog> {
                   );
                   if (picked != null) setState(() => _color = picked);
                 },
-                child: Icon(Icons.palette_outlined,
+                child: Icon(LucideIcons.palette,
                     size: 16, color: _color.toColor()),
               ),
               const SizedBox(width: AppSpacing.md),
@@ -297,7 +300,7 @@ final class _EventEditorDialogState extends State<EventEditorDialog> {
                     setState(() => _backgroundColor = picked);
                   }
                 },
-                child: const Icon(Icons.format_color_fill, size: 16),
+                child: const Icon(LucideIcons.paintBucket, size: 16),
               ),
             ],
           ),

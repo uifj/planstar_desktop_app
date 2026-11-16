@@ -2,6 +2,7 @@
 library;
 
 import 'package:core_design_system/core_design_system.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -18,16 +19,16 @@ final class AppShell extends ConsumerWidget {
   final StatefulNavigationShell navigationShell;
 
   static const List<_Destination> _destinations = <_Destination>[
-    _Destination('/calendar', '日历', Icons.calendar_month_outlined),
-    _Destination('/notes', '便签', Icons.sticky_note_2_outlined),
-    _Destination('/countdown', '倒数日', Icons.hourglass_top_outlined),
-    _Destination('/timetable', '课程表', Icons.table_chart_outlined),
-    _Destination('/subscription', '订阅', Icons.rss_feed_outlined),
-    _Destination('/search', '搜索', Icons.search_outlined),
-    _Destination('/history', '历史', Icons.history_outlined),
-    _Destination('/transfer', '导入导出', Icons.import_export_outlined),
-    _Destination('/account', '账号同步', Icons.cloud_sync_outlined),
-    _Destination('/settings', '设置', Icons.settings_outlined),
+    _Destination('/calendar', '日历', LucideIcons.calendarDays),
+    _Destination('/notes', '便签', LucideIcons.stickyNote),
+    _Destination('/countdown', '倒数日', LucideIcons.hourglass),
+    _Destination('/timetable', '课程表', LucideIcons.table2),
+    _Destination('/subscription', '订阅', LucideIcons.rss),
+    _Destination('/search', '搜索', LucideIcons.search),
+    _Destination('/history', '历史', LucideIcons.history),
+    _Destination('/transfer', '导入导出', LucideIcons.arrowRightLeft),
+    _Destination('/account', '账号同步', LucideIcons.cloudSync),
+    _Destination('/settings', '设置', LucideIcons.settings),
   ];
 
   @override

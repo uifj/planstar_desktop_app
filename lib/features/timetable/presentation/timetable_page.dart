@@ -2,6 +2,7 @@
 library;
 
 import 'package:core_design_system/core_design_system.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -36,7 +37,7 @@ final class TimetablePage extends ConsumerWidget {
               const Spacer(),
               OutlinedButton.icon(
                 onPressed: () => _showSettings(context, ref),
-                icon: const Icon(Icons.settings_outlined, size: 16),
+                icon: const Icon(LucideIcons.settings, size: 16),
                 label: const Text('课程表设置'),
               ),
               const SizedBox(width: AppSpacing.sm),
@@ -48,7 +49,7 @@ final class TimetablePage extends ConsumerWidget {
                         DateKey.today(ref.read(clockProvider).now()),
                   );
                 },
-                icon: const Icon(Icons.add, size: 16),
+                icon: const Icon(LucideIcons.plus, size: 16),
                 label: const Text('新建课程表'),
               ),
             ],
@@ -68,7 +69,7 @@ final class TimetablePage extends ConsumerWidget {
         Expanded(
           child: state.items.isEmpty
               ? const EmptyState(
-                  icon: Icons.table_chart_outlined,
+                  icon: LucideIcons.table2,
                   title: '暂无课程表',
                   hint: '支持单双周、节次时间与课程冲突检测',
                 )
@@ -140,7 +141,7 @@ final class _TimetableCard extends ConsumerWidget {
       title: timetable.name,
       subtitle: '${timetable.startDate.cnFull} 开学 · ${timetable.weeks} 周',
       trailing: IconButton(
-        icon: Icon(Icons.delete_outline, size: 16, color: colors.error),
+        icon: Icon(LucideIcons.trash2, size: 16, color: colors.error),
         onPressed: () => ref
             .read(timetableControllerProvider.notifier)
             .remove(timetable.id),
@@ -190,7 +191,7 @@ final class _TimetableCard extends ConsumerWidget {
           width: 88,
           height: 36,
           child: Icon(
-            Icons.add,
+            LucideIcons.plus,
             size: 14,
             color: context.appColors.textDisabled,
           ),
@@ -255,6 +256,7 @@ final class _TimetableCard extends ConsumerWidget {
               const SizedBox(height: AppSpacing.sm),
               DropdownButton<WeekParity>(
                 value: parity,
+                icon: const Icon(LucideIcons.chevronDown, size: 16),
                 items: WeekParity.values
                     .map(
                       (WeekParity p) => DropdownMenuItem<WeekParity>(

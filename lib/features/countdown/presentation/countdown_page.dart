@@ -2,6 +2,7 @@
 library;
 
 import 'package:core_design_system/core_design_system.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -38,13 +39,13 @@ final class CountdownPage extends ConsumerWidget {
                 onPressed: () => ref
                     .read(countdownControllerProvider.notifier)
                     .openDesktopCard(),
-                icon: const Icon(Icons.open_in_new, size: 16),
+                icon: const Icon(LucideIcons.externalLink, size: 16),
                 label: const Text('打开桌面卡片'),
               ),
               const SizedBox(width: AppSpacing.sm),
               FilledButton.icon(
                 onPressed: () => _create(context, ref),
-                icon: const Icon(Icons.add, size: 16),
+                icon: const Icon(LucideIcons.plus, size: 16),
                 label: const Text('新建倒数日'),
               ),
             ],
@@ -53,7 +54,7 @@ final class CountdownPage extends ConsumerWidget {
         Expanded(
           child: state.items.isEmpty
               ? const EmptyState(
-                  icon: Icons.hourglass_top_outlined,
+                  icon: LucideIcons.hourglass,
                   title: '暂无倒数日',
                   hint: '支持倒计时、累计日、生日、纪念日',
                 )
@@ -75,7 +76,7 @@ final class CountdownPage extends ConsumerWidget {
                           '${item.targetDate.cnFull} · ${item.type.label}',
                       trailing: IconButton(
                         icon: Icon(
-                          Icons.delete_outline,
+                          LucideIcons.trash2,
                           size: 16,
                           color: context.appColors.error,
                         ),
@@ -148,6 +149,7 @@ final class CountdownPage extends ConsumerWidget {
                   Expanded(
                     child: DropdownButton<CountdownType>(
                       value: type,
+                      icon: const Icon(LucideIcons.chevronDown, size: 16),
                       isExpanded: true,
                       items: CountdownType.values
                           .map(
@@ -166,6 +168,7 @@ final class CountdownPage extends ConsumerWidget {
                   Expanded(
                     child: DropdownButton<CountdownShowType>(
                       value: showType,
+                      icon: const Icon(LucideIcons.chevronDown, size: 16),
                       isExpanded: true,
                       items: CountdownShowType.values
                           .map(
@@ -193,7 +196,7 @@ final class CountdownPage extends ConsumerWidget {
                   );
                   if (picked != null) setState(() => date = DateKey(picked));
                 },
-                icon: const Icon(Icons.event, size: 16),
+                icon: const Icon(LucideIcons.calendarClock, size: 16),
                 label: Text(date.cnFull),
               ),
             ],

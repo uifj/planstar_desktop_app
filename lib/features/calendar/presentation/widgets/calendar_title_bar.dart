@@ -2,6 +2,7 @@
 library;
 
 import 'package:core_design_system/core_design_system.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -45,7 +46,7 @@ final class CalendarTitleBar extends ConsumerWidget {
           const SizedBox(width: AppSpacing.md),
           IconButton(
             tooltip: '上一页',
-            icon: const Icon(Icons.chevron_left),
+            icon: const Icon(LucideIcons.chevronLeft),
             onPressed: navigation.previous,
           ),
           OutlinedButton(
@@ -54,7 +55,7 @@ final class CalendarTitleBar extends ConsumerWidget {
           ),
           IconButton(
             tooltip: '下一页',
-            icon: const Icon(Icons.chevron_right),
+            icon: const Icon(LucideIcons.chevronRight),
             onPressed: navigation.next,
           ),
           const SizedBox(width: AppSpacing.md),
@@ -62,6 +63,7 @@ final class CalendarTitleBar extends ConsumerWidget {
             width: 150,
             child: DropdownButton<CalendarDisplayMode>(
               value: settings.displayMode,
+              icon: const Icon(LucideIcons.chevronDown, size: 16),
               isExpanded: true,
               underline: const SizedBox.shrink(),
               items: CalendarDisplayMode.values
@@ -84,7 +86,7 @@ final class CalendarTitleBar extends ConsumerWidget {
           const Spacer(),
           FilledButton.icon(
             onPressed: onNewEvent,
-            icon: const Icon(Icons.add, size: 16),
+            icon: const Icon(LucideIcons.plus, size: 16),
             label: const Text('新建任务'),
           ),
         ],

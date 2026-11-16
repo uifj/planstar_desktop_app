@@ -2,6 +2,7 @@
 library;
 
 import 'package:core_design_system/core_design_system.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -39,7 +40,7 @@ final class HistoryPage extends ConsumerWidget {
                       await showClearConfirmDialog(context, '历史记录');
                   if (confirmed) await controller.clear();
                 },
-                icon: const Icon(Icons.delete_sweep_outlined, size: 16),
+                icon: const Icon(LucideIcons.eraser, size: 16),
                 label: const Text('清空历史'),
               ),
             ],
@@ -48,7 +49,7 @@ final class HistoryPage extends ConsumerWidget {
         Expanded(
           child: state.items.isEmpty
               ? const EmptyState(
-                  icon: Icons.history_outlined,
+                  icon: LucideIcons.history,
                   title: '暂无历史记录',
                   hint: '编辑单元格或便签会自动留痕',
                 )
@@ -66,8 +67,8 @@ final class HistoryPage extends ConsumerWidget {
                       ),
                       leading: Icon(
                         entry.kind == HistoryKind.cell
-                            ? Icons.calendar_today_outlined
-                            : Icons.sticky_note_2_outlined,
+                            ? LucideIcons.calendarCheck
+                            : LucideIcons.stickyNote,
                       ),
                       title: Text(
                         entry.content.isEmpty ? '（清空内容）' : entry.content,
@@ -88,7 +89,7 @@ final class HistoryPage extends ConsumerWidget {
                               child: const Text('恢复'),
                             ),
                           IconButton(
-                            icon: const Icon(Icons.delete_outline, size: 16),
+                            icon: const Icon(LucideIcons.trash2, size: 16),
                             onPressed: () => controller.remove(entry.id),
                           ),
                         ],

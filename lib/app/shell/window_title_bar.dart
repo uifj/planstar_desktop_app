@@ -3,6 +3,7 @@
 library;
 
 import 'package:core_design_system/core_design_system.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -36,7 +37,7 @@ final class WindowTitleBar extends ConsumerWidget {
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
         child: Row(
           children: <Widget>[
-            Icon(Icons.calendar_month, size: 20, color: colors.brand),
+            Icon(LucideIcons.calendarDays, size: 20, color: colors.brand),
             const SizedBox(width: AppSpacing.sm),
             Text(
               '企划星 · 桌面日历清单',
@@ -47,11 +48,11 @@ final class WindowTitleBar extends ConsumerWidget {
               ),
             ),
             const SizedBox(width: AppSpacing.xl),
-            _icon(Icons.first_page, '上一页', () =>
+            _icon(LucideIcons.chevronsLeft, '上一页', () =>
                 ref.read(monthNavigationProvider.notifier).previous()),
-            _icon(Icons.home, '返回今日', () =>
+            _icon(LucideIcons.house, '返回今日', () =>
                 ref.read(monthNavigationProvider.notifier).today()),
-            _icon(Icons.last_page, '下一页', () =>
+            _icon(LucideIcons.chevronsRight, '下一页', () =>
                 ref.read(monthNavigationProvider.notifier).next()),
             const SizedBox(width: AppSpacing.sm),
             Text(
@@ -62,12 +63,12 @@ final class WindowTitleBar extends ConsumerWidget {
               ),
             ),
             const Spacer(),
-            _icon(Icons.search, '搜日历清单', () => context.go('/search')),
-            _icon(Icons.notifications_none, '提醒（已排 $scheduled 条）', () =>
+            _icon(LucideIcons.search, '搜日历清单', () => context.go('/search')),
+            _icon(LucideIcons.bell, '提醒（已排 $scheduled 条）', () =>
                 ref.read(reminderControllerProvider.notifier).showTestAlert()),
-            _icon(Icons.cloud_sync_outlined, '手动同步', () =>
+            _icon(LucideIcons.cloudSync, '手动同步', () =>
                 ref.read(syncControllerProvider.notifier).syncNow()),
-            _icon(Icons.brightness_6_outlined, '切换主题', () {
+            _icon(LucideIcons.sunMoon, '切换主题', () {
               final current = ref.read(settingsControllerProvider).themeMode;
               final next = current == AppThemeMode.dark
                   ? AppThemeMode.light
@@ -76,7 +77,7 @@ final class WindowTitleBar extends ConsumerWidget {
                   .read(settingsControllerProvider.notifier)
                   .update((AppSettings s) => s.copyWith(themeMode: next));
             }),
-            _icon(Icons.settings_outlined, '设置', () => context.go('/settings')),
+            _icon(LucideIcons.settings, '设置', () => context.go('/settings')),
             const SizedBox(width: AppSpacing.sm),
             Text(
               account.displayName,
@@ -88,17 +89,17 @@ final class WindowTitleBar extends ConsumerWidget {
             const SizedBox(width: AppSpacing.sm),
             _windowButton(
               context,
-              Icons.minimize,
+              LucideIcons.minus,
               () => ref.read(windowGatewayProvider).minimize(),
             ),
             _windowButton(
               context,
-              Icons.crop_square,
+              LucideIcons.maximize2,
               () => ref.read(windowGatewayProvider).toggleMaximize(),
             ),
             _windowButton(
               context,
-              Icons.close,
+              LucideIcons.x,
               () => ref.read(windowGatewayProvider).close(),
               danger: true,
             ),

@@ -5,6 +5,7 @@
 library;
 
 import 'package:core_design_system/core_design_system.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/value_objects.dart';
@@ -156,6 +157,7 @@ final class SettingDropdown<T> extends StatelessWidget {
           Expanded(
             child: DropdownButton<T>(
               value: value,
+              icon: const Icon(LucideIcons.chevronDown, size: 16),
               isExpanded: true,
               underline: const SizedBox.shrink(),
               items: items,
@@ -386,7 +388,7 @@ final class ColorSwatchPicker extends StatelessWidget {
                     ),
                   ),
                   child: color.isTransparent
-                      ? const Icon(Icons.block, size: 14)
+                      ? const Icon(LucideIcons.ban, size: 14)
                       : null,
                 ),
               ),

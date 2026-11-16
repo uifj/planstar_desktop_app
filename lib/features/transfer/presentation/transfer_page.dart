@@ -2,6 +2,7 @@
 library;
 
 import 'package:core_design_system/core_design_system.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -80,7 +81,7 @@ final class _TransferPageState extends ConsumerState<TransferPage> {
                             format: _format,
                             range: _range,
                           ),
-                  icon: const Icon(Icons.file_download_outlined, size: 16),
+                  icon: const Icon(LucideIcons.download, size: 16),
                   label: const Text('导出到文件'),
                 ),
               ),
@@ -111,7 +112,7 @@ final class _TransferPageState extends ConsumerState<TransferPage> {
                       : () => controller.importFrom(
                             replaceConflicts: _replaceConflicts,
                           ),
-                  icon: const Icon(Icons.file_upload_outlined, size: 16),
+                  icon: const Icon(LucideIcons.upload, size: 16),
                   label: const Text('选择文件并导入'),
                 ),
               ),

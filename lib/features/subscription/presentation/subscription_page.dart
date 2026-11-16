@@ -2,6 +2,7 @@
 library;
 
 import 'package:core_design_system/core_design_system.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
@@ -35,13 +36,13 @@ final class SubscriptionPage extends ConsumerWidget {
               const Spacer(),
               OutlinedButton.icon(
                 onPressed: () => controller.refresh('', all: true),
-                icon: const Icon(Icons.sync, size: 16),
+                icon: const Icon(LucideIcons.refreshCw, size: 16),
                 label: const Text('同步全部'),
               ),
               const SizedBox(width: AppSpacing.sm),
               FilledButton.icon(
                 onPressed: () => _create(context, ref),
-                icon: const Icon(Icons.add, size: 16),
+                icon: const Icon(LucideIcons.plus, size: 16),
                 label: const Text('添加订阅'),
               ),
             ],
@@ -61,7 +62,7 @@ final class SubscriptionPage extends ConsumerWidget {
         Expanded(
           child: state.items.isEmpty
               ? const EmptyState(
-                  icon: Icons.rss_feed_outlined,
+                  icon: LucideIcons.rss,
                   title: '暂无订阅日历',
                   hint: '支持本地订阅与 Google / Outlook / iCloud / CalDAV',
                 )
@@ -87,7 +88,7 @@ final class SubscriptionPage extends ConsumerWidget {
                             ),
                             IconButton(
                               icon: Icon(
-                                Icons.delete_outline,
+                                LucideIcons.trash2,
                                 size: 16,
                                 color: context.appColors.error,
                               ),
@@ -110,7 +111,7 @@ final class SubscriptionPage extends ConsumerWidget {
                             ),
                             IconButton(
                               tooltip: '复制分享链接',
-                              icon: const Icon(Icons.copy, size: 16),
+                              icon: const Icon(LucideIcons.copy, size: 16),
                               onPressed: () => Clipboard.setData(
                                 ClipboardData(text: item.shareLink),
                               ),
@@ -168,6 +169,7 @@ final class SubscriptionPage extends ConsumerWidget {
               const SizedBox(height: AppSpacing.sm),
               DropdownButton<SubscriptionSource>(
                 value: source,
+                icon: const Icon(LucideIcons.chevronDown, size: 16),
                 isExpanded: true,
                 items: SubscriptionSource.values
                     .map(

@@ -2,6 +2,7 @@
 library;
 
 import 'package:core_design_system/core_design_system.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -51,7 +52,7 @@ final class CellEditorPanel extends ConsumerWidget {
                 ),
                 const Spacer(),
                 IconButton(
-                  icon: const Icon(Icons.close, size: 18),
+                  icon: const Icon(LucideIcons.x, size: 18),
                   onPressed: () =>
                       ref.read(selectedDateProvider.notifier).clear(),
                 ),
@@ -106,7 +107,7 @@ final class CellEditorPanel extends ConsumerWidget {
                             ),
                           ),
                           IconButton(
-                            icon: const Icon(Icons.palette_outlined, size: 16),
+                            icon: const Icon(LucideIcons.palette, size: 16),
                             onPressed: () async {
                               final picked = await showColorPickerDialog(
                                 context,
@@ -122,12 +123,12 @@ final class CellEditorPanel extends ConsumerWidget {
                             },
                           ),
                           IconButton(
-                            icon: const Icon(Icons.repeat, size: 16),
+                            icon: const Icon(LucideIcons.repeat, size: 16),
                             tooltip: '设为重复任务',
                             onPressed: () => _promote(context, ref, line),
                           ),
                           IconButton(
-                            icon: const Icon(Icons.delete_outline, size: 16),
+                            icon: const Icon(LucideIcons.trash2, size: 16),
                             onPressed: () =>
                                 controller.removeLine(date, line.id),
                           ),
@@ -166,7 +167,7 @@ final class CellEditorPanel extends ConsumerWidget {
                       ),
                     ],
                   ),
-                  icon: const Icon(Icons.add, size: 16),
+                  icon: const Icon(LucideIcons.plus, size: 16),
                   label: const Text('添加一行'),
                 ),
                 OutlinedButton.icon(
@@ -179,7 +180,7 @@ final class CellEditorPanel extends ConsumerWidget {
                       await controller.setCellBackgroundColor(date, picked);
                     }
                   },
-                  icon: const Icon(Icons.format_color_fill, size: 16),
+                  icon: const Icon(LucideIcons.paintBucket, size: 16),
                   label: const Text('单元格颜色'),
                 ),
                 OutlinedButton.icon(
@@ -193,7 +194,7 @@ final class CellEditorPanel extends ConsumerWidget {
                       );
                     }
                   },
-                  icon: const Icon(Icons.delete_sweep_outlined, size: 16),
+                  icon: const Icon(LucideIcons.eraser, size: 16),
                   label: const Text('清空'),
                 ),
               ],
