@@ -109,7 +109,9 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
   double _resizeStartW = 0;
   double _resizeStartH = 0;
   String _regionSignature = '';
-  Timer? _saveTimer;
+  late final KeyValueStore _store;
+  // 读取完成前不允许写盘，避免启动期的生命周期回调覆盖已保存的位置/尺寸。
+  bool _positionLoaded = false;
   final TextEditingController _input = TextEditingController();
   final TextEditingController _cellInput = TextEditingController();
   final FocusNode _cellFocus = FocusNode();
@@ -119,6 +121,8 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    // 缓存端口引用，dispose / 生命周期回调里不再依赖 ref。
+    _store = ref.read(keyValueStoreProvider);
     _loadPosition();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await ref
@@ -131,8 +135,9 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
 
   @override
   void dispose() {
+    // 进程可能随时被结束，退出前把最终位置/尺寸写盘。
+    unawaited(_persistPosition());
     WidgetsBinding.instance.removeObserver(this);
-    _saveTimer?.cancel();
     _input.dispose();
     _cellInput.dispose();
     _cellFocus.dispose();
@@ -147,8 +152,18 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
     _pushRegion();
   }
 
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // 隐藏桌面组件 / 切后台 / 应用退出时都补一次落盘。
+    if (state == AppLifecycleState.hidden ||
+        state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached) {
+      unawaited(_persistPosition());
+    }
+  }
+
   Future<void> _loadPosition() async {
-    final json = await ref.read(keyValueStoreProvider).readJson(_positionKey);
+    final json = await _store.readJson(_positionKey);
     if (json != null) {
       _x = (json['x'] as num?)?.toDouble() ?? _x;
       _y = (json['y'] as num?)?.toDouble() ?? _y;
@@ -156,6 +171,7 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
       _cardHeight = (json['height'] as num?)?.toDouble() ?? _cardHeight;
     }
     if (!mounted) return;
+    _positionLoaded = true;
     setState(_clampToScreen);
     _regionSignature = '';
     _pushRegion();
@@ -211,19 +227,19 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
     return Size(width, height);
   }
 
-  void _scheduleSavePosition() {
-    _saveTimer?.cancel();
-    _saveTimer = Timer(const Duration(milliseconds: 300), () async {
-      await ref.read(keyValueStoreProvider).writeJson(
-            _positionKey,
-            <String, Object?>{
-              'x': _x,
-              'y': _y,
-              'width': _cardWidth,
-              'height': _cardHeight,
-            },
-          );
-    });
+  /// 立即落盘，不再用 300ms 去抖：调整完马上关闭应用也不会丢最后一次操作。
+  /// DataHub 的写入是进程级串行 + 原子替换，拖拽/调整结束时各写一次即可。
+  Future<void> _persistPosition() async {
+    if (!_positionLoaded) return;
+    await _store.writeJson(
+      _positionKey,
+      <String, Object?>{
+        'x': _x,
+        'y': _y,
+        'width': _cardWidth,
+        'height': _cardHeight,
+      },
+    );
   }
 
   /// 把卡片的物理像素矩形推给原生层；用签名去重，避免每帧重设区域。
@@ -278,7 +294,7 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
     setState(() {});
     _regionSignature = '';
     _pushRegion();
-    _scheduleSavePosition();
+    unawaited(_persistPosition());
   }
 
   bool _edgeHasLeft(_ResizeEdge edge) => switch (edge) {
@@ -423,7 +439,7 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
     setState(() {});
     _regionSignature = '';
     _pushRegion();
-    _scheduleSavePosition();
+    unawaited(_persistPosition());
   }
 
   void _select(DateKey date) {
