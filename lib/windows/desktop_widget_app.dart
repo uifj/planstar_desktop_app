@@ -97,6 +97,7 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
   // 长按/双击弹出的完整编辑器；_popupRect 是 overlay 窗口坐标系的逻辑像素矩形。
   DateKey? _popupDate;
   Rect? _popupRect;
+  DateTime? _popupOpenedAt;
   String? _activeLineId;
   _ColorTarget _paletteTarget = _ColorTarget.none;
   bool _confirmClear = false;
@@ -493,16 +494,36 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
   /// 长按 / 双击格子：在该格子旁弹出完整编辑器（方案 C）。
   /// 原来的「点一下 = 格子内快速编辑」保持不变，两者互补而非替换。
   void _openPopup(DateKey date, BuildContext cellContext) {
+    // 拿不到 RenderBox 时也不能静默失败：退回卡片中部作为锚点，
+    // 保证浮层一定会出现（此前这里直接 return，是「点了没反应」的隐患）。
     final box = cellContext.findRenderObject();
-    if (box is! RenderBox || !box.hasSize) return;
-    // overlay 窗口覆盖整个虚拟屏，view 坐标即窗口坐标（逻辑像素）。
-    final origin = box.localToGlobal(Offset.zero);
-    final cell = Rect.fromLTWH(
-      origin.dx,
-      origin.dy,
-      box.size.width,
-      box.size.height,
-    );
+    late final Rect cell;
+    if (box is RenderBox && box.hasSize) {
+      // overlay 窗口覆盖整个虚拟屏，view 坐标即窗口坐标（逻辑像素）。
+      final origin = box.localToGlobal(Offset.zero);
+      cell = Rect.fromLTWH(
+        origin.dx,
+        origin.dy,
+        box.size.width,
+        box.size.height,
+      );
+    } else {
+      cell = _fallbackCell();
+    }
+    _showPopup(date, cell);
+  }
+
+  /// 底部「浮层编辑」按钮 / 右键等没有格子 RenderBox 的入口使用。
+  Rect _fallbackCell() => Rect.fromLTWH(
+        _x + _cardWidth * 0.35,
+        _y + _cardHeight * 0.3,
+        _cardWidth / 7,
+        100,
+      );
+
+  void _openPopupFromToolbar() => _showPopup(_targetDate, _fallbackCell());
+
+  void _showPopup(DateKey date, Rect cell) {
     final popup = computeDesktopPopupRect(
       cell,
       _screenSize,
@@ -520,6 +541,8 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
       _confirmClear = false;
       _cellInput.clear();
     });
+    // 同一次手势的后续 pointer 不应立刻把刚打开的浮层关掉。
+    _popupOpenedAt = DateTime.now();
     _regionSignature = '';
     _pushRegion();
     _focusNewLine();
@@ -530,6 +553,7 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
     setState(() {
       _popupDate = null;
       _popupRect = null;
+      _popupOpenedAt = null;
       _editingDate = null;
       _activeLineId = null;
       _paletteTarget = _ColorTarget.none;
@@ -749,7 +773,17 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
           behavior: HitTestBehavior.translucent,
           // 点击浮层之外（卡片空白区 / 桌面穿透区）即关闭编辑器。
           onPointerDown: (PointerDownEvent e) {
-            if (_popupRect != null && !_popupRect!.contains(e.position)) {
+            if (_popupRect == null) return;
+            // 打开浮层的那次手势（含紧随其后的 pointer）不参与关闭判断，
+            // 否则双击/长按刚弹出就被同一串事件关掉，看起来像「没实现」。
+            final openedAt = _popupOpenedAt;
+            if (openedAt != null &&
+                DateTime.now().difference(openedAt) <
+                    const Duration(milliseconds: 400)) {
+              return;
+            }
+            // DPI 取整可能带来几像素偏差，留容差避免弹窗内点击被误判为外部。
+            if (!_popupRect!.inflate(16).contains(e.position)) {
               _closePopup();
             }
           },
@@ -1236,6 +1270,9 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
       // 单击 = 格子内快速编辑；长按 / 双击 = 在格子旁弹出完整编辑器。
       onDoubleTap: () => _openPopup(day.date, context),
       onLongPress: () => _openPopup(day.date, context),
+      // 桌面端右键最稳定，作为长按/双击之外的第三条触发路径。
+      onSecondaryTapDown: (TapDownDetails _) =>
+          _openPopup(day.date, context),
       child: Container(
         decoration: BoxDecoration(
           color: background,
@@ -1549,11 +1586,21 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
               onPressed: _clearCell,
             ),
             _toolButton(
+              icon: LucideIcons.maximize2,
+              label: '浮层编辑',
+              tooltip: '在格子旁弹出完整编辑器（也可长按 / 双击 / 右键格子）',
+              active: _popupDate != null,
+              onPressed: _openPopupFromToolbar,
+            ),
+            _toolButton(
               icon: LucideIcons.check,
               label: '完成编辑',
               tooltip: '退出当前格子的编辑态',
               active: _editingDate != null,
-              onPressed: _closeEditor,
+              onPressed: () {
+                _closePopup();
+                _closeEditor();
+              },
             ),
           ],
         ),
