@@ -286,22 +286,27 @@ test/widget_test.dart                          # 重复规则 / 提醒 / 设置�
 | 通道注册 | `windows/runner/flutter_window.cpp` | 每个 engine 注册一份通道（主窗口 + 每个 `desktop_multi_window` 子窗口，HWND 取 `GetAncestor(view, GA_ROOT)`） |
 | 端口 | `lib/core/ports.dart` | `DesktopWallpaperGateway.setRegion(DesktopCardRect)`、`MultiWindowGateway.openDesktopWidget()`、`CrossEngineSync` / `StorageReloader` |
 | 应用 | `lib/features/desktop/application/desktop_controller.dart` | 设置 → 打开/关闭组件窗口；启动时恢复上一版设置过的系统原壁纸 |
-| 表现 | `lib/windows/desktop_widget_app.dart` | 透明全屏 `Stack` + `Listener(HitTestBehavior.translucent)`；可拖动/可缩放的月历卡片（默认 1008×820，格子内快速编辑 + 长按/双击浮层编辑器 + 底部工具栏 + 内嵌调色板 + 8 方向 resize 热区） |
+| 表现 | `lib/windows/desktop_widget_app.dart` | 透明全屏 `Stack` + `Listener(HitTestBehavior.translucent)`；可拖动/可缩放的月历卡片（默认 1008×820，单击选中 + 双击/长按/右键弹出白底浮层编辑器 + 底部工具栏 + 内嵌调色板 + 8 方向 resize 热区） |
 | 同步 | `lib/infrastructure/data_hub.dart` + `windows/runner/data_hub_plugin.cpp` + `lib/features/sync/application/cross_engine_sync_controller.dart` | 所有 engine 经 MethodChannel 把写操作汇聚到同进程的原生 DataHub 单例（mutex 串行 + 原子落盘 + 单调 revision），成功后用 EventChannel 广播增量；各 engine 按 key 精准重载读模型并幂等重放本地副作用 |
 
 **桌面编辑能力（对齐旧版企划星）**：卡片默认 1008×820，格子按可用高度
-自适应铺满（约 140×105，比旧版大近一倍）。**单击**任意日期即**在该格子内**
-进入快速编辑：每行一个输入框、Lucide 勾选框标记完成、删除本行、底部回车新增。
-底部工具栏的**「浮层编辑」按钮**，或**右键 / 长按 / 双击**格子，都会在该格子
-右侧（空间不足翻到左侧）弹出完整编辑器：日期标题、逐行编辑、内嵌调色板与
-紧凑工具行，点浮层外或右上 ✓ 关闭。桌面端 `onTap` 与 `onLongPress` /
-`onDoubleTap` 同注册时鼠标手势容易被判成两次单击，因此保留一条显式按钮和
-右键作为兜底；`_openPopup` 拿不到格子 `RenderBox` 时回落到卡片中部锚点，
-且打开后 400ms 内的同串 pointer 不触发「点外部关闭」，避免刚弹出就消失。
+自适应铺满（约 140×105，比旧版大近一倍）。**单击**任意日期只**选中并高亮**
+该格（同时作为底部工具栏的作用目标），格子内始终是只读展示，不浮现输入框
+遮挡日期与农历。
+
+**编辑统一走浮层**：双击同一格（自判定：350ms 内第二次点击）、长按、右键，
+或底部工具栏的**「浮层编辑」按钮**，都会在该格右侧（空间不足翻到左侧）弹出
+**纯白底 + 黑字**的完整编辑器：日期标题、逐行输入框、Lucide 勾选框、删除、
+底部回车新增、内嵌调色板与紧凑工具行，点浮层外或右上 ✓ 关闭。白字输入框
+看不清的问题由此消除（原桌面深色格底配白字与浅色输入框对比度不足）。
+桌面端 `onTap` 与 `onDoubleTap` 同注册时鼠标手势容易被判成两次单击，因此
+双击由 `isDesktopDoubleTap`（`lib/windows/popup_layout.dart`）自行判定并有
+单测覆盖；显式按钮与右键是另外两条可靠入口。`_openPopup` 拿不到格子
+`RenderBox` 时回落到卡片中部锚点，且打开后 400ms 内的同串 pointer 不触发
+「点外部关闭」，避免刚弹出就消失。
 浮层是 overlay 内自绘的 `Positioned` 而非 `showDialog`——`_pushRegion()` 会把
 「卡片矩形 + 浮层矩形」一起推给 `setRegion`，原生用 `CombineRgn(RGN_OR)` 合并
-命中区域，所以浮层超出卡片时仍可点击、卡片外仍穿透；定位策略抽成纯函数
-`lib/windows/popup_layout.dart`，含单测覆盖翻转与夹紧。
+命中区域，所以浮层超出卡片时仍可点击、卡片外仍穿透。
 底部常驻两排：快速输入框 + 编辑工具栏（添加一行／文字颜色／单元格颜色／
 标记完成／提升为任务／清空本日／完成编辑），颜色按钮在卡片内嵌一条 23 色调色板
 （含「最近使用」与透明色），支持对当前行或整格文字着色、设置单元格背景色。
