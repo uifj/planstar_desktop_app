@@ -168,11 +168,11 @@ lib/
     ├── search/                                # 全模块搜索 + 5 种范围
     │   ├── application/search_controller.dart
     │   └── presentation/search_page.dart
-    ├── history/                               # 自动留痕 + 恢复
+    ├── history/                               # 自动留痕 + 搜索筛选 + 恢复
     │   ├── domain/history_entry.dart
-    │   ├── application/history_controller.dart
+    │   ├── application/history_controller.dart  # 就地更新、冲突校验、可读文案
     │   ├── infrastructure/local_history_repository.dart
-    │   └── presentation/history_page.dart
+    │   └── presentation/history_page.dart     # 搜索/类型筛选/日期分组/恢复确认
     ├── transfer/                              # 数据库 / 文本 / CSV 导入导出
     │   ├── application/transfer_controller.dart
     │   └── presentation/transfer_page.dart
@@ -339,6 +339,14 @@ test/widget_test.dart                          # 重复规则 / 提醒 / 设置�
 所有写操作都走原有的 `CalendarController.saveCellLines` / `setLineColor` /
 `setCellBackgroundColor` / `toggleLineCompleted` / `removeLine`，
 领域事件、历史留痕、提醒重排、同步标脏与主窗口编辑完全一致。
+
+**历史页**：`HistoryController` 在主窗口、便签子窗口、桌面 overlay 三个 engine
+都会初始化，因此三处编辑都会留痕并经 DataHub 广播到主窗口历史页。便签事件
+携带真实标题与首行摘要（不再是 `NoteChanged` 技术名），删除记录带原便签标题。
+页面支持关键词搜索、类型筛选、按日期分组（今天/昨天/中文日期）、加载/错误/
+空态；写入/删除/清空采用就地更新，不再每条都全量重读磁盘。恢复只针对日历
+格子，恢复前弹确认并比较 `DayCell.updatedAt`：若当前内容更新则警告会覆盖，
+恢复后用 SnackBar 反馈结果。
 
 ```
 桌面点击 → 格子内 TextField / Lucide 勾选框 / 底部颜色工具条
