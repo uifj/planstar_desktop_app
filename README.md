@@ -111,7 +111,8 @@ lib/
 ├── shared/widgets/common.dart                 # AppSectionCard / Setting* / 调色板 / 弹窗骨架
 ├── windows/
 │   ├── sub_window_app.dart                    # 子窗口分发（便签 / 倒数日 / 桌面组件）
-│   └── desktop_widget_app.dart                # 桌面可编辑月历 overlay（格子内直接编辑 + 底部工具栏）
+│   ├── desktop_widget_app.dart                # 桌面可编辑月历 overlay（格子内编辑 + 浮层编辑器 + 底部工具栏）
+│   └── popup_layout.dart                      # 浮层编辑器定位纯函数（翻转 / 夹紧）
 └── features/
     ├── calendar/                              # ★ 核心限界上下文
     │   ├── domain/
@@ -285,17 +286,35 @@ test/widget_test.dart                          # 重复规则 / 提醒 / 设置�
 | 通道注册 | `windows/runner/flutter_window.cpp` | 每个 engine 注册一份通道（主窗口 + 每个 `desktop_multi_window` 子窗口，HWND 取 `GetAncestor(view, GA_ROOT)`） |
 | 端口 | `lib/core/ports.dart` | `DesktopWallpaperGateway.setRegion(DesktopCardRect)`、`MultiWindowGateway.openDesktopWidget()`、`CrossEngineSync` / `StorageReloader` |
 | 应用 | `lib/features/desktop/application/desktop_controller.dart` | 设置 → 打开/关闭组件窗口；启动时恢复上一版设置过的系统原壁纸 |
-| 表现 | `lib/windows/desktop_widget_app.dart` | 透明全屏 `Stack` + `Listener(HitTestBehavior.translucent)`；可拖动/可缩放的月历卡片（默认 1008×820，格子内直接编辑 + 底部编辑工具栏 + 内嵌调色板 + 8 方向 resize 热区） |
+| 表现 | `lib/windows/desktop_widget_app.dart` | 透明全屏 `Stack` + `Listener(HitTestBehavior.translucent)`；可拖动/可缩放的月历卡片（默认 1008×820，格子内快速编辑 + 长按/双击浮层编辑器 + 底部工具栏 + 内嵌调色板 + 8 方向 resize 热区） |
 | 同步 | `lib/infrastructure/data_hub.dart` + `windows/runner/data_hub_plugin.cpp` + `lib/features/sync/application/cross_engine_sync_controller.dart` | 所有 engine 经 MethodChannel 把写操作汇聚到同进程的原生 DataHub 单例（mutex 串行 + 原子落盘 + 单调 revision），成功后用 EventChannel 广播增量；各 engine 按 key 精准重载读模型并幂等重放本地副作用 |
 
 **桌面编辑能力（对齐旧版企划星）**：卡片默认 1008×820，格子按可用高度
-自适应铺满（约 140×105，比旧版大近一倍）。点击任意日期即**在该格子内**进入
-编辑态：每行一个输入框，可直接改文字、用 Lucide 勾选框标记完成、删除本行，
-底部输入框回车再新增一行；不再弹出独立编辑卡片（弹窗会被 `SetWindowRgn` 裁掉）。
+自适应铺满（约 140×105，比旧版大近一倍）。**单击**任意日期即**在该格子内**
+进入快速编辑：每行一个输入框、Lucide 勾选框标记完成、删除本行、底部回车新增。
+**长按 / 双击**则在该格子右侧（空间不足翻到左侧）弹出完整编辑器：日期标题、
+逐行编辑、内嵌调色板与紧凑工具行，点浮层外或右上 ✓ 关闭。
+浮层是 overlay 内自绘的 `Positioned` 而非 `showDialog`——`_pushRegion()` 会把
+「卡片矩形 + 浮层矩形」一起推给 `setRegion`，原生用 `CombineRgn(RGN_OR)` 合并
+命中区域，所以浮层超出卡片时仍可点击、卡片外仍穿透；定位策略抽成纯函数
+`lib/windows/popup_layout.dart`，含单测覆盖翻转与夹紧。
 底部常驻两排：快速输入框 + 编辑工具栏（添加一行／文字颜色／单元格颜色／
 标记完成／提升为任务／清空本日／完成编辑），颜色按钮在卡片内嵌一条 23 色调色板
 （含「最近使用」与透明色），支持对当前行或整格文字着色、设置单元格背景色。
 单元格/文字颜色都走 `EventColor` 值对象，默认文字按背景亮度自动取对比色。
+
+**视觉分级**：桌面格底分三级——今天 `themeDark3`、本月 20% 透明白、
+非本月 6% 透明白，日期 / 副标题 / 行文字也按本月层级调整；主窗口原本只淡化
+非本月背景，现在日期数字同时转 `textDisabled`，两处观感统一。
+默认文字由 `_defaultTextOn` 计算：先用 `Color.alphaBlend` 把半透明格底合成到
+`black3` 卡片再判亮度（`computeLuminance()` 忽略 alpha，直接算会把半透明白
+误判为亮底而返回黑字），因此桌面默认格是**白字**，主窗口仍由
+`settings.calendarFontColor` 保持黑字，互不干扰；用户手动选的亮色格仍自动
+切成黑字。
+周六周日按 `day.date.weekday` 与设置 `settings.restDays`（默认 `[6,7]`）判定，
+不硬编码列号（用户可改 `startOfWeek`）：桌面叠淡橙底 + 暖色描边 + 偏暖数字，
+主窗口叠淡橙底 + 休息日红色数字，两处周头也换暖色并加粗。
+
 卡片标题栏可拖动；**四条边 + 四个角**各有一条透明 resize 热区（6px / 16px，
 右下角带可见握柄与对应鼠标光标），按住拖动即可调整大小，最小 560×420、
 最大不超过虚拟屏。左/上方向调整会同步修正卡片左上角坐标以保持对侧不动；
