@@ -121,17 +121,54 @@ final class _SubWindowTitleBar extends ConsumerWidget {
   }
 }
 
-final class _NoteWindow extends ConsumerWidget {
+final class _NoteWindow extends ConsumerStatefulWidget {
   const _NoteWindow({required this.noteId});
 
   final String noteId;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_NoteWindow> createState() => _NoteWindowState();
+}
+
+final class _NoteWindowState extends ConsumerState<_NoteWindow> {
+  // 按行 id 缓存 controller：逐字输入会触发 save→load→rebuild，
+  // 每次 build 都 new controller 会让光标跳到末尾并持续泄漏。
+  final Map<String, TextEditingController> _controllers =
+      <String, TextEditingController>{};
+
+  @override
+  void dispose() {
+    for (final controller in _controllers.values) {
+      controller.dispose();
+    }
+    _controllers.clear();
+    super.dispose();
+  }
+
+  void _syncControllers(List<RichLine> lines) {
+    final valid = lines.map((RichLine l) => l.id).toSet();
+    for (final id in _controllers.keys.toList(growable: false)) {
+      if (!valid.contains(id)) {
+        _controllers.remove(id)!.dispose();
+      }
+    }
+    for (final line in lines) {
+      final controller = _controllers.putIfAbsent(
+        line.id,
+        () => TextEditingController(text: line.text),
+      );
+      // 仅当外部修改了文本（跨 engine 同步/恢复）时才回写，
+      // 用户正在输入时 value 已相同，不会打断 IME。
+      if (controller.text != line.text) controller.text = line.text;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final notes = ref.watch(notesControllerProvider);
     Note? note;
     for (final item in notes.items) {
-      if (item.id == noteId) note = item;
+      if (item.id == widget.noteId) note = item;
     }
     final colors = context.appColors;
     if (note == null) {
@@ -142,9 +179,9 @@ final class _NoteWindow extends ConsumerWidget {
         ),
       );
     }
+    _syncControllers(note.lines);
     final controllers = <TextEditingController>[
-      for (final line in note.lines)
-        TextEditingController(text: line.text),
+      for (final line in note.lines) _controllers[line.id]!,
     ];
     return Container(
       color: note.backgroundColor.toColor().withValues(alpha: 0.55),

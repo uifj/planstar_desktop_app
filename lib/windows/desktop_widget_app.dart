@@ -104,7 +104,6 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
   // 长按/双击弹出的完整编辑器；_popupRect 是 overlay 窗口坐标系的逻辑像素矩形。
   DateKey? _popupDate;
   Rect? _popupRect;
-  DateTime? _popupOpenedAt;
   String? _activeLineId;
   _ColorTarget _paletteTarget = _ColorTarget.none;
   bool _confirmClear = false;
@@ -227,10 +226,14 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
   /// 取所有可用来源里最大的屏幕范围，避免子窗口 engine 的 view 尺寸偏小
   /// 导致卡片被错误缩小、位置被压到 (0,0)。
   Size get _screenSize {
-    // 保底：即便某个来源偏小，也至少留出默认卡片 + 足够的调整余量，
-    // 否则一次 clamp 就不可逆地把位置压到 0 并锁死继续拉大的能力。
-    var width = _screen.width > 1920 ? _screen.width : 1920.0;
-    var height = _screen.height > 1080 ? _screen.height : 1080.0;
+    // 下限只保证「默认卡片 + 边距」，不能用 1920×1080 硬下限：
+    // 1366×768 屏幕上会把卡片 clamp 到可视区外且再也拖不回来。
+    var width = _screen.width > _defaultCardWidth + 64
+        ? _screen.width
+        : _defaultCardWidth + 64.0;
+    var height = _screen.height > _defaultCardHeight + 64
+        ? _screen.height
+        : _defaultCardHeight + 64.0;
     final views = WidgetsBinding.instance.platformDispatcher.views;
     for (final view in views) {
       final dpr = view.devicePixelRatio > 0 ? view.devicePixelRatio : 1.0;
@@ -238,12 +241,18 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
       final vh = view.physicalSize.height / dpr;
       if (vw > width) width = vw;
       if (vh > height) height = vh;
-      // 原生 GetSystemMetrics 返回物理像素，按同一 dpr 换算为逻辑像素。
-      final nw = _nativeMetrics.width / dpr;
-      final nh = _nativeMetrics.height / dpr;
-      if (nw > width) width = nw;
-      if (nh > height) height = nh;
     }
+    // 原生 GetSystemMetrics 返回物理像素，按 overlay 所属 view 的 dpr 换算。
+    // 用当前 engine 的 view dpr（与 setRegion 同一坐标系），避免混合 DPI 下
+    // 逐个 view 换算把逻辑尺寸错误放大。
+    final effectiveDpr =
+        views.isNotEmpty && views.first.devicePixelRatio > 0
+            ? views.first.devicePixelRatio
+            : 1.0;
+    final nativeWidth = _nativeMetrics.width / effectiveDpr;
+    final nativeHeight = _nativeMetrics.height / effectiveDpr;
+    if (nativeWidth > width) width = nativeWidth;
+    if (nativeHeight > height) height = nativeHeight;
     return Size(width, height);
   }
 
@@ -566,8 +575,10 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
       _confirmClear = false;
       _cellInput.clear();
     });
-    // 同一次手势的后续 pointer 不应立刻把刚打开的浮层关掉。
-    _popupOpenedAt = DateTime.now();
+    // 浮层已打开，清掉双击判定状态：避免长按/右键打开后，紧跟着的左键
+    // 又落在 350ms 窗口内被误判成双击而重复打开。
+    _lastCellTapAt = null;
+    _lastCellTapDate = null;
     _regionSignature = '';
     _pushRegion();
     _focusNewLine();
@@ -578,7 +589,6 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
     setState(() {
       _popupDate = null;
       _popupRect = null;
-      _popupOpenedAt = null;
       _editingDate = null;
       _activeLineId = null;
       _paletteTarget = _ColorTarget.none;
@@ -802,14 +812,9 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
           // 点击浮层之外（卡片空白区 / 桌面穿透区）即关闭编辑器。
           onPointerDown: (PointerDownEvent e) {
             if (_popupRect == null) return;
-            // 打开浮层的那次手势（含紧随其后的 pointer）不参与关闭判断，
-            // 否则双击/长按刚弹出就被同一串事件关掉，看起来像「没实现」。
-            final openedAt = _popupOpenedAt;
-            if (openedAt != null &&
-                DateTime.now().difference(openedAt) <
-                    const Duration(milliseconds: 400)) {
-              return;
-            }
+            // 不用时间窗屏蔽：双击/长按都是从 up 事件触发，打开后到来的
+            // pointer down 必然是新的手势，本就该按位置判断开关。时间窗会
+            // 让紧接着点别的格子时浮层仍显示旧日期、且能被连续快点无限续期。
             // DPI 取整可能带来几像素偏差，留容差避免弹窗内点击被误判为外部。
             if (!_popupRect!.inflate(16).contains(e.position)) {
               _closePopup();
@@ -1295,7 +1300,9 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
         (cellWidth / _referenceCellWidth).clamp(0.85, 1.5).toDouble();
     // 单击只高亮选中；编辑态只存在于浮层里，格子内始终只读展示。
     final selected = _selectedDate == day.date || _editingDate == day.date;
-    final cell = _cellOf(day.date);
+    // MonthData 已把 DayCell 聚合进每个 CalendarDayModel，直接用它，
+    // 避免 42 个格子各自线性扫描整个 cells 列表（N+1）。
+    final cell = day.cell;
     final customColor = cell?.backgroundColor;
     final inMonth = day.isCurrentMonth;
     final weekend = settings.showRestDays &&
