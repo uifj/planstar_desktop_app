@@ -58,13 +58,20 @@ final class DesktopController extends Notifier<DesktopState> {
   bool _openingWidget = false;
   bool _wallpaperRestored = false;
   String _appliedSignature = '';
+  StreamSubscription<TrayAction>? _traySubscription;
+  StreamSubscription<MultiWindowCommand>? _windowCommands;
+  void Function()? _cancelSettingsChanged;
 
   @override
   DesktopState build() {
     // 仅由应用根 ref.read，需保活以持续接收托盘 / 领域事件。
     ref.keepAlive();
-    ref.read(trayActionsProvider).listen(_onTrayAction);
-    ref.read(domainEventBusProvider).on<SettingsChanged>(_onSettingsChanged);
+    // 标题栏 X / Alt+F4 由 window_manager 拦截后直接 hide，
+    // 必须回写 visible，否则托盘 toggle 的第一次点击方向是反的。
+    ref.read(windowGatewayProvider).onCloseIntercepted = markHidden;
+    _traySubscription = ref.read(trayActionsProvider).listen(_onTrayAction);
+    _cancelSettingsChanged =
+        ref.read(domainEventBusProvider).on<SettingsChanged>(_onSettingsChanged);
     ref.listen<AppSettings>(
       settingsControllerProvider,
       (AppSettings? previous, AppSettings next) {
@@ -79,13 +86,17 @@ final class DesktopController extends Notifier<DesktopState> {
         }
       },
     );
-    ref
+    _windowCommands = ref
         .read(multiWindowGatewayProvider)
         .incoming
         .listen(_onWindowCommand);
     ref.onDispose(() {
       _wallpaperTimer?.cancel();
       _refreshDebounce?.cancel();
+      _traySubscription?.cancel();
+      _windowCommands?.cancel();
+      _cancelSettingsChanged?.call();
+      ref.read(windowGatewayProvider).onCloseIntercepted = null;
     });
     Future.microtask(applySettings);
     return const DesktopState();
@@ -282,9 +293,14 @@ final class DesktopController extends Notifier<DesktopState> {
     state = state.copyWith(visible: true);
   }
 
+  /// 主窗口已被原生层隐藏（X / Alt+F4），只同步状态不再重复调用 hide。
+  void markHidden() {
+    if (state.visible) state = state.copyWith(visible: false);
+  }
+
   void hide() {
     ref.read(windowGatewayProvider).hide();
-    state = state.copyWith(visible: false);
+    markHidden();
   }
 
   /// 请求关闭主窗口：因已开启关闭拦截，实际会隐藏到托盘。

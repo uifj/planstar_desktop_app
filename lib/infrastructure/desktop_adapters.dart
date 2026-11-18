@@ -25,6 +25,9 @@ final class WindowManagerGateway
 
   final AppLogger logger;
 
+  @override
+  void Function()? onCloseIntercepted;
+
   bool _ready = false;
 
   Future<void> ensureInitialized() async {
@@ -154,6 +157,7 @@ final class WindowManagerGateway
   /// window_manager 的关闭拦截回调：只隐藏，托盘「退出」才真正结束进程。
   @override
   void onWindowClose() {
+    onCloseIntercepted?.call();
     unawaited(hide());
   }
 }

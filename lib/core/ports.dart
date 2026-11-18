@@ -184,6 +184,10 @@ abstract interface class WindowGateway {
 
   Future<void> toggleMaximize();
 
+  /// 原生关闭按钮 / Alt+F4 触发的隐藏通知（由实现方回调），
+  /// 用于让应用层状态与真实窗口可见态保持一致。
+  void Function()? onCloseIntercepted;
+
   /// 请求关闭窗口。主窗口已开启「关闭拦截」，实际行为是隐藏到托盘；
   /// 真正结束进程请用 [destroy]。
   Future<void> close();
