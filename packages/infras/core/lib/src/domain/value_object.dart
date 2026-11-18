@@ -35,7 +35,10 @@ abstract class ValueObject {
   }
 
   @override
-  int get hashCode => Object.hashAll(<Object?>[runtimeType, ...props]);
+  int get hashCode => Object.hashAll(<Object?>[
+        runtimeType,
+        ...props.map(_deepHashCode),
+      ]);
 }
 
 /// 值对象内部的深比较。
@@ -60,4 +63,21 @@ bool _deepEquals(Object? a, Object? b) {
     return true;
   }
   return a == b;
+}
+
+/// 与 [_deepEquals] 对齐的深哈希：List 按序、Map 按排序后的 key，
+/// 保证「相等的对象哈希必然相等」这一 Dart 契约（原先集合用 identity hash，
+/// 两个内容相同的 AppSettings/RecurrenceRule 在 Set/Map 里会重复）。
+int _deepHashCode(Object? value) {
+  if (value == null) return 0;
+  if (value is List) return Object.hashAll(value.map(_deepHashCode));
+  if (value is Map) {
+    final keys = value.keys.toList()
+      ..sort((Object? a, Object? b) => a.toString().compareTo(b.toString()));
+    return Object.hashAll(<Object?>[
+      for (final key in keys) _deepHashCode(key),
+      for (final key in keys) _deepHashCode(value[key]),
+    ]);
+  }
+  return value.hashCode;
 }
