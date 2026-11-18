@@ -30,6 +30,9 @@ final crossEngineSyncControllerProvider =
 final class CrossEngineSyncController extends Notifier<int> {
   bool _applying = false;
   int _lastAppliedRevision = 0;
+  // reload 期间到达的变更不能丢弃：按 key 保留最新的一条，当前批次
+  // 结束后再串行处理一轮，否则旧读模型会一直留在界面上。
+  final Map<String, DataChange> _pending = <String, DataChange>{};
 
   @override
   int build() {
@@ -44,31 +47,58 @@ final class CrossEngineSyncController extends Notifier<int> {
   }
 
   Future<void> _apply(DataChange change) async {
-    if (_applying) return;
+    if (_applying) {
+      _enqueue(change);
+      return;
+    }
     if (change.revision > 0 && change.revision <= _lastAppliedRevision) return;
     _applying = true;
     try {
-      if (change.isFullReload) {
-        await ref.read(storageReloaderProvider).reload();
-        await _reloadAll();
-      } else {
-        await _reloadFor(change.key);
+      DataChange current = change;
+      while (true) {
+        await _applyOne(current);
+        // 同一 key 若期间来了更新版本，取最新的一条继续处理。
+        final nextKey = _pending.keys.firstOrNull;
+        if (nextKey == null) break;
+        final next = _pending.remove(nextKey)!;
+        if (next.revision <= _lastAppliedRevision) continue;
+        current = next;
       }
-      _lastAppliedRevision = change.revision;
-      // 本 engine 的数据已刷新，补齐无落盘副作用的联动（提醒重排 / 脏计数）。
-      // 历史留痕不在这里做：写入方的 DayCellChanged 已单次落盘，避免广播回环。
-      await ref.read(domainEventBusProvider).dispatch(<DomainEvent>[
-        CrossEngineDataChanged(
-          aggregateId: change.key,
-          occurredAt: ref.read(clockProvider).now(),
-          key: change.key,
-          revision: change.revision,
-        ),
-      ]);
-      state++;
     } finally {
       _applying = false;
     }
+  }
+
+  void _enqueue(DataChange change) {
+    if (change.revision > 0 && change.revision <= _lastAppliedRevision) return;
+    final key = change.isFullReload ? '' : change.key;
+    final existing = _pending[key];
+    if (existing == null || change.revision >= existing.revision) {
+      _pending[key] = change;
+    }
+  }
+
+  Future<void> _applyOne(DataChange change) async {
+    if (change.isFullReload) {
+      await ref.read(storageReloaderProvider).reload();
+      await _reloadAll();
+    } else {
+      await _reloadFor(change.key);
+    }
+    if (change.revision > _lastAppliedRevision) {
+      _lastAppliedRevision = change.revision;
+    }
+    // 本 engine 的数据已刷新，补齐无落盘副作用的联动（提醒重排 / 脏计数）。
+    // 历史留痕不在这里做：写入方的 DayCellChanged 已单次落盘，避免广播回环。
+    await ref.read(domainEventBusProvider).dispatch(<DomainEvent>[
+      CrossEngineDataChanged(
+        aggregateId: change.key,
+        occurredAt: ref.read(clockProvider).now(),
+        key: change.key,
+        revision: change.revision,
+      ),
+    ]);
+    state++;
   }
 
   Future<void> _reloadFor(String key) async {

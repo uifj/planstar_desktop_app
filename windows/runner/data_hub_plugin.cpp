@@ -120,8 +120,11 @@ class DataHub {
           }
         }
       }
+      if (!PersistLocked()) {
+        // Keep configured_=false so a later configure can retry initial persist.
+        return SnapshotLocked();
+      }
       configured_ = true;
-      PersistLocked();
     }
     return SnapshotLocked();
   }
@@ -137,16 +140,26 @@ class DataHub {
     int64_t revision = 0;
     {
       std::lock_guard<std::mutex> lock(mutex_);
+      const auto previous = entries_.find(key);
+      const bool existed = previous != entries_.end();
+      const std::string old_value = existed ? previous->second : std::string();
       entries_[key] = value;
-      revision = ++revision_;
-      PersistLocked();
+      revision = revision_ + 1;
+      if (!PersistLocked()) {
+        // Roll back both data and revision: a failed write must not be
+        // observed by other engines nor advance the monotonic clock.
+        if (existed) {
+          entries_[key] = old_value;
+        } else {
+          entries_.erase(key);
+        }
+        return ErrorResult("persist failed; write was rolled back");
+      }
+      revision_ = revision;
       targets = sinks_;
     }
     Broadcast(targets, key, &value, false, revision, origin);
-    EncodableMap result;
-    result[EncodableValue("ok")] = EncodableValue(true);
-    result[EncodableValue("revision")] = EncodableValue(revision);
-    return result;
+    return OkResult(revision);
   }
 
   EncodableMap Delete(const std::string& key, const std::string& origin) {
@@ -154,16 +167,20 @@ class DataHub {
     int64_t revision = 0;
     {
       std::lock_guard<std::mutex> lock(mutex_);
-      entries_.erase(key);
-      revision = ++revision_;
-      PersistLocked();
+      const auto previous = entries_.find(key);
+      if (previous == entries_.end()) return OkResult(revision_);
+      const std::string old_value = previous->second;
+      entries_.erase(previous);
+      revision = revision_ + 1;
+      if (!PersistLocked()) {
+        entries_[key] = old_value;
+        return ErrorResult("persist failed; delete was rolled back");
+      }
+      revision_ = revision;
       targets = sinks_;
     }
     Broadcast(targets, key, nullptr, true, revision, origin);
-    EncodableMap result;
-    result[EncodableValue("ok")] = EncodableValue(true);
-    result[EncodableValue("revision")] = EncodableValue(revision);
-    return result;
+    return OkResult(revision);
   }
 
   EncodableMap Clear() {
@@ -171,15 +188,31 @@ class DataHub {
     int64_t revision = 0;
     {
       std::lock_guard<std::mutex> lock(mutex_);
+      const auto previous = entries_;
       entries_.clear();
-      revision = ++revision_;
-      PersistLocked();
+      revision = revision_ + 1;
+      if (!PersistLocked()) {
+        entries_ = previous;
+        return ErrorResult("persist failed; clear was rolled back");
+      }
+      revision_ = revision;
       targets = sinks_;
     }
     Broadcast(targets, std::string(), nullptr, true, revision, std::string());
+    return OkResult(revision);
+  }
+
+  static EncodableMap OkResult(int64_t revision) {
     EncodableMap result;
     result[EncodableValue("ok")] = EncodableValue(true);
     result[EncodableValue("revision")] = EncodableValue(revision);
+    return result;
+  }
+
+  static EncodableMap ErrorResult(const char* message) {
+    EncodableMap result;
+    result[EncodableValue("ok")] = EncodableValue(false);
+    result[EncodableValue("error")] = EncodableValue(message);
     return result;
   }
 
@@ -209,8 +242,10 @@ class DataHub {
 
   // Atomic replace: write a temp file, then MoveFileEx(REPLACE_EXISTING).
   // A concurrently reading engine can never observe a half-written JSON.
-  void PersistLocked() {
-    if (file_path_.empty()) return;
+  // Returns false on any IO failure so callers can roll back the in-memory
+  // mutation and report the error instead of silently claiming success.
+  bool PersistLocked() {
+    if (file_path_.empty()) return true;
     std::ostringstream out;
     out << "{\"revision\":" << revision_ << ",\"entries\":{";
     bool first = true;
@@ -223,15 +258,20 @@ class DataHub {
 
     const std::wstring tmp = Utf8ToWide(file_path_ + ".tmp");
     const std::wstring target = Utf8ToWide(file_path_);
-    if (tmp.empty() || target.empty()) return;
+    if (tmp.empty() || target.empty()) return false;
     {
       std::ofstream file(tmp, std::ios::binary | std::ios::trunc);
-      if (!file) return;
+      if (!file) return false;
       file << out.str();
       file.flush();
+      if (!file.good()) return false;
     }
-    ::MoveFileExW(tmp.c_str(), target.c_str(),
-                  MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH);
+    if (!::MoveFileExW(tmp.c_str(), target.c_str(),
+                       MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH)) {
+      ::DeleteFileW(tmp.c_str());
+      return false;
+    }
+    return true;
   }
 
   void Broadcast(

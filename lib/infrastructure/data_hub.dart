@@ -122,8 +122,8 @@ final class _NativeBackend implements _Backend {
 
   late final String _origin;
   int _lastRevision = 0;
-  // 本 engine 自己提交的 revision。广播到达时用于跳过自反馈，
-  // 但绝不直接推进 _lastRevision —— 否则会跳过其它 engine 的中间广播。
+  // 本 engine 自己提交的 revision。广播先于 method result 到达时用于
+  // 补偿去重；但主过滤靠 origin，不依赖两条 channel 的到达顺序。
   final Set<int> _ownRevisions = <int>{};
   StreamSubscription<dynamic>? _subscription;
 
@@ -182,6 +182,10 @@ final class _NativeBackend implements _Backend {
     _ownRevisions.removeWhere((int r) => r < revision);
     final key = '${raw['key'] ?? ''}';
     final origin = '${raw['origin'] ?? ''}';
+    // 原生层在 method result 之前广播，_ownRevisions 可能尚未登记；
+    // 但 origin 是发起方 engine 标识，能确定性地跳过自反馈。
+    // 必须放在应用 value 之前：自己的写入已由 _applyResult 乐观更新。
+    if (origin.isNotEmpty && origin == _origin) return;
     final deleted = raw['deleted'] == true;
     final value = raw['value'];
     if (deleted) {
@@ -241,7 +245,9 @@ final class _NativeBackend implements _Backend {
     Map<String, Object?>? result,
   ) {
     if (result == null || result['ok'] != true) {
-      throw StateError('DataHub 写入失败：$key');
+      throw StateError(
+        'DataHub 写入失败：$key${result == null ? '' : '（${result['error'] ?? '未知错误'}）'}',
+      );
     }
     if (deleted) {
       _entries.remove(key);
@@ -284,6 +290,7 @@ final class _LocalBackend implements _Backend {
   int _seenRevision = 0;
   Timer? _timer;
   Future<void> _queue = Future<void>.value();
+  bool _polling = false;
 
   @override
   Stream<DataChange> get changes => _changes.stream;
@@ -295,6 +302,19 @@ final class _LocalBackend implements _Backend {
     _file = File('$root/$dataHubFileName');
     final entries = await _loadInitialEntries(root);
     _entries.addAll(entries);
+    // revision 必须续用文件里的值：每个 engine / 每次进程启动都从 0 开始
+    // 会让其它 engine 把本窗口的写入当成旧变更而永久忽略。
+    if (await _file.exists()) {
+      try {
+        final decoded = jsonDecode(await _file.readAsString());
+        if (decoded is Map) {
+          _revision = (decoded['revision'] as num?)?.toInt() ?? 0;
+          _seenRevision = _revision;
+        }
+      } on Object {
+        // 文件损坏时按 0 重新开始，迁移/原子写会重建。
+      }
+    }
     await _persist(null, null);
     _timer = Timer.periodic(
       const Duration(milliseconds: 300),
@@ -303,6 +323,8 @@ final class _LocalBackend implements _Backend {
   }
 
   Future<void> _poll() async {
+    if (_polling) return;
+    _polling = true;
     try {
       if (!await _file.exists()) return;
       final decoded = jsonDecode(await _file.readAsString());
@@ -337,6 +359,8 @@ final class _LocalBackend implements _Backend {
       }
     } on Object {
       // 原子写保证不会读到半截 JSON；偶发 IO 错误留给下一轮补偿。
+    } finally {
+      _polling = false;
     }
   }
 
