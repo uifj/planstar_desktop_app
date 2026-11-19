@@ -38,13 +38,12 @@ typedef RetryDecider = bool Function(Failure failure);
 final class MultipartUploadEngine {
   /// 创建引擎。
   MultipartUploadEngine({
-    required Dio dio,
+    required this._dio,
     this.config = const MultipartUploadConfig(),
     RetryDecider? isRetryable,
     DateTime Function()? clock,
-  })  : _dio = dio,
-        _isRetryable = isRetryable ?? defaultRetryDecider,
-        _clock = clock ?? DateTime.now;
+  }) : _isRetryable = isRetryable ?? defaultRetryDecider,
+       _clock = clock ?? DateTime.now;
 
   final Dio _dio;
   final RetryDecider _isRetryable;
@@ -94,9 +93,7 @@ final class MultipartUploadEngine {
     CancelToken? cancelToken,
   }) async {
     if (bytes.isEmpty) {
-      return Fail<MultipartUploadResult>(
-        Failure.input(message: '文件为空，无需上传'),
-      );
+      return Fail<MultipartUploadResult>(Failure.input(message: '文件为空，无需上传'));
     }
 
     final partCount = (bytes.length + config.partSize - 1) ~/ config.partSize;
@@ -181,8 +178,7 @@ final class MultipartUploadEngine {
               ),
               cancelToken: cancelToken,
             );
-            etags[partNumber] =
-                response.headers.value(_etagHeader) ?? '';
+            etags[partNumber] = response.headers.value(_etagHeader) ?? '';
             uploadedBytes += chunk.length;
             completedParts++;
             if (completedParts >= partCount) {
@@ -195,7 +191,8 @@ final class MultipartUploadEngine {
           } on DioException catch (error) {
             final failure = _mapDioException(error);
             lastFailure = failure;
-            final canRetry = attempt < config.maxRetries &&
+            final canRetry =
+                attempt < config.maxRetries &&
                 _isRetryable(failure) &&
                 !(cancelToken?.isCancelled ?? false);
             if (!canRetry) {
@@ -219,7 +216,8 @@ final class MultipartUploadEngine {
             }
           }
         }
-        final fallback = lastFailure ??
+        final fallback =
+            lastFailure ??
             Failure(
               code: 'UPLOAD_ERROR',
               message: '分片 $partNumber 上传失败',
@@ -275,10 +273,8 @@ final class MultipartUploadEngine {
     return totalBytes - (partCount - 1) * config.partSize;
   }
 
-  static Failure _cancelledFailure() => Failure.network(
-        code: 'REQUEST_CANCELLED',
-        message: '上传已取消',
-      );
+  static Failure _cancelledFailure() =>
+      Failure.network(code: 'REQUEST_CANCELLED', message: '上传已取消');
 
   static Failure _mapDioException(DioException error) {
     switch (error.type) {

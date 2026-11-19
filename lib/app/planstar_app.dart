@@ -2,9 +2,10 @@
 library;
 
 import 'package:core_design_system/core_design_system.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../features/calendar/application/sound_reaction.dart';
 import '../features/desktop/application/desktop_controller.dart';
 import '../features/history/application/history_controller.dart';
 import '../features/reminder/application/reminder_controller.dart';
@@ -33,6 +34,7 @@ final class _PlanstarAppState extends ConsumerState<PlanstarApp> {
       ref.read(historyControllerProvider);
       ref.read(syncControllerProvider);
       ref.read(crossEngineSyncControllerProvider);
+      ref.read(soundReactionProvider);
     });
   }
 
@@ -48,19 +50,14 @@ final class _PlanstarAppState extends ConsumerState<PlanstarApp> {
       routerConfig: ref.watch(routerProvider),
       builder: (BuildContext context, Widget? child) => AppTheme.withAppFont(
         context,
-        Stack(
-          children: <Widget>[
-            ?child,
-            const ReminderOverlay(),
-          ],
-        ),
+        Stack(children: <Widget>[?child, const ReminderOverlay()]),
       ),
     );
   }
 
   ThemeMode _toMaterialThemeMode(AppThemeMode mode) => switch (mode) {
-        AppThemeMode.light => ThemeMode.light,
-        AppThemeMode.dark => ThemeMode.dark,
-        AppThemeMode.system => ThemeMode.system,
-      };
+    AppThemeMode.light => ThemeMode.light,
+    AppThemeMode.dark => ThemeMode.dark,
+    AppThemeMode.system => ThemeMode.system,
+  };
 }

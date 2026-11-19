@@ -59,7 +59,7 @@ final class FormPostUploader {
   ///
   /// 不提供默认 Dio：隐式自建实例、上传结束后 `close`，既浪费连接池，
   /// 也绕过了宿主的网络策略。这里要求显式注入。
-  FormPostUploader({required Dio dio, this.logger}) : _dio = dio;
+  FormPostUploader({required this._dio, this.logger});
 
   final Dio _dio;
 
@@ -75,9 +75,7 @@ final class FormPostUploader {
     void Function(int sent, int total)? onProgress,
   }) async {
     if (_disposed) {
-      return Fail<void>(
-        Failure.input(message: 'FormPostUploader 已释放，不能继续上传'),
-      );
+      return Fail<void>(Failure.input(message: 'FormPostUploader 已释放，不能继续上传'));
     }
 
     final file = MultipartFile.fromBytes(
@@ -160,10 +158,7 @@ final class FormPostUploader {
       case DioExceptionType.badCertificate:
       case DioExceptionType.connectionError:
       case DioExceptionType.unknown:
-        return Failure.network(
-          message: e.message ?? '表单直传失败',
-          cause: e,
-        );
+        return Failure.network(message: e.message ?? '表单直传失败', cause: e);
     }
   }
 }

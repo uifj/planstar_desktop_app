@@ -4,12 +4,12 @@ library;
 
 import 'package:core_design_system/core_design_system.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../bootstrap/core_providers.dart';
-import '../../features/calendar/application/calendar_controllers.dart';
+import '../../features/calendar/presentation/calendar_providers.dart';
 import '../../features/reminder/application/reminder_controller.dart';
 import '../../features/settings/application/settings_controller.dart';
 import '../../features/settings/domain/app_settings.dart';
@@ -48,12 +48,21 @@ final class WindowTitleBar extends ConsumerWidget {
               ),
             ),
             const SizedBox(width: AppSpacing.xl),
-            _icon(LucideIcons.chevronsLeft, '上一页', () =>
-                ref.read(monthNavigationProvider.notifier).previous()),
-            _icon(LucideIcons.house, '返回今日', () =>
-                ref.read(monthNavigationProvider.notifier).today()),
-            _icon(LucideIcons.chevronsRight, '下一页', () =>
-                ref.read(monthNavigationProvider.notifier).next()),
+            _icon(
+              LucideIcons.chevronsLeft,
+              '上一页',
+              () => ref.read(monthNavigationProvider.notifier).previous(),
+            ),
+            _icon(
+              LucideIcons.house,
+              '返回今日',
+              () => ref.read(monthNavigationProvider.notifier).today(),
+            ),
+            _icon(
+              LucideIcons.chevronsRight,
+              '下一页',
+              () => ref.read(monthNavigationProvider.notifier).next(),
+            ),
             const SizedBox(width: AppSpacing.sm),
             Text(
               '${anchor.year}年${anchor.month}月',
@@ -64,10 +73,17 @@ final class WindowTitleBar extends ConsumerWidget {
             ),
             const Spacer(),
             _icon(LucideIcons.search, '搜日历清单', () => context.go('/search')),
-            _icon(LucideIcons.bell, '提醒（已排 $scheduled 条）', () =>
-                ref.read(reminderControllerProvider.notifier).showTestAlert()),
-            _icon(LucideIcons.cloudSync, '手动同步', () =>
-                ref.read(syncControllerProvider.notifier).syncNow()),
+            _icon(
+              LucideIcons.bell,
+              '提醒（已排 $scheduled 条）',
+              () =>
+                  ref.read(reminderControllerProvider.notifier).showTestAlert(),
+            ),
+            _icon(
+              LucideIcons.cloudSync,
+              '手动同步',
+              () => ref.read(syncControllerProvider.notifier).syncNow(),
+            ),
             _icon(LucideIcons.sunMoon, '切换主题', () {
               final current = ref.read(settingsControllerProvider).themeMode;
               final next = current == AppThemeMode.dark
@@ -111,13 +127,13 @@ final class WindowTitleBar extends ConsumerWidget {
   }
 
   Widget _icon(IconData icon, String tooltip, VoidCallback onTap) => Tooltip(
-        message: tooltip,
-        child: IconButton(
-          icon: Icon(icon, size: 18),
-          onPressed: onTap,
-          visualDensity: VisualDensity.compact,
-        ),
-      );
+    message: tooltip,
+    child: IconButton(
+      icon: Icon(icon, size: 18),
+      onPressed: onTap,
+      visualDensity: VisualDensity.compact,
+    ),
+  );
 
   Widget _windowButton(
     BuildContext context,
@@ -132,8 +148,6 @@ final class WindowTitleBar extends ConsumerWidget {
       onPressed: onTap,
       visualDensity: VisualDensity.compact,
     );
-    return tooltip == null
-        ? button
-        : Tooltip(message: tooltip, child: button);
+    return tooltip == null ? button : Tooltip(message: tooltip, child: button);
   }
 }

@@ -2,18 +2,18 @@
 library;
 
 import 'package:core_design_system/core_design_system.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../bootstrap/core_providers.dart';
+import '../../../bootstrap/timeline.dart';
 import '../../../core/value_objects.dart';
-import '../../countdown/application/countdown_controller.dart';
-import '../../countdown/domain/countdown.dart';
 import '../../desktop/application/desktop_controller.dart';
 import '../../notes/application/notes_controller.dart';
-import '../../settings/application/settings_controller.dart';
-import '../application/calendar_controllers.dart';
+import '../application/calendar_controller.dart';
+import 'calendar_providers.dart';
+import 'read_model/month_data.dart';
 import 'dialogs/context_dialogs.dart';
 import 'dialogs/event_editor_dialog.dart';
 import 'widgets/calendar_title_bar.dart';
@@ -26,20 +26,21 @@ final class CalendarPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final data = ref.watch(monthDataProvider);
-    final settings = ref.watch(settingsControllerProvider);
-    final calendar = ref.watch(calendarControllerProvider);
+    final error = ref.watch(calendarControllerProvider.select((s) => s.error));
+    final loading = ref.watch(
+      calendarControllerProvider.select((s) => s.loading),
+    );
     final selectedDate = ref.watch(selectedDateProvider);
     final controller = ref.read(calendarControllerProvider.notifier);
 
     return Column(
       children: <Widget>[
         CalendarTitleBar(onNewEvent: () => _newEvent(context, ref, null)),
-        if (calendar.error != null)
+        if (error != null)
           Padding(
             padding: const EdgeInsets.all(AppSpacing.xs),
             child: Text(
-              calendar.error!,
+              error,
               style: TextStyle(
                 fontSize: AppTypography.caption,
                 color: context.appColors.error,
@@ -52,13 +53,10 @@ final class CalendarPage extends ConsumerWidget {
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.all(AppSpacing.md),
-                  child: calendar.loading
+                  child: loading
                       ? const Center(child: CircularProgressIndicator())
                       : SingleChildScrollView(
                           child: MonthGrid(
-                            data: data,
-                            settings: settings,
-                            selectedDate: selectedDate,
                             onTap: (CalendarDayModel day) => ref
                                 .read(selectedDateProvider.notifier)
                                 .select(day.date),
@@ -68,24 +66,21 @@ final class CalendarPage extends ConsumerWidget {
                             onSecondaryTap: (
                               CalendarDayModel day,
                               Offset position,
-                            ) =>
-                                _contextMenu(context, ref, day, position),
-                            onToggleLine: (
-                              CalendarDayModel day,
-                              String lineId,
-                            ) =>
-                                controller.toggleLineCompleted(
-                              day.date,
-                              lineId,
-                            ),
-                            onToggleEvent: (
-                              CalendarDayModel day,
-                              EventOccurrence occurrence,
-                            ) =>
-                                controller.toggleEventCompleted(
-                              occurrence.event,
-                              day.date,
-                            ),
+                            ) => _contextMenu(context, ref, day, position),
+                            onToggleLine:
+                                (CalendarDayModel day, String lineId) =>
+                                    controller.toggleLineCompleted(
+                                      day.date,
+                                      lineId,
+                                    ),
+                            onToggleEvent:
+                                (
+                                  CalendarDayModel day,
+                                  EventOccurrence occurrence,
+                                ) => controller.toggleEventCompleted(
+                                  occurrence.event,
+                                  day.date,
+                                ),
                           ),
                         ),
                 ),
@@ -94,7 +89,7 @@ final class CalendarPage extends ConsumerWidget {
             ],
           ),
         ),
-        CountdownBar(items: data.countdownBar),
+        const CountdownBar(),
       ],
     );
   }
@@ -106,11 +101,12 @@ final class CalendarPage extends ConsumerWidget {
   ) async {
     final result = await showEventEditorDialog(
       context,
-      initialDate:
-          date ?? DateKey.today(ref.read(clockProvider).now()),
+      initialDate: date ?? DateKey.today(ref.read(clockProvider).now()),
     );
     if (result == null) return;
-    await ref.read(calendarControllerProvider.notifier).createEvent(
+    await ref
+        .read(calendarControllerProvider.notifier)
+        .createEvent(
           content: result.content,
           startDate: result.startDate,
           type: result.type,
@@ -157,9 +153,7 @@ final class CalendarPage extends ConsumerWidget {
       case 'new_event':
         await _newEvent(context, ref, day.date);
       case 'copy':
-        await Clipboard.setData(
-          ClipboardData(text: day.cell?.snapshot ?? ''),
-        );
+        await Clipboard.setData(ClipboardData(text: day.cell?.snapshot ?? ''));
         _toast(ref, '已复制本日内容');
       case 'paste':
         final clipboard = await Clipboard.getData('text/plain');
@@ -186,11 +180,10 @@ final class CalendarPage extends ConsumerWidget {
         if (!context.mounted) break;
         await _deleteEvent(context, ref, day);
       case 'countdown':
-        await ref.read(countdownControllerProvider.notifier).create(
-              title: '${day.date.month}月${day.date.day}日',
-              targetDate: day.date,
-              type: CountdownType.custom,
-            );
+        await ref.read(createCountdownProvider)(
+          title: '${day.date.month}月${day.date.day}日',
+          targetDate: day.date.date,
+        );
         _toast(ref, '已添加倒数日');
       case 'note':
         final note = await ref
@@ -216,11 +209,9 @@ final class CalendarPage extends ConsumerWidget {
     final scope = await showDeleteScopeDialog(context);
     if (scope == null) return;
     final occurrence = day.events.first;
-    await ref.read(calendarControllerProvider.notifier).deleteEvent(
-          occurrence.event,
-          onDate: day.date,
-          scope: scope,
-        );
+    await ref
+        .read(calendarControllerProvider.notifier)
+        .deleteEvent(occurrence.event, onDate: day.date, scope: scope);
   }
 
   void _toast(WidgetRef ref, String message) {

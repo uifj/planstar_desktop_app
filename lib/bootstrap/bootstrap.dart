@@ -25,6 +25,7 @@ import '../infrastructure/storage_adapters.dart';
 import '../infrastructure/wallpaper_image_gateway.dart';
 import '../windows/sub_window_app.dart';
 import 'core_providers.dart';
+import 'reload_targets.dart';
 
 final class AppBootstrap {
   const AppBootstrap._();
@@ -39,15 +40,15 @@ final class AppBootstrap {
       level: AppLogger.defaultLevelFor(isReleaseMode: kReleaseMode),
     );
     const clock = SystemClock();
-    final isDesktop = !kIsWeb &&
+    final isDesktop =
+        !kIsWeb &&
         (defaultTargetPlatform == TargetPlatform.windows ||
             defaultTargetPlatform == TargetPlatform.linux ||
             defaultTargetPlatform == TargetPlatform.macOS);
     final isSubWindow = args.length >= 3 && args.first == 'multi_window';
-    final forceDesktopEmbedding =
-        args.contains('--planstar-embed-desktop');
+    final forceDesktopEmbedding = args.contains('--planstar-embed-desktop');
 
-    // 单一真相源：所有 engine 通过原生 DataHub 串行读写，EventChannel 广播。
+    // 单一真相源：所有 engine 通过原生 DataHub 串行读写，Pigeon FlutterApi 广播。
     // 不再使用 SharedPreferences —— 它的 Windows 实现每个 isolate 各缓存一份，
     // 且 legacy reload() 并不会重读磁盘。
     final dataHub = await DataHubStore.create();
@@ -65,8 +66,8 @@ final class AppBootstrap {
     final config = configLoader.cached ?? AppConfig.empty;
 
     final dio = buildDio(
-      baseUrl: config.getString('apiBaseUrl') ??
-          'https://api.planstar.local/v1/',
+      baseUrl:
+          config.getString('apiBaseUrl') ?? 'https://api.planstar.local/v1/',
       enableLogging: false,
     );
     dio.interceptors.add(
@@ -82,18 +83,20 @@ final class AppBootstrap {
     final notificationGateway = FlutterLocalNotificationsGateway(
       logger: logger.child('notify'),
       clock: clock,
-      locationName: config.section('calendar').getString('timezone') ??
-          'Asia/Shanghai',
+      locationName:
+          config.section('calendar').getString('timezone') ?? 'Asia/Shanghai',
     );
     await notificationGateway.initialize();
 
     final windowGateway = WindowManagerGateway(logger: logger.child('window'));
     final trayGateway = TrayManagerGateway(logger: logger.child('tray'));
-    final multiWindowGateway =
-        DesktopMultiWindowGateway(logger: logger.child('multiwindow'));
+    final multiWindowGateway = DesktopMultiWindowGateway(
+      logger: logger.child('multiwindow'),
+    );
     final autoStartGateway = LaunchAtStartupGateway();
-    final soundGateway =
-        AudioPlayersSoundGateway(logger: logger.child('sound'));
+    final soundGateway = AudioPlayersSoundGateway(
+      logger: logger.child('sound'),
+    );
     final fileGateway = DesktopFileGateway();
     final desktopWallpaperGateway = MethodChannelDesktopWallpaperGateway(
       logger: logger.child('wallpaper'),
@@ -116,8 +119,7 @@ final class AppBootstrap {
         if (subWindowArguments['kind'] != 'desktop') {
           final rect = WindowRect.fromJson(
             Map<String, Object?>.from(
-              (subWindowArguments['rect'] as Map?) ??
-                  const <String, Object?>{},
+              (subWindowArguments['rect'] as Map?) ?? const <String, Object?>{},
             ),
           );
           await windowGateway.initializeSubWindow(
@@ -137,6 +139,9 @@ final class AppBootstrap {
       keyValueStoreProvider.overrideWithValue(dataHub),
       storageReloaderProvider.overrideWithValue(dataHub),
       crossEngineSyncProvider.overrideWithValue(dataHub),
+      reloadTargetRegistryProvider.overrideWithValue(
+        buildReloadTargetRegistry(),
+      ),
       secureStoreProvider.overrideWithValue(secureStore),
       loggerProvider.overrideWithValue(logger),
       configLoaderProvider.overrideWithValue(configLoader),
@@ -152,12 +157,8 @@ final class AppBootstrap {
       desktopWallpaperGatewayProvider.overrideWithValue(
         desktopWallpaperGateway,
       ),
-      wallpaperImageGatewayProvider.overrideWithValue(
-        wallpaperImageGateway,
-      ),
-      desktopEmbeddedOverrideProvider.overrideWithValue(
-        forceDesktopEmbedding,
-      ),
+      wallpaperImageGatewayProvider.overrideWithValue(wallpaperImageGateway),
+      desktopEmbeddedOverrideProvider.overrideWithValue(forceDesktopEmbedding),
       trayActionsProvider.overrideWithValue(trayActions.stream),
     ];
 

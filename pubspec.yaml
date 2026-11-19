@@ -4,7 +4,7 @@ publish_to: 'none'
 version: 1.0.0+1
 
 environment:
-  sdk: ^3.11.5
+  sdk: ^3.14.0
 
 # Pub Workspace：packages/infras 下的两个包由根工程统一解析，禁止各自 pub get。
 workspace:
@@ -15,8 +15,12 @@ dependencies:
   flutter:
     sdk: flutter
 
+  # ── 解耦设计库：Flutter 3.50 起 flutter/material.dart 已弃用（ADR-0009）─────
+  # 业务 widget 统一 import package:material_ui/material_ui.dart。
+  material_ui: ^1.11.1
+
   # ── 图标：全项目统一使用 Lucide（lucide_icons_flutter）────────────────────
-  # 4.0.3 对应 Lucide 官方图标集，SDK 约束 ^3.0.0，兼容当前 Dart 3.11.5。
+  # 4.0.3 对应 Lucide 官方图标集。
   lucide_icons_flutter: 4.0.3
 
   # ── 已有基建包：零 Flutter 内核 + 三层设计令牌 ────────────────────────────
@@ -26,41 +30,53 @@ dependencies:
     path: packages/infras/core_design_system
 
   # ── 状态管理 / 路由 ──────────────────────────────────────────────────────
-  # 3.4+ 要求 Dart 3.12，当前 SDK 为 3.11.5，故精确锁定 3.3.2。
-  flutter_riverpod: 3.3.2
-  riverpod: 3.3.2
-  go_router: ^17.5.0
+  flutter_riverpod: ^3.5.0
+  riverpod: ^3.5.0
+  go_router: ^18.1.4
 
   # ── 桌面端关键能力 ───────────────────────────────────────────────────────
-  window_manager: ^0.5.2
+  window_manager: ^0.7.0
   desktop_multi_window: ^0.3.1
-  tray_manager: ^0.5.3
+  tray_manager: ^0.9.0
   launch_at_startup: ^0.5.1
   path_provider: ^2.1.6
   # 13.x 的 windows_file_picker 依赖 win32 6，与 launch_at_startup 的
-  # win32_registry 2.x（win32 5）互斥；11.0.3 使用 win32 5，可共存。
+  # win32_registry 2.x（win32 5）互斥；11.x 使用 win32 5，可共存。
   file_picker: ^11.0.3
+  # 桌面功能统一走 window_manager / tray_manager / screen_retriever 公开新 API；
+  # 仅 Application.quit 未被三包导出，兜底退出处直接引用 nativeapi。
+  nativeapi: ^0.6.1
+  screen_retriever: ^0.4.0
+  hotkey_manager: ^0.4.0
+  # auto_updater 暂时摘除：Windows 实现的 AutoUpdater 是进程级单例，
+  # desktop_multi_window 子 engine 走整份 RegisterPlugins 时第二次构造
+  # 抛 C++ 异常 → abort 冻死平台线程（ADR-0010 / ADR-0012）。
+  # Dart 层零调用；未来接线时只能注册在主 engine，再恢复此依赖。
+  # auto_updater: ^1.0.0
 
   # ── 提醒 / 通知 / 音效 ───────────────────────────────────────────────────
-  # 23.x 要求 Flutter 3.44；22.3.3 是当前 SDK 下最新的 Windows 可用版本。
-  flutter_local_notifications: ^22.3.3
+  flutter_local_notifications: ^23.0.2
   timezone: ^0.11.2
-  # 6.8+ 要求 Flutter 3.44，故锁定 6.7.1。
-  audioplayers: 6.7.1
+  audioplayers: ^6.8.1
 
   # ── core 存储端口的平台适配器 ────────────────────────────────────────────
-  shared_preferences: ^2.5.6
-  # 11.x 的 windows 实现要求 win32 6；10.3.4 走 win32 5，与桌面插件组兼容。
+  # 普通键值存储走 DataHubStore，不再依赖 shared_preferences（ADR-0002 子项 7）。
+  # 11.x 的 windows 实现要求 win32 6；10.x 走 win32 5，与桌面插件组兼容。
   flutter_secure_storage: ^10.3.4
 
   # ── 领域工具 ────────────────────────────────────────────────────────────
   intl: ^0.20.3
   lunar: ^1.7.9
 
+  # ── 本地数据库 ──────────────────────────────────────────────────────────
+  drift_flutter: ^0.3.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  pigeon: ^30.0.4
+  flutter_app_packager: ^0.6.13
 
 flutter:
   uses-material-design: true

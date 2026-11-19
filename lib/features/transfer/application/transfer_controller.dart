@@ -7,7 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../bootstrap/core_providers.dart';
 import '../../../core/value_objects.dart';
-import '../../calendar/application/calendar_controllers.dart';
+import '../../calendar/application/calendar_controller.dart';
 import '../../calendar/domain/repositories.dart';
 
 enum ExportFormat {
@@ -29,23 +29,18 @@ final class TransferState {
   final bool busy;
   final String? message;
 
-  TransferState copyWith({bool? busy, String? message}) => TransferState(
-        busy: busy ?? this.busy,
-        message: message ?? this.message,
-      );
+  TransferState copyWith({bool? busy, String? message}) =>
+      TransferState(busy: busy ?? this.busy, message: message ?? this.message);
 }
 
 final transferControllerProvider =
-    NotifierProvider<TransferController, TransferState>(
-  TransferController.new,
-);
+    NotifierProvider<TransferController, TransferState>(TransferController.new);
 
 final class TransferController extends Notifier<TransferState> {
   @override
   TransferState build() => const TransferState();
 
-  CalendarRepository get _repository =>
-      ref.read(calendarRepositoryProvider);
+  CalendarRepository get _repository => ref.read(calendarRepositoryProvider);
 
   Future<CalendarSnapshot> _snapshot() async {
     final events = await _repository.allEvents();
@@ -73,9 +68,7 @@ final class TransferController extends Notifier<TransferState> {
           if (range != null && !range.contains(cell.date)) continue;
           buffer.writeln('${cell.date.cnFull}：');
           for (final line in cell.lines) {
-            buffer.writeln(
-              '  ${line.completed ? "[完成] " : ""}${line.text}',
-            );
+            buffer.writeln('  ${line.completed ? "[完成] " : ""}${line.text}');
           }
         }
         return buffer.toString();
@@ -111,8 +104,7 @@ final class TransferController extends Notifier<TransferState> {
     }
   }
 
-  String _escapeCsv(String value) =>
-      '"${value.replaceAll('"', '""')}"';
+  String _escapeCsv(String value) => '"${value.replaceAll('"', '""')}"';
 
   Future<void> exportTo({
     required ExportFormat format,
@@ -135,8 +127,7 @@ final class TransferController extends Notifier<TransferState> {
             : null;
     }
     final content = _render(format, snapshot, range: effectiveRange);
-    final suggested =
-        'planstar_${today.key}.${format.extension}';
+    final suggested = 'planstar_${today.key}.${format.extension}';
     final path = await ref.read(fileGatewayProvider).pickSavePath(suggested);
     if (path == null) {
       state = state.copyWith(busy: false, message: '已取消导出');
@@ -156,9 +147,7 @@ final class TransferController extends Notifier<TransferState> {
   }
 
   /// 导入数据库文件：同日期冲突时默认替换（旧版「所有冲突都选择该方法」）。
-  Future<void> importFrom({
-    bool replaceConflicts = true,
-  }) async {
+  Future<void> importFrom({bool replaceConflicts = true}) async {
     state = state.copyWith(busy: true, message: '请选择要导入的文件…');
     final path = await ref.read(fileGatewayProvider).pickOpenPath();
     if (path == null) {

@@ -10,6 +10,7 @@ add_executable(${BINARY_NAME} WIN32
   "flutter_window.cpp"
   "desktop_wallpaper_plugin.cpp"
   "data_hub_plugin.cpp"
+  "generated/data_hub.g.cpp"
   "main.cpp"
   "utils.cpp"
   "win32_window.cpp"
@@ -21,6 +22,10 @@ add_executable(${BINARY_NAME} WIN32
 # Apply the standard set of build settings. This can be removed for applications
 # that need different build settings.
 apply_standard_settings(${BINARY_NAME})
+
+# 源码注释为中文（UTF-8 无 BOM）；MSVC 默认按代码页 936 解读会报 C4819，
+# 而标准设置开了 /WX，必须显式声明源文件编码。
+target_compile_options(${BINARY_NAME} PRIVATE /utf-8)
 
 # Add preprocessor definitions for the build version.
 target_compile_definitions(${BINARY_NAME} PRIVATE "FLUTTER_VERSION=\"${FLUTTER_VERSION}\"")

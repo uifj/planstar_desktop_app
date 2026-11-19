@@ -30,45 +30,52 @@ sealed class Result<T> {
 
   /// 失败描述；成功时为 `null`。
   Failure? get failure => switch (this) {
-        Success<T>() => null,
-        Fail<T>(:final failure) => failure,
-      };
+    Success<T>() => null,
+    Fail<T>(:final failure) => failure,
+  };
 
   /// 成功值。失败态访问会抛 [StateError]——请先用 `switch` 或 [fold]。
   T get requireData => switch (this) {
-        Success<T>(:final data) => data,
-        Fail<T>(:final failure) =>
-          throw StateError('Result 是失败态，不能取 data：$failure'),
-      };
+    Success<T>(:final data) => data,
+    Fail<T>(:final failure) => throw StateError(
+      'Result 是失败态，不能取 data：$failure',
+    ),
+  };
 
   /// 二分折叠。
   R fold<R>({
     required R Function(Failure failure) onFailure,
     required R Function(T data) onSuccess,
-  }) =>
-      switch (this) {
-        Success<T>(:final data) => onSuccess(data),
-        Fail<T>(:final failure) => onFailure(failure),
-      };
+  }) => switch (this) {
+    Success<T>(:final data) => onSuccess(data),
+    Fail<T>(:final failure) => onFailure(failure),
+  };
 
   /// 映射成功值；失败原样透传。
   Result<R> map<R>(R Function(T data) transform) => switch (this) {
-        Success<T>(:final data) => Success<R>(transform(data)),
-        Fail<T>(:final failure) => Fail<R>(failure),
-      };
+    Success<T>(:final data) => Success<R>(transform(data)),
+    Fail<T>(:final failure) => Fail<R>(failure),
+  };
 
   /// 链式映射（`transform` 自己返回 [Result]，用于串联可能失败的一步）。
-  Result<R> flatMap<R>(Result<R> Function(T data) transform) =>
-      switch (this) {
-        Success<T>(:final data) => transform(data),
-        Fail<T>(:final failure) => Fail<R>(failure),
-      };
+  Result<R> flatMap<R>(Result<R> Function(T data) transform) => switch (this) {
+    Success<T>(:final data) => transform(data),
+    Fail<T>(:final failure) => Fail<R>(failure),
+  };
+
+  /// [flatMap] 的异步版：串联可能失败的异步一步（读存储 → 写存储）。
+  Future<Result<R>> flatMapAsync<R>(
+    Future<Result<R>> Function(T data) transform,
+  ) async => switch (this) {
+    Success<T>(:final data) => await transform(data),
+    Fail<T>(:final failure) => Fail<R>(failure),
+  };
 
   /// 取成功值，失败时用 [fallback] 兜底。
   T getOrElse(T Function(Failure failure) fallback) => switch (this) {
-        Success<T>(:final data) => data,
-        Fail<T>(:final failure) => fallback(failure),
-      };
+    Success<T>(:final data) => data,
+    Fail<T>(:final failure) => fallback(failure),
+  };
 
   /// 成功时执行副作用并原样返回（用于埋点/日志，不改变结果）。
   Result<T> tap(void Function(T data) effect) {
@@ -133,4 +140,22 @@ final class Fail<T> extends Result<T> {
 
   @override
   String toString() => 'Fail($failure)';
+}
+
+/// 把可能抛异常的异步边界（文件 IO / 插件通道）收敛成 [Result]。
+///
+/// 与 [Result.guard] 一样只用于**边界**；业务内部不要用它吞掉逻辑错误。
+Future<Result<T>> guardAsync<T>(Future<T> Function() body) async {
+  try {
+    return Success<T>(await body());
+  } catch (error) {
+    return Fail<T>(
+      Failure(
+        code: 'LOCAL_IO_ERROR',
+        message: '本地操作失败：$error',
+        type: FailureType.data,
+        cause: error,
+      ),
+    );
+  }
 }

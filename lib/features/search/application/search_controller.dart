@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../bootstrap/core_providers.dart';
 import '../../../core/value_objects.dart';
-import '../../calendar/application/calendar_controllers.dart';
+import '../../calendar/application/calendar_controller.dart';
 import '../../calendar/domain/recurrence_policy.dart';
 import '../../countdown/application/countdown_controller.dart';
 import '../../notes/application/notes_controller.dart';
@@ -61,14 +61,13 @@ final class SearchState {
     DateKey? customStart,
     DateKey? customEnd,
     List<SearchHit>? hits,
-  }) =>
-      SearchState(
-        keyword: keyword ?? this.keyword,
-        range: range ?? this.range,
-        customStart: customStart ?? this.customStart,
-        customEnd: customEnd ?? this.customEnd,
-        hits: hits ?? this.hits,
-      );
+  }) => SearchState(
+    keyword: keyword ?? this.keyword,
+    range: range ?? this.range,
+    customStart: customStart ?? this.customStart,
+    customEnd: customEnd ?? this.customEnd,
+    hits: hits ?? this.hits,
+  );
 }
 
 final searchControllerProvider =
@@ -83,13 +82,15 @@ final class SearchController extends Notifier<SearchState> {
     return switch (s.range) {
       SearchRange.all => null,
       SearchRange.oneMonth => DateRange(today.addDays(-30), today.addDays(365)),
-      SearchRange.threeMonths =>
-        DateRange(today.addDays(-90), today.addDays(365)),
-      SearchRange.oneYear =>
-        DateRange(today.addDays(-365), today.addDays(365)),
-      SearchRange.custom => (s.customStart != null && s.customEnd != null)
-          ? DateRange(s.customStart!, s.customEnd!)
-          : null,
+      SearchRange.threeMonths => DateRange(
+        today.addDays(-90),
+        today.addDays(365),
+      ),
+      SearchRange.oneYear => DateRange(today.addDays(-365), today.addDays(365)),
+      SearchRange.custom =>
+        (s.customStart != null && s.customEnd != null)
+            ? DateRange(s.customStart!, s.customEnd!)
+            : null,
     };
   }
 
@@ -116,7 +117,7 @@ final class SearchController extends Notifier<SearchState> {
 
     if (query.isNotEmpty) {
       final calendar = ref.read(calendarControllerProvider);
-      for (final cell in calendar.cells) {
+      for (final cell in calendar.cells.values) {
         for (final line in cell.lines) {
           if (!line.text.toLowerCase().contains(query)) continue;
           if (!inRange(cell.date)) continue;

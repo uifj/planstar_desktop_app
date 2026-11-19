@@ -6,9 +6,6 @@ list(APPEND FLUTTER_PLUGIN_LIST
   audioplayers_linux
   desktop_multi_window
   flutter_secure_storage_linux
-  screen_retriever_linux
-  tray_manager
-  window_manager
 )
 
 list(APPEND FLUTTER_FFI_PLUGIN_LIST

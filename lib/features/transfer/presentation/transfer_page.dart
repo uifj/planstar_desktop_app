@@ -3,7 +3,7 @@ library;
 
 import 'package:core_design_system/core_design_system.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../shared/widgets/common.dart';
@@ -42,8 +42,7 @@ final class _TransferPageState extends ConsumerState<TransferPage> {
                     ChoiceChip(
                       label: Text(format.label),
                       selected: _format == format,
-                      onSelected: (_) =>
-                          setState(() => _format = format),
+                      onSelected: (_) => setState(() => _format = format),
                     ),
                 ],
               ),
@@ -77,10 +76,8 @@ final class _TransferPageState extends ConsumerState<TransferPage> {
                 child: FilledButton.icon(
                   onPressed: state.busy
                       ? null
-                      : () => controller.exportTo(
-                            format: _format,
-                            range: _range,
-                          ),
+                      : () =>
+                            controller.exportTo(format: _format, range: _range),
                   icon: const Icon(LucideIcons.download, size: 16),
                   label: const Text('导出到文件'),
                 ),
@@ -100,9 +97,8 @@ final class _TransferPageState extends ConsumerState<TransferPage> {
                 contentPadding: EdgeInsets.zero,
                 title: const Text('所有冲突都替换为导入内容'),
                 value: _replaceConflicts,
-                onChanged: (bool? value) => setState(
-                  () => _replaceConflicts = value ?? true,
-                ),
+                onChanged: (bool? value) =>
+                    setState(() => _replaceConflicts = value ?? true),
               ),
               Align(
                 alignment: Alignment.centerRight,
@@ -110,8 +106,8 @@ final class _TransferPageState extends ConsumerState<TransferPage> {
                   onPressed: state.busy
                       ? null
                       : () => controller.importFrom(
-                            replaceConflicts: _replaceConflicts,
-                          ),
+                          replaceConflicts: _replaceConflicts,
+                        ),
                   icon: const Icon(LucideIcons.upload, size: 16),
                   label: const Text('选择文件并导入'),
                 ),

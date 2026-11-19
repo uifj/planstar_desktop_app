@@ -9,7 +9,7 @@ import 'dart:ui' as ui;
 
 import '../../../core/ports.dart';
 import '../../../core/value_objects.dart';
-import '../../calendar/application/calendar_controllers.dart';
+import '../../calendar/presentation/read_model/month_data.dart';
 import '../../settings/domain/app_settings.dart';
 
 final class WallpaperRenderer {
@@ -29,10 +29,7 @@ final class WallpaperRenderer {
     final double scale = (h / 1080).clamp(0.75, 1.6).toDouble();
 
     final recorder = ui.PictureRecorder();
-    final canvas = ui.Canvas(
-      recorder,
-      ui.Rect.fromLTWH(0, 0, w, h),
-    );
+    final canvas = ui.Canvas(recorder, ui.Rect.fromLTWH(0, 0, w, h));
     final full = ui.Rect.fromLTWH(0, 0, w, h);
 
     _drawBackground(canvas, full, settings, background);
@@ -53,9 +50,7 @@ final class WallpaperRenderer {
     final picture = recorder.endRecording();
     final image = await picture.toImage(width, height);
     try {
-      final bytes = await image.toByteData(
-        format: ui.ImageByteFormat.png,
-      );
+      final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
       return Uint8List.fromList(bytes!.buffer.asUint8List());
     } finally {
       image.dispose();
@@ -69,17 +64,9 @@ final class WallpaperRenderer {
     ui.Image? background,
   ) {
     if (background != null) {
-      _drawImageFit(
-        canvas,
-        background,
-        bounds,
-        settings.wallpaperFit,
-      );
+      _drawImageFit(canvas, background, bounds, settings.wallpaperFit);
       // 压暗底图，保证白色日历文字可读。
-      canvas.drawRect(
-        bounds,
-        ui.Paint()..color = const ui.Color(0x880A0D14),
-      );
+      canvas.drawRect(bounds, ui.Paint()..color = const ui.Color(0x880A0D14));
       return;
     }
     canvas.drawRect(
@@ -151,10 +138,7 @@ final class WallpaperRenderer {
     const ui.Color secondaryText = ui.Color(0xFFA9B2C4);
 
     canvas.drawRRect(
-      ui.RRect.fromRectAndRadius(
-        bounds,
-        ui.Radius.circular(20 * scale),
-      ),
+      ui.RRect.fromRectAndRadius(bounds, ui.Radius.circular(20 * scale)),
       ui.Paint()..color = const ui.Color(0xDE10141E),
     );
 
@@ -182,11 +166,8 @@ final class WallpaperRenderer {
         : month.columns.first;
     final rows = _clampInt(settings.maxRows, 1, days.length ~/ 7);
     final cellWidth = innerWidth / 7;
-    final gridHeight = bounds.height -
-        pad * 2 -
-        titleHeight -
-        headerHeight -
-        footerHeight;
+    final gridHeight =
+        bounds.height - pad * 2 - titleHeight - headerHeight - footerHeight;
     final cellHeight = gridHeight / (rows == 0 ? 1 : rows);
 
     for (var column = 0; column < 7; column++) {
@@ -221,23 +202,17 @@ final class WallpaperRenderer {
       );
       final isRest = day.meta.isRestDay || day.meta.isMakeupWorkday;
       canvas.drawRRect(
-        ui.RRect.fromRectAndRadius(
-          cellRect,
-          ui.Radius.circular(8 * scale),
-        ),
+        ui.RRect.fromRectAndRadius(cellRect, ui.Radius.circular(8 * scale)),
         ui.Paint()
           ..color = day.isToday
               ? accent.withAlpha(46)
               : (isRest
-                  ? const ui.Color(0x1AFF5F5F)
-                  : const ui.Color(0x12FFFFFF)),
+                    ? const ui.Color(0x1AFF5F5F)
+                    : const ui.Color(0x12FFFFFF)),
       );
       if (day.isToday) {
         canvas.drawRRect(
-          ui.RRect.fromRectAndRadius(
-            cellRect,
-            ui.Radius.circular(8 * scale),
-          ),
+          ui.RRect.fromRectAndRadius(cellRect, ui.Radius.circular(8 * scale)),
           ui.Paint()
             ..style = ui.PaintingStyle.stroke
             ..strokeWidth = 2 * scale
@@ -315,11 +290,12 @@ final class WallpaperRenderer {
       final content = occurrence.event.content.trim();
       if (content.isNotEmpty) lines.add(content);
     }
-    for (final item in day.subscriptionEvents) {
-      if (item.title.trim().isNotEmpty) lines.add(item.title.trim());
-    }
-    for (final lesson in day.lessons) {
-      if (lesson.name.trim().isNotEmpty) lines.add(lesson.name.trim());
+    for (final tag in day.tags) {
+      if (tag.kind != TimelineTagKind.subscription &&
+          tag.kind != TimelineTagKind.lesson) {
+        continue;
+      }
+      if (tag.text.trim().isNotEmpty) lines.add(tag.text.trim());
     }
     return lines;
   }

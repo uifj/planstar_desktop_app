@@ -11,10 +11,7 @@ import 'value_objects.dart';
 
 /// 事件基类：统一带上聚合 id 与发生时刻。
 abstract base class AppDomainEvent extends DomainEvent {
-  const AppDomainEvent({
-    required this.aggregateId,
-    required super.occurredAt,
-  });
+  const AppDomainEvent({required this.aggregateId, required super.occurredAt});
 
   final String aggregateId;
 }
@@ -56,6 +53,25 @@ final class DayCellChanged extends AppDomainEvent {
 
   final DateKey date;
   final String snapshot;
+}
+
+/// 完成转变的来源：日历事件按次完成，或单元格清单行勾选。
+enum TaskCompletionSource { event, cellLine }
+
+/// 「未完成 → 完成」转变的显式事实（ADR-0005）。
+///
+/// 只在操作发起 engine 的本地总线分发：跨 engine 重载走
+/// [CrossEngineDataChanged]，不会也不应重建本事件——提示音只在操作端响。
+final class TaskCompleted extends AppDomainEvent {
+  const TaskCompleted({
+    required super.aggregateId,
+    required super.occurredAt,
+    required this.date,
+    required this.source,
+  });
+
+  final DateKey date;
+  final TaskCompletionSource source;
 }
 
 /// 便签变更。携带标题与正文摘要，供历史页显示可读内容

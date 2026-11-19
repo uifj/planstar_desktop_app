@@ -5,10 +5,11 @@
 /// 平台实现丢弃缓存——因此「写盘 + 标记文件 + reload」这条旧链路在 Windows
 /// 上从来不会把另一个 engine 的数据读进来。
 ///
-/// 现在所有写操作经 MethodChannel 汇聚到同进程的原生 [DataHub] 串行执行，
-/// 成功后由 EventChannel 广播带单调 revision 的增量。本类同时实现
-/// `KeyValueStore` / `StorageReloader` / `CrossEngineSync` 三个端口，
-/// 领域层与各 controller 无需改动。
+/// 现在所有写操作经 Pigeon 生成的 [DataHubHostApi] 汇聚到同进程的原生
+/// DataHub 串行执行，成功后由原生层经 [DataHubFlutterApi] 代理向各 engine
+/// 推送带单调 revision 的增量（ADR-0007：取代手写 MethodChannel/EventChannel）。
+/// 本类同时实现 `KeyValueStore` / `StorageReloader` / `CrossEngineSync` 三个
+/// 端口，领域层与各 controller 无需改动。
 ///
 /// 非 Windows 或原生插件缺失时自动降级为 [_LocalBackend]（原子写 + 轮询），
 /// 保证 Linux / macOS / Web / 单元测试可运行。
@@ -21,13 +22,11 @@ import 'dart:math';
 
 import 'package:core/storage.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../core/ports.dart';
+import 'generated/data_hub.g.dart';
 
-const String dataHubMethodChannel = 'planstar/data_hub';
-const String dataHubEventChannel = 'planstar/data_hub_events';
 const String dataHubFileName = 'planstar_data_hub.json';
 const String legacyPrefsFileName = 'shared_preferences.json';
 
@@ -63,7 +62,8 @@ final class DataHubStore
     bool forceLocal = false,
     String? supportDirectory,
   }) async {
-    final useNative = !forceLocal &&
+    final useNative =
+        !forceLocal &&
         !kIsWeb &&
         defaultTargetPlatform == TargetPlatform.windows;
     if (useNative) {
@@ -109,13 +109,12 @@ final class DataHubStore
   void dispose() => _backend.dispose();
 }
 
-/// Windows：原生进程级 DataHub。
-final class _NativeBackend implements _Backend {
+/// Windows：原生进程级 DataHub（Pigeon 命令面 + 广播接收器）。
+final class _NativeBackend implements _Backend, DataHubFlutterApi {
   _NativeBackend({this.supportDirectory});
 
   final String? supportDirectory;
-  final MethodChannel _method = const MethodChannel(dataHubMethodChannel);
-  final EventChannel _events = const EventChannel(dataHubEventChannel);
+  final DataHubHostApi _host = DataHubHostApi();
   final StreamController<DataChange> _changes =
       StreamController<DataChange>.broadcast();
   final Map<String, String> _entries = <String, String>{};
@@ -123,9 +122,8 @@ final class _NativeBackend implements _Backend {
   late final String _origin;
   int _lastRevision = 0;
   // 本 engine 自己提交的 revision。广播先于 method result 到达时用于
-  // 补偿去重；但主过滤靠 origin，不依赖两条 channel 的到达顺序。
+  // 补偿去重；但主过滤靠 origin，不依赖两条通道的到达顺序。
   final Set<int> _ownRevisions = <int>{};
-  StreamSubscription<dynamic>? _subscription;
 
   @override
   Stream<DataChange> get changes => _changes.stream;
@@ -134,64 +132,40 @@ final class _NativeBackend implements _Backend {
   Future<void> initialize() async {
     _origin =
         '${DateTime.now().microsecondsSinceEpoch}-${Random().nextInt(1 << 31)}';
-    final root = supportDirectory ??
-        (await getApplicationSupportDirectory()).path;
+    final root =
+        supportDirectory ?? (await getApplicationSupportDirectory()).path;
     final entries = await _loadInitialEntries(root);
-    final configured = await _method.invokeMapMethod<String, Object?>(
-      'configure',
-      <String, Object?>{
-        'filePath': '$root/$dataHubFileName',
-        'entries': entries,
-      },
-    );
-    if (configured == null) {
-      throw StateError('DataHub.configure 未返回结果');
-    }
+    final configured = await _host.configure('$root/$dataHubFileName', entries);
     _adoptSnapshot(configured);
-    _subscription = _events.receiveBroadcastStream().listen(
-          _onEvent,
-          onError: (Object _) {
-            // 事件流异常时退化为「仅本 engine 可见」，不阻断业务流程。
-          },
-        );
+    DataHubFlutterApi.setUp(this);
   }
 
-  void _adoptSnapshot(Map<String, Object?> snapshot) {
-    final revision = (snapshot['revision'] as num?)?.toInt() ?? 0;
-    final raw = snapshot['entries'];
-    if (raw is Map) {
-      _entries
-        ..clear()
-        ..addEntries(
-          raw.entries.map(
-            (MapEntry<dynamic, dynamic> e) =>
-                MapEntry<String, String>('${e.key}', '${e.value}'),
-          ),
-        );
-    }
-    if (revision > _lastRevision) _lastRevision = revision;
+  void _adoptSnapshot(DataHubSnapshot snapshot) {
+    _entries
+      ..clear()
+      ..addAll(snapshot.entries);
+    if (snapshot.revision > _lastRevision) _lastRevision = snapshot.revision;
   }
 
-  void _onEvent(dynamic event) {
-    if (event is! Map) return;
-    final raw = Map<Object?, Object?>.from(event);
-    final revision = (raw['revision'] as num?)?.toInt() ?? 0;
+  @override
+  void dataChanged(DataChangePayload payload) {
+    final revision = payload.revision;
     // 单调推进：只丢弃重复的旧广播，不因 method result 跳过任何一次变更。
     if (revision <= _lastRevision) return;
     _lastRevision = revision;
     _ownRevisions.removeWhere((int r) => r < revision);
-    final key = '${raw['key'] ?? ''}';
-    final origin = '${raw['origin'] ?? ''}';
+    final key = payload.key;
+    final origin = payload.origin;
     // 原生层在 method result 之前广播，_ownRevisions 可能尚未登记；
     // 但 origin 是发起方 engine 标识，能确定性地跳过自反馈。
     // 必须放在应用 value 之前：自己的写入已由 _applyResult 乐观更新。
     if (origin.isNotEmpty && origin == _origin) return;
-    final deleted = raw['deleted'] == true;
-    final value = raw['value'];
+    final deleted = payload.deleted;
+    final value = payload.value;
     if (deleted) {
       _entries.remove(key);
     } else if (value != null) {
-      _entries[key] = '$value';
+      _entries[key] = value;
     }
     // 自己提交的写入：本地已乐观更新且副作用由领域事件处理，跳过广播，
     // 避免重复 load / 重复 dirty 计数。
@@ -211,51 +185,42 @@ final class _NativeBackend implements _Backend {
 
   @override
   Future<void> write(String key, String value) async {
-    final result = await _method.invokeMapMethod<String, Object?>(
-      'write',
-      <String, Object?>{
-        'key': key,
-        'value': value,
-        'origin': _origin,
-      },
-    );
+    final result = await _host.write(key, value, _origin);
     _applyResult(key, value, false, result);
   }
 
   @override
   Future<void> delete(String key) async {
-    final result = await _method.invokeMapMethod<String, Object?>(
-      'delete',
-      <String, Object?>{'key': key, 'origin': _origin},
-    );
+    final result = await _host.delete(key, _origin);
     _applyResult(key, null, true, result);
   }
 
   @override
   Future<void> clear() async {
-    final snapshot = await _method.invokeMapMethod<String, Object?>('clear');
+    final result = await _host.clear();
+    if (!result.ok) {
+      throw StateError('DataHub 清空失败：${result.error ?? '未知错误'}');
+    }
     _entries.clear();
-    if (snapshot != null) _adoptSnapshot(snapshot);
+    _ownRevisions.add(result.revision);
+    if (result.revision > _lastRevision) _lastRevision = result.revision;
   }
 
   void _applyResult(
     String key,
     String? value,
     bool deleted,
-    Map<String, Object?>? result,
+    WriteResult result,
   ) {
-    if (result == null || result['ok'] != true) {
-      throw StateError(
-        'DataHub 写入失败：$key${result == null ? '' : '（${result['error'] ?? '未知错误'}）'}',
-      );
+    if (!result.ok) {
+      throw StateError('DataHub 写入失败：$key（${result.error ?? '未知错误'}）');
     }
     if (deleted) {
       _entries.remove(key);
     } else if (value != null) {
       _entries[key] = value;
     }
-    final revision = (result['revision'] as num?)?.toInt() ?? 0;
-    _ownRevisions.add(revision);
+    _ownRevisions.add(result.revision);
   }
 
   @override
@@ -263,15 +228,13 @@ final class _NativeBackend implements _Backend {
 
   @override
   Future<void> reload() async {
-    final snapshot =
-        await _method.invokeMapMethod<String, Object?>('snapshot');
-    if (snapshot != null) _adoptSnapshot(snapshot);
+    _adoptSnapshot(await _host.snapshot());
   }
 
   @override
   void dispose() {
-    _subscription?.cancel();
-    _subscription = null;
+    DataHubFlutterApi.setUp(null);
+    unawaited(_host.release());
     _changes.close();
   }
 }
@@ -335,14 +298,11 @@ final class _LocalBackend implements _Backend {
       final raw = decoded['entries'];
       if (raw is! Map) return;
       final next = raw.map(
-        (Object? k, Object? v) =>
-            MapEntry<String, String>('$k', '$v'),
+        (Object? k, Object? v) => MapEntry<String, String>('$k', '$v'),
       );
       final changedKeys = <String>{
         ..._entries.keys.where((String k) => !next.containsKey(k)),
-        ...next.keys.where(
-          (String k) => _entries[k] != next[k],
-        ),
+        ...next.keys.where((String k) => _entries[k] != next[k]),
       };
       _entries
         ..clear()
@@ -368,10 +328,7 @@ final class _LocalBackend implements _Backend {
     _revision++;
     final tmp = File('${_file.path}.tmp');
     await tmp.writeAsString(
-      jsonEncode(<String, Object?>{
-        'revision': _revision,
-        'entries': _entries,
-      }),
+      jsonEncode(<String, Object?>{'revision': _revision, 'entries': _entries}),
       flush: true,
     );
     await tmp.rename(_file.path);
@@ -394,8 +351,7 @@ final class _LocalBackend implements _Backend {
   Future<String?> read(String key) async => _entries[key];
 
   @override
-  Future<void> write(String key, String value) =>
-      _enqueue(key, value, false);
+  Future<void> write(String key, String value) => _enqueue(key, value, false);
 
   @override
   Future<void> delete(String key) => _enqueue(key, null, true);
@@ -426,8 +382,7 @@ Future<Map<String, String>> _loadInitialEntries(String dir) async {
       final decoded = jsonDecode(await hub.readAsString());
       if (decoded is Map && decoded['entries'] is Map) {
         return (decoded['entries'] as Map).map(
-          (Object? k, Object? v) =>
-              MapEntry<String, String>('$k', '$v'),
+          (Object? k, Object? v) => MapEntry<String, String>('$k', '$v'),
         );
       }
     } on Object {

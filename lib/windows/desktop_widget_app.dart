@@ -10,28 +10,41 @@
 ///
 /// 所有编辑都通过既有的 `CalendarController` 用例落到同一套仓储与领域事件，
 /// 主窗口通过 `CrossEngineSync` 立即看到结果，数据流与页面内编辑完全一致。
+///
+/// ADR-0006 步骤5：几何（位置/尺寸/浮层矩形）与编辑态分别收敛到独立
+/// [ValueNotifier]，拖动/缩放只通知几何域，卡片内容作为缓存 child 不随
+/// 几何重建；月历网格 / 编辑器浮层 / 调色板拆为独立 widget，各自只监听
+/// 相关域。命中区域 / 拖动手势 / `_pushRegion` 链路逻辑保持原样。
 library;
 
 import 'dart:async';
 
 import 'package:core/storage.dart';
 import 'package:core_design_system/core_design_system.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../bootstrap/core_providers.dart';
 import '../core/ports.dart';
 import '../core/value_objects.dart';
-import '../features/calendar/application/calendar_controllers.dart';
+import '../features/calendar/application/calendar_controller.dart';
 import '../features/calendar/domain/calendar_event.dart';
 import '../features/calendar/domain/day_cell.dart';
+import '../features/calendar/presentation/calendar_providers.dart';
+import '../features/calendar/presentation/read_model/month_data.dart';
 import '../features/history/application/history_controller.dart';
 import '../features/settings/application/settings_controller.dart';
 import '../features/settings/domain/app_settings.dart';
-import '../features/subscription/domain/subscription.dart';
 import '../shared/widgets/common.dart';
 import 'popup_layout.dart';
+
+/// 桌面卡片位置/尺寸的持久化键。
+const String desktopCardPositionKey = 'planstar.desktop.card.v2';
+
+/// 卡片位置键的重载分组注册（只有 overlay engine 自己消费）。
+void registerDesktopPositionReloadTargets(ReloadTargetRegistry registry) =>
+    registry.registerKey(desktopCardPositionKey, 'position');
 
 enum _ColorTarget { none, text, cell }
 
@@ -45,6 +58,89 @@ enum _ResizeEdge {
   topRight,
   bottomLeft,
   bottomRight,
+}
+
+/// 卡片几何域：位置 / 尺寸 / 浮层矩形。拖动/缩放只改这里，
+/// 与编辑态解耦，避免高频 pointer 移动重建整张月历网格。
+final class _Geometry {
+  const _Geometry({
+    required this.x,
+    required this.y,
+    required this.width,
+    required this.height,
+    this.popupRect,
+  });
+
+  final double x;
+  final double y;
+  final double width;
+  final double height;
+  final Rect? popupRect;
+
+  static const Object _unset = Object();
+
+  _Geometry copyWith({
+    double? x,
+    double? y,
+    double? width,
+    double? height,
+    Object? popupRect = _unset,
+  }) => _Geometry(
+    x: x ?? this.x,
+    y: y ?? this.y,
+    width: width ?? this.width,
+    height: height ?? this.height,
+    popupRect: identical(popupRect, _unset)
+        ? this.popupRect
+        : popupRect as Rect?,
+  );
+}
+
+/// 编辑态域：选中 / 编辑 / 浮层日期 / 调色板目标 / 清空确认 / 最近用色。
+/// 与几何域分离，编辑操作不触发卡片重定位。
+///
+/// 注意：`activeLineId`（当前聚焦行）不在此域内——它在输入框聚焦时静默更新、
+/// 只被动作/调色板按需读取，若纳入通知会在打字聚焦时重建浮层、扰乱光标。
+final class _Editing {
+  const _Editing({
+    this.selectedDate,
+    this.editingDate,
+    this.popupDate,
+    this.paletteTarget = _ColorTarget.none,
+    this.confirmClear = false,
+    this.recentColors = const <EventColor>[],
+  });
+
+  final DateKey? selectedDate;
+  final DateKey? editingDate;
+  final DateKey? popupDate;
+  final _ColorTarget paletteTarget;
+  final bool confirmClear;
+  final List<EventColor> recentColors;
+
+  static const Object _unset = Object();
+
+  _Editing copyWith({
+    Object? selectedDate = _unset,
+    Object? editingDate = _unset,
+    Object? popupDate = _unset,
+    _ColorTarget? paletteTarget,
+    bool? confirmClear,
+    List<EventColor>? recentColors,
+  }) => _Editing(
+    selectedDate: identical(selectedDate, _unset)
+        ? this.selectedDate
+        : selectedDate as DateKey?,
+    editingDate: identical(editingDate, _unset)
+        ? this.editingDate
+        : editingDate as DateKey?,
+    popupDate: identical(popupDate, _unset)
+        ? this.popupDate
+        : popupDate as DateKey?,
+    paletteTarget: paletteTarget ?? this.paletteTarget,
+    confirmClear: confirmClear ?? this.confirmClear,
+    recentColors: recentColors ?? this.recentColors,
+  );
 }
 
 final class DesktopWidgetApp extends ConsumerStatefulWidget {
@@ -71,11 +167,16 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
   static const double _popupHeight = 368;
   static const double _popupGap = 6;
   static const double _popupRadius = 12;
-  static const String _positionKey = 'planstar.desktop.card.v2';
 
-  // 尺寸与位置一样是持久化状态；格子由 LayoutBuilder 按可用空间自适应。
-  double _cardWidth = _defaultCardWidth;
-  double _cardHeight = _defaultCardHeight;
+  // 几何域：尺寸与位置一样是持久化状态；格子由 LayoutBuilder 自适应。
+  final ValueNotifier<_Geometry> _geometry = ValueNotifier<_Geometry>(
+    const _Geometry(
+      x: 96,
+      y: 96,
+      width: _defaultCardWidth,
+      height: _defaultCardHeight,
+    ),
+  );
 
   // 虚拟屏逻辑尺寸由多个来源取最大值：子窗口 engine 的 MediaQuery / view
   // 尺寸可能随启动时序偏小，原生 GetSystemMetrics 才是权威虚拟屏范围。
@@ -92,21 +193,16 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
   // 默认卡片宽度下单格的宽度，用于把字号随格子尺寸等比缩放。
   static const double _referenceCellWidth = 140;
 
-  double _x = 96;
-  double _y = 96;
-  // 选中态与编辑态分离：单击只选中并高亮格子，编辑只在浮层里进行。
-  DateKey? _selectedDate;
-  DateKey? _editingDate;
+  // 编辑态域：单击只选中并高亮格子，编辑只在浮层里进行。
+  final ValueNotifier<_Editing> _editing = ValueNotifier<_Editing>(
+    const _Editing(),
+  );
   // 桌面鼠标下 GestureDetector 的 onDoubleTap 常与 onTap 竞争失败，
   // 因此自己按「同一格 + 350ms 内两次点击」判定双击。
   DateTime? _lastCellTapAt;
   DateKey? _lastCellTapDate;
-  // 长按/双击弹出的完整编辑器；_popupRect 是 overlay 窗口坐标系的逻辑像素矩形。
-  DateKey? _popupDate;
-  Rect? _popupRect;
+  // 当前聚焦行：聚焦时静默更新（不通知），只被动作/调色板按需读取。
   String? _activeLineId;
-  _ColorTarget _paletteTarget = _ColorTarget.none;
-  bool _confirmClear = false;
   bool _dragging = false;
   Offset _dragOrigin = Offset.zero;
   double _dragStartX = 0;
@@ -114,8 +210,9 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
 
   // 窗口创建/激活时 Windows 会投递一次孤立 pointer 事件，落在角手柄上会
   // 被误判成 resize；启动后短暂冷却，用户无感但能挡掉这类伪拖拽。
-  final DateTime _resizeEnabledAt =
-      DateTime.now().add(const Duration(milliseconds: 1500));
+  final DateTime _resizeEnabledAt = DateTime.now().add(
+    const Duration(milliseconds: 1500),
+  );
   bool _resizing = false;
   bool _resizeActivated = false;
   _ResizeEdge? _resizeEdge;
@@ -128,10 +225,16 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
   late final KeyValueStore _store;
   // 读取完成前不允许写盘，避免启动期的生命周期回调覆盖已保存的位置/尺寸。
   bool _positionLoaded = false;
+  // 启动期子窗口 view 还是创建尺寸（1920×1080 物理），先于全屏化到达的
+  // clamp 若从「上一次 clamp 结果」出发会把存储坐标压扁且再也恢复不回来；
+  // 故 clamp 始终从存储原值出发，直到用户拖拽/调整接管几何。
+  Offset? _restoredOrigin;
   final TextEditingController _input = TextEditingController();
   final TextEditingController _cellInput = TextEditingController();
   final FocusNode _cellFocus = FocusNode();
-  final List<EventColor> _recentColors = <EventColor>[];
+
+  _Geometry get _geo => _geometry.value;
+  _Editing get _ed => _editing.value;
 
   @override
   void initState() {
@@ -160,13 +263,15 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
     _input.dispose();
     _cellInput.dispose();
     _cellFocus.dispose();
+    _geometry.dispose();
+    _editing.dispose();
     super.dispose();
   }
 
   @override
   void didChangeMetrics() {
     _screen = MediaQuery.sizeOf(context);
-    setState(_clampToScreen);
+    _clampToScreen();
     _regionSignature = '';
     _pushRegion();
   }
@@ -182,29 +287,33 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
   }
 
   Future<void> _loadPosition() async {
-    final json = await _store.readJson(_positionKey);
+    final json = await _store.readJson(desktopCardPositionKey);
+    var g = _geo;
     if (json != null) {
-      _x = (json['x'] as num?)?.toDouble() ?? _x;
-      _y = (json['y'] as num?)?.toDouble() ?? _y;
-      _cardWidth = (json['width'] as num?)?.toDouble() ?? _cardWidth;
-      _cardHeight = (json['height'] as num?)?.toDouble() ?? _cardHeight;
+      g = g.copyWith(
+        x: (json['x'] as num?)?.toDouble() ?? g.x,
+        y: (json['y'] as num?)?.toDouble() ?? g.y,
+        width: (json['width'] as num?)?.toDouble() ?? g.width,
+        height: (json['height'] as num?)?.toDouble() ?? g.height,
+      );
     }
     if (!mounted) return;
     _positionLoaded = true;
-    setState(_clampToScreen);
+    _restoredOrigin = Offset(g.x, g.y);
+    _geometry.value = g;
+    _clampToScreen();
     _regionSignature = '';
     _pushRegion();
   }
 
   Future<void> _loadNativeMetrics() async {
     try {
-      final metrics =
-          await ref.read(desktopWallpaperGatewayProvider).desktopMetrics();
+      final metrics = await ref
+          .read(desktopWallpaperGatewayProvider)
+          .desktopMetrics();
       if (!mounted) return;
-      setState(() {
-        _nativeMetrics = metrics;
-        _clampToScreen();
-      });
+      _nativeMetrics = metrics;
+      _clampToScreen();
       _regionSignature = '';
       _pushRegion();
     } on Object {
@@ -214,13 +323,19 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
 
   /// 卡片尺寸与位置都必须留在虚拟屏内，否则命中区域会被裁到屏幕外。
   void _clampToScreen() {
-    _cardWidth = _cardWidth.clamp(_minCardWidth, _maxCardWidth).toDouble();
-    _cardHeight = _cardHeight.clamp(_minCardHeight, _maxCardHeight).toDouble();
+    final g = _geo;
+    final w = g.width.clamp(_minCardWidth, _maxCardWidth).toDouble();
+    final h = g.height.clamp(_minCardHeight, _maxCardHeight).toDouble();
     final size = _screenSize;
-    final maxX = size.width - _cardWidth;
-    final maxY = size.height - _cardHeight;
-    _x = _x.clamp(0.0, maxX > 0 ? maxX : 0.0).toDouble();
-    _y = _y.clamp(0.0, maxY > 0 ? maxY : 0.0).toDouble();
+    final maxX = size.width - w;
+    final maxY = size.height - h;
+    final origin = _restoredOrigin ?? Offset(g.x, g.y);
+    _geometry.value = g.copyWith(
+      x: origin.dx.clamp(0.0, maxX > 0 ? maxX : 0.0).toDouble(),
+      y: origin.dy.clamp(0.0, maxY > 0 ? maxY : 0.0).toDouble(),
+      width: w,
+      height: h,
+    );
   }
 
   /// 取所有可用来源里最大的屏幕范围，避免子窗口 engine 的 view 尺寸偏小
@@ -245,10 +360,9 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
     // 原生 GetSystemMetrics 返回物理像素，按 overlay 所属 view 的 dpr 换算。
     // 用当前 engine 的 view dpr（与 setRegion 同一坐标系），避免混合 DPI 下
     // 逐个 view 换算把逻辑尺寸错误放大。
-    final effectiveDpr =
-        views.isNotEmpty && views.first.devicePixelRatio > 0
-            ? views.first.devicePixelRatio
-            : 1.0;
+    final effectiveDpr = views.isNotEmpty && views.first.devicePixelRatio > 0
+        ? views.first.devicePixelRatio
+        : 1.0;
     final nativeWidth = _nativeMetrics.width / effectiveDpr;
     final nativeHeight = _nativeMetrics.height / effectiveDpr;
     if (nativeWidth > width) width = nativeWidth;
@@ -260,15 +374,13 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
   /// DataHub 的写入是进程级串行 + 原子替换，拖拽/调整结束时各写一次即可。
   Future<void> _persistPosition() async {
     if (!_positionLoaded) return;
-    await _store.writeJson(
-      _positionKey,
-      <String, Object?>{
-        'x': _x,
-        'y': _y,
-        'width': _cardWidth,
-        'height': _cardHeight,
-      },
-    );
+    final g = _geo;
+    await _store.writeJson(desktopCardPositionKey, <String, Object?>{
+      'x': g.x,
+      'y': g.y,
+      'width': g.width,
+      'height': g.height,
+    });
   }
 
   /// 把卡片矩形（以及浮层编辑器矩形）推给原生层。
@@ -280,26 +392,29 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       final dpr = MediaQuery.of(context).devicePixelRatio;
+      final g = _geo;
       final rects = <DesktopCardRect>[
         DesktopCardRect(
-          x: _x * dpr,
-          y: _y * dpr,
-          width: _cardWidth * dpr,
-          height: _cardHeight * dpr,
+          x: g.x * dpr,
+          y: g.y * dpr,
+          width: g.width * dpr,
+          height: g.height * dpr,
           radius: _cardRadius * dpr,
         ),
-        if (_popupRect != null)
+        if (g.popupRect != null)
           DesktopCardRect(
-            x: _popupRect!.left * dpr,
-            y: _popupRect!.top * dpr,
-            width: _popupRect!.width * dpr,
-            height: _popupRect!.height * dpr,
+            x: g.popupRect!.left * dpr,
+            y: g.popupRect!.top * dpr,
+            width: g.popupRect!.width * dpr,
+            height: g.popupRect!.height * dpr,
             radius: _popupRadius * dpr,
           ),
       ];
       final signature = rects
-          .map((DesktopCardRect r) =>
-              '${r.x},${r.y},${r.width},${r.height},${r.radius}')
+          .map(
+            (DesktopCardRect r) =>
+                '${r.x},${r.y},${r.width},${r.height},${r.radius}',
+          )
           .join('|');
       if (signature == _regionSignature) return;
       _regionSignature = signature;
@@ -310,9 +425,10 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
   void _beginDrag(Offset globalPosition) {
     _closePopup(pushRegion: false);
     _dragging = true;
+    _restoredOrigin = null;
     _dragOrigin = globalPosition;
-    _dragStartX = _x;
-    _dragStartY = _y;
+    _dragStartX = _geo.x;
+    _dragStartY = _geo.y;
     // 拖拽期间放开整窗命中，避免逐帧 SetWindowRgn 造成残影。
     ref
         .read(desktopWallpaperGatewayProvider)
@@ -321,10 +437,10 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
 
   void _updateDrag(Offset globalPosition) {
     if (!_dragging) return;
-    setState(() {
-      _x = _dragStartX + globalPosition.dx - _dragOrigin.dx;
-      _y = _dragStartY + globalPosition.dy - _dragOrigin.dy;
-    });
+    _geometry.value = _geo.copyWith(
+      x: _dragStartX + globalPosition.dx - _dragOrigin.dx,
+      y: _dragStartY + globalPosition.dy - _dragOrigin.dy,
+    );
   }
 
   void _endDrag() {
@@ -332,59 +448,54 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
     _dragging = false;
     _clampToScreen();
     // 8px 网格吸附（对齐 Vectra 的 snap 思路）。
-    _x = (_x / 8).round() * 8.0;
-    _y = (_y / 8).round() * 8.0;
-    setState(() {});
+    final g = _geo;
+    _geometry.value = g.copyWith(
+      x: (g.x / 8).round() * 8.0,
+      y: (g.y / 8).round() * 8.0,
+    );
     _regionSignature = '';
     _pushRegion();
     unawaited(_persistPosition());
   }
 
   bool _edgeHasLeft(_ResizeEdge edge) => switch (edge) {
-        _ResizeEdge.left ||
-        _ResizeEdge.topLeft ||
-        _ResizeEdge.bottomLeft =>
-          true,
-        _ => false,
-      };
+    _ResizeEdge.left || _ResizeEdge.topLeft || _ResizeEdge.bottomLeft => true,
+    _ => false,
+  };
 
   bool _edgeHasRight(_ResizeEdge edge) => switch (edge) {
-        _ResizeEdge.right ||
-        _ResizeEdge.topRight ||
-        _ResizeEdge.bottomRight =>
-          true,
-        _ => false,
-      };
+    _ResizeEdge.right ||
+    _ResizeEdge.topRight ||
+    _ResizeEdge.bottomRight => true,
+    _ => false,
+  };
 
   bool _edgeHasTop(_ResizeEdge edge) => switch (edge) {
-        _ResizeEdge.top ||
-        _ResizeEdge.topLeft ||
-        _ResizeEdge.topRight =>
-          true,
-        _ => false,
-      };
+    _ResizeEdge.top || _ResizeEdge.topLeft || _ResizeEdge.topRight => true,
+    _ => false,
+  };
 
   bool _edgeHasBottom(_ResizeEdge edge) => switch (edge) {
-        _ResizeEdge.bottom ||
-        _ResizeEdge.bottomLeft ||
-        _ResizeEdge.bottomRight =>
-          true,
-        _ => false,
-      };
+    _ResizeEdge.bottom ||
+    _ResizeEdge.bottomLeft ||
+    _ResizeEdge.bottomRight => true,
+    _ => false,
+  };
 
   void _beginResize(_ResizeEdge edge, Offset globalPosition) {
     if (DateTime.now().isBefore(_resizeEnabledAt)) return;
     _closePopup(pushRegion: false);
     _resizing = true;
+    _restoredOrigin = null;
     // 启动/激活窗口时偶尔会带一次孤立的 pointer 事件，必须超过阈值才算
     // 真正开始调整，否则会把随机尺寸写进持久化。
     _resizeActivated = false;
     _resizeEdge = edge;
     _resizeOrigin = globalPosition;
-    _resizeStartX = _x;
-    _resizeStartY = _y;
-    _resizeStartW = _cardWidth;
-    _resizeStartH = _cardHeight;
+    _resizeStartX = _geo.x;
+    _resizeStartY = _geo.y;
+    _resizeStartW = _geo.width;
+    _resizeStartH = _geo.height;
     // 与拖动一样，调整期间放开整窗命中，避免逐帧 SetWindowRgn 造成残影。
     ref
         .read(desktopWallpaperGatewayProvider)
@@ -449,16 +560,13 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
       h = screen.height - y;
     }
     final maxW = screen.width > _minCardWidth ? screen.width : _minCardWidth;
-    final maxH = screen.height > _minCardHeight ? screen.height : _minCardHeight;
+    final maxH = screen.height > _minCardHeight
+        ? screen.height
+        : _minCardHeight;
     w = w.clamp(_minCardWidth, maxW).toDouble();
     h = h.clamp(_minCardHeight, maxH).toDouble();
 
-    setState(() {
-      _x = x;
-      _y = y;
-      _cardWidth = w;
-      _cardHeight = h;
-    });
+    _geometry.value = _geo.copyWith(x: x, y: y, width: w, height: h);
   }
 
   void _endResize() {
@@ -475,12 +583,14 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
     }
     _clampToScreen();
     // 与拖动一致：8px 网格吸附，位置与尺寸都对齐。
-    _x = (_x / 8).round() * 8.0;
-    _y = (_y / 8).round() * 8.0;
-    _cardWidth = (_cardWidth / 8).round() * 8.0;
-    _cardHeight = (_cardHeight / 8).round() * 8.0;
+    final g = _geo;
+    _geometry.value = g.copyWith(
+      x: (g.x / 8).round() * 8.0,
+      y: (g.y / 8).round() * 8.0,
+      width: (g.width / 8).round() * 8.0,
+      height: (g.height / 8).round() * 8.0,
+    );
     _clampToScreen();
-    setState(() {});
     _regionSignature = '';
     _pushRegion();
     unawaited(_persistPosition());
@@ -505,22 +615,22 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
   /// 单击只选中格子（高亮 + 作为底部工具栏的作用目标），不进入编辑态。
   /// 真正的编辑统一通过浮层编辑器，避免格子内输入框遮挡日期与农历。
   void _select(DateKey date) {
-    setState(() {
-      _selectedDate = date;
-      _activeLineId = null;
-      _paletteTarget = _ColorTarget.none;
-      _confirmClear = false;
-    });
+    _activeLineId = null;
+    _editing.value = _ed.copyWith(
+      selectedDate: date,
+      paletteTarget: _ColorTarget.none,
+      confirmClear: false,
+    );
   }
 
   void _closeEditor() {
-    setState(() {
-      _editingDate = null;
-      _activeLineId = null;
-      _paletteTarget = _ColorTarget.none;
-      _confirmClear = false;
-      _cellInput.clear();
-    });
+    _activeLineId = null;
+    _editing.value = _ed.copyWith(
+      editingDate: null,
+      paletteTarget: _ColorTarget.none,
+      confirmClear: false,
+    );
+    _cellInput.clear();
     if (_cellFocus.hasFocus) _cellFocus.unfocus();
   }
 
@@ -547,12 +657,15 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
   }
 
   /// 底部「浮层编辑」按钮 / 右键等没有格子 RenderBox 的入口使用。
-  Rect _fallbackCell() => Rect.fromLTWH(
-        _x + _cardWidth * 0.35,
-        _y + _cardHeight * 0.3,
-        _cardWidth / 7,
-        100,
-      );
+  Rect _fallbackCell() {
+    final g = _geo;
+    return Rect.fromLTWH(
+      g.x + g.width * 0.35,
+      g.y + g.height * 0.3,
+      g.width / 7,
+      100,
+    );
+  }
 
   void _openPopupFromToolbar() => _showPopup(_targetDate, _fallbackCell());
 
@@ -564,17 +677,17 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
       height: _popupHeight,
       gap: _popupGap,
     );
-    setState(() {
-      _popupDate = date;
-      _popupRect = popup;
-      _selectedDate = date;
-      // 工具栏 / inlineEditor 仍复用 _editingDate，避免引入第二套编辑状态。
-      _editingDate = date;
-      _activeLineId = null;
-      _paletteTarget = _ColorTarget.none;
-      _confirmClear = false;
-      _cellInput.clear();
-    });
+    _activeLineId = null;
+    _editing.value = _ed.copyWith(
+      popupDate: date,
+      selectedDate: date,
+      // 工具栏 / inlineEditor 仍复用 editingDate，避免引入第二套编辑状态。
+      editingDate: date,
+      paletteTarget: _ColorTarget.none,
+      confirmClear: false,
+    );
+    _geometry.value = _geo.copyWith(popupRect: popup);
+    _cellInput.clear();
     // 浮层已打开，清掉双击判定状态：避免长按/右键打开后，紧跟着的左键
     // 又落在 350ms 窗口内被误判成双击而重复打开。
     _lastCellTapAt = null;
@@ -585,16 +698,16 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
   }
 
   void _closePopup({bool pushRegion = true}) {
-    if (_popupDate == null) return;
-    setState(() {
-      _popupDate = null;
-      _popupRect = null;
-      _editingDate = null;
-      _activeLineId = null;
-      _paletteTarget = _ColorTarget.none;
-      _confirmClear = false;
-      _cellInput.clear();
-    });
+    if (_ed.popupDate == null) return;
+    _activeLineId = null;
+    _editing.value = _ed.copyWith(
+      popupDate: null,
+      editingDate: null,
+      paletteTarget: _ColorTarget.none,
+      confirmClear: false,
+    );
+    _geometry.value = _geo.copyWith(popupRect: null);
+    _cellInput.clear();
     if (_cellFocus.hasFocus) _cellFocus.unfocus();
     _regionSignature = '';
     // 拖动/缩放会立刻 setRegion(dragging: true) 放开整窗命中，
@@ -603,7 +716,7 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
   }
 
   void _focusNewLine() {
-    if (_editingDate == null) {
+    if (_ed.editingDate == null) {
       // 「添加一行」在只选中状态下也应打开浮层，而不是静默无反应。
       _openPopupFromToolbar();
       return;
@@ -614,23 +727,19 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
   }
 
   void _openPalette(_ColorTarget target) {
-    setState(() {
-      _paletteTarget = _paletteTarget == target ? _ColorTarget.none : target;
-      _confirmClear = false;
-    });
+    _editing.value = _ed.copyWith(
+      paletteTarget: _ed.paletteTarget == target ? _ColorTarget.none : target,
+      confirmClear: false,
+    );
   }
 
   DateKey get _targetDate =>
-      _editingDate ??
-      _selectedDate ??
+      _ed.editingDate ??
+      _ed.selectedDate ??
       DateKey.today(ref.read(clockProvider).now());
 
-  DayCell? _cellOf(DateKey date) {
-    for (final cell in ref.read(calendarControllerProvider).cells) {
-      if (cell.date == date) return cell;
-    }
-    return null;
-  }
+  DayCell? _cellOf(DateKey date) =>
+      ref.read(calendarControllerProvider).cells[date];
 
   List<RichLine> _linesOf(DateKey date) =>
       _cellOf(date)?.lines ?? const <RichLine>[];
@@ -639,15 +748,12 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
     if (text.trim().isEmpty) return;
     final lines = _linesOf(date);
     await ref.read(calendarControllerProvider.notifier).saveCellLines(
-          date,
-          <RichLine>[
-            ...lines,
-            RichLine(
-              id: ref.read(idGeneratorProvider).next(),
-              text: text.trim(),
-            ),
-          ],
-        );
+      date,
+      <RichLine>[
+        ...lines,
+        RichLine(id: ref.read(idGeneratorProvider).next(), text: text.trim()),
+      ],
+    );
   }
 
   Future<void> _addFromQuickInput() async {
@@ -657,7 +763,7 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
   }
 
   Future<void> _addFromCell() async {
-    final date = _editingDate;
+    final date = _ed.editingDate;
     if (date == null) return;
     final text = _cellInput.text;
     _cellInput.clear();
@@ -666,7 +772,9 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
   }
 
   Future<void> _updateLineText(DateKey date, String id, String value) async {
-    await ref.read(calendarControllerProvider.notifier).saveCellLines(
+    await ref
+        .read(calendarControllerProvider.notifier)
+        .saveCellLines(
           date,
           _linesOf(date)
               .map(
@@ -693,7 +801,8 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
       return;
     }
     final lines = _linesOf(date);
-    final allDone = lines.isNotEmpty && lines.every((RichLine l) => l.completed);
+    final allDone =
+        lines.isNotEmpty && lines.every((RichLine l) => l.completed);
     await controller.saveCellLines(
       date,
       lines
@@ -703,30 +812,31 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
   }
 
   Future<void> _promoteActiveLine() async {
-    final date = _editingDate;
+    final date = _ed.editingDate;
     final id = _activeLineId;
     if (date == null || id == null) return;
     await ref
         .read(calendarControllerProvider.notifier)
         .promoteLineToEvent(date, id, CalendarEventType.task);
-    setState(() => _activeLineId = null);
+    _activeLineId = null;
+    _editing.value = _ed.copyWith();
   }
 
   Future<void> _clearCell() async {
-    if (!_confirmClear) {
-      setState(() => _confirmClear = true);
+    if (!_ed.confirmClear) {
+      _editing.value = _ed.copyWith(confirmClear: true);
       return;
     }
     await ref
         .read(calendarControllerProvider.notifier)
         .saveCellLines(_targetDate, const <RichLine>[]);
-    setState(() => _confirmClear = false);
+    _editing.value = _ed.copyWith(confirmClear: false);
   }
 
   Future<void> _applyColor(EventColor color) async {
     final date = _targetDate;
     final controller = ref.read(calendarControllerProvider.notifier);
-    if (_paletteTarget == _ColorTarget.cell) {
+    if (_ed.paletteTarget == _ColorTarget.cell) {
       await controller.setCellBackgroundColor(date, color);
     } else {
       final id = _activeLineId;
@@ -742,11 +852,11 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
       }
     }
     if (!mounted) return;
-    setState(() {
-      _recentColors.removeWhere((EventColor c) => c.argb == color.argb);
-      _recentColors.insert(0, color);
-      if (_recentColors.length > 8) _recentColors.removeRange(8, _recentColors.length);
-    });
+    final recent = <EventColor>[..._ed.recentColors]
+      ..removeWhere((EventColor c) => c.argb == color.argb)
+      ..insert(0, color);
+    if (recent.length > 8) recent.removeRange(8, recent.length);
+    _editing.value = _ed.copyWith(recentColors: recent);
   }
 
   /// 用户手动设置的单元格颜色可能很亮，默认文字自动取对比色。
@@ -776,9 +886,7 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
     if (day.isToday) return BasePalette.themeDark3;
     final inMonth = day.isCurrentMonth;
     if (weekend) {
-      return BasePalette.orangeLight3.withValues(
-        alpha: inMonth ? 0.16 : 0.06,
-      );
+      return BasePalette.orangeLight3.withValues(alpha: inMonth ? 0.16 : 0.06);
     }
     return BasePalette.white1.withValues(alpha: inMonth ? 0.20 : 0.06);
   }
@@ -793,8 +901,9 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
 
   @override
   Widget build(BuildContext context) {
-    final month = ref.watch(monthDataProvider);
-    final settings = ref.watch(settingsControllerProvider);
+    final themeMode = ref.watch(
+      settingsControllerProvider.select((AppSettings s) => s.themeMode),
+    );
     // overlay 窗口覆盖整个虚拟屏，view 的逻辑尺寸就是可用的屏幕范围。
     _screen = MediaQuery.sizeOf(context);
     return MaterialApp(
@@ -803,7 +912,7 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
       color: Colors.transparent,
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
-      themeMode: _toMaterialThemeMode(settings.themeMode),
+      themeMode: _toMaterialThemeMode(themeMode),
       builder: AppTheme.withAppFont,
       home: Scaffold(
         backgroundColor: Colors.transparent,
@@ -811,36 +920,44 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
           behavior: HitTestBehavior.translucent,
           // 点击浮层之外（卡片空白区 / 桌面穿透区）即关闭编辑器。
           onPointerDown: (PointerDownEvent e) {
-            if (_popupRect == null) return;
+            final popupRect = _geo.popupRect;
+            if (popupRect == null) return;
             // 不用时间窗屏蔽：双击/长按都是从 up 事件触发，打开后到来的
             // pointer down 必然是新的手势，本就该按位置判断开关。时间窗会
             // 让紧接着点别的格子时浮层仍显示旧日期、且能被连续快点无限续期。
             // DPI 取整可能带来几像素偏差，留容差避免弹窗内点击被误判为外部。
-            if (!_popupRect!.inflate(16).contains(e.position)) {
+            if (!popupRect.inflate(16).contains(e.position)) {
               _closePopup();
             }
           },
-          child: Stack(
-            fit: StackFit.expand,
-            children: <Widget>[
-              Positioned(
-                left: _x,
-                top: _y,
-                width: _cardWidth,
-                height: _cardHeight,
-                child: _card(context, month, settings),
-              ),
-              // 放在最外层 Stack 而非 _card 的 ClipRRect 内，
-              // 否则最底行格子的弹窗会被卡片圆角裁掉。
-              if (_popupRect != null && _popupDate != null)
-                Positioned(
-                  left: _popupRect!.left,
-                  top: _popupRect!.top,
-                  width: _popupRect!.width,
-                  height: _popupRect!.height,
-                  child: _popupEditor(),
+          // 几何域独立监听：拖动/缩放只重定位卡片，卡片内容（含 42 格网格）
+          // 作为缓存 child 不随几何重建。
+          child: ValueListenableBuilder<_Geometry>(
+            valueListenable: _geometry,
+            child: _DesktopCard(this),
+            builder: (BuildContext context, _Geometry geo, Widget? card) =>
+                Stack(
+                  fit: StackFit.expand,
+                  children: <Widget>[
+                    Positioned(
+                      left: geo.x,
+                      top: geo.y,
+                      width: geo.width,
+                      height: geo.height,
+                      child: card!,
+                    ),
+                    // 放在最外层 Stack 而非 _card 的 ClipRRect 内，
+                    // 否则最底行格子的弹窗会被卡片圆角裁掉。
+                    if (geo.popupRect != null && _ed.popupDate != null)
+                      Positioned(
+                        left: geo.popupRect!.left,
+                        top: geo.popupRect!.top,
+                        width: geo.popupRect!.width,
+                        height: geo.popupRect!.height,
+                        child: _PopupEditor(this),
+                      ),
+                  ],
                 ),
-            ],
           ),
         ),
       ),
@@ -850,7 +967,7 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
   /// 浮层编辑器：日期标题 + 逐行编辑 + 内嵌调色板 + 紧凑工具行。
   /// 复用 `_inlineEditor` / `_paletteStrip` 与现有工具动作，不引入第二套编辑状态。
   Widget _popupEditor() {
-    final date = _popupDate!;
+    final date = _ed.popupDate!;
     return Material(
       color: Colors.transparent,
       child: Container(
@@ -885,7 +1002,8 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
                 ),
               ),
             ),
-            if (_paletteTarget != _ColorTarget.none) _paletteStrip(light: true),
+            if (_ed.paletteTarget != _ColorTarget.none)
+              _PaletteStrip(this, light: true),
             _popupTools(),
           ],
         ),
@@ -894,96 +1012,89 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
   }
 
   Widget _popupHeader(DateKey date) => Container(
-        height: 40,
-        padding: const EdgeInsets.only(
-          left: AppSpacing.sm,
-          right: AppSpacing.xxs,
+    height: 40,
+    padding: const EdgeInsets.only(left: AppSpacing.sm, right: AppSpacing.xxs),
+    decoration: const BoxDecoration(
+      border: Border(bottom: BorderSide(color: BasePalette.grayLight3)),
+    ),
+    child: Row(
+      children: <Widget>[
+        Container(
+          width: 3,
+          height: 16,
+          decoration: BoxDecoration(
+            color: BasePalette.themeLight6,
+            borderRadius: BorderRadius.circular(2),
+          ),
         ),
-        decoration: const BoxDecoration(
-          border: Border(bottom: BorderSide(color: BasePalette.grayLight3)),
-        ),
-        child: Row(
-          children: <Widget>[
-            Container(
-              width: 3,
-              height: 16,
-              decoration: BoxDecoration(
-                color: BasePalette.themeLight6,
-                borderRadius: BorderRadius.circular(2),
-              ),
+        const SizedBox(width: AppSpacing.xs),
+        Expanded(
+          child: Text(
+            '${date.year}年${date.month}月${date.day}日',
+            style: const TextStyle(
+              fontSize: AppTypography.body,
+              color: BasePalette.grayDark1,
             ),
-            const SizedBox(width: AppSpacing.xs),
-            Expanded(
-              child: Text(
-                '${date.year}年${date.month}月${date.day}日',
-                style: const TextStyle(
-                  fontSize: AppTypography.body,
-                  color: BasePalette.grayDark1,
-                ),
-              ),
-            ),
-            _popupTool(LucideIcons.check, '完成编辑', _closePopup,
-                light: true),
-          ],
+          ),
         ),
-      );
+        _popupTool(LucideIcons.check, '完成编辑', _closePopup, light: true),
+      ],
+    ),
+  );
 
   Widget _popupTools() => Container(
-        height: 40,
-        decoration: const BoxDecoration(
-          border: Border(top: BorderSide(color: BasePalette.grayLight3)),
+    height: 40,
+    decoration: const BoxDecoration(
+      border: Border(top: BorderSide(color: BasePalette.grayLight3)),
+    ),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: <Widget>[
+        _popupTool(LucideIcons.plus, '添加一行', _focusNewLine, light: true),
+        _popupTool(
+          LucideIcons.type,
+          '文字颜色',
+          () => _openPalette(_ColorTarget.text),
+          light: true,
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: <Widget>[
-            _popupTool(LucideIcons.plus, '添加一行', _focusNewLine,
-                light: true),
-            _popupTool(
-              LucideIcons.type,
-              '文字颜色',
-              () => _openPalette(_ColorTarget.text),
-              light: true,
-            ),
-            _popupTool(
-              LucideIcons.paintBucket,
-              '单元格颜色',
-              () => _openPalette(_ColorTarget.cell),
-              light: true,
-            ),
-            _popupTool(LucideIcons.checkCheck, '标记完成', _toggleComplete,
-                light: true),
-            _popupTool(LucideIcons.eraser, '清空本日', _clearCell,
-                light: true),
-          ],
+        _popupTool(
+          LucideIcons.paintBucket,
+          '单元格颜色',
+          () => _openPalette(_ColorTarget.cell),
+          light: true,
         ),
-      );
+        _popupTool(
+          LucideIcons.checkCheck,
+          '标记完成',
+          _toggleComplete,
+          light: true,
+        ),
+        _popupTool(LucideIcons.eraser, '清空本日', _clearCell, light: true),
+      ],
+    ),
+  );
 
   Widget _popupTool(
     IconData icon,
     String tooltip,
     VoidCallback onPressed, {
     bool light = false,
-  }) =>
-      Tooltip(
-        message: tooltip,
-        child: IconButton(
-          onPressed: onPressed,
-          icon: Icon(
-            icon,
-            size: 15,
-            color: light ? BasePalette.grayDark4 : BasePalette.grayLight4,
-          ),
-          visualDensity: VisualDensity.compact,
-          padding: EdgeInsets.zero,
-          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-        ),
-      );
+  }) => Tooltip(
+    message: tooltip,
+    child: IconButton(
+      onPressed: onPressed,
+      icon: Icon(
+        icon,
+        size: 15,
+        color: light ? BasePalette.grayDark4 : BasePalette.grayLight4,
+      ),
+      visualDensity: VisualDensity.compact,
+      padding: EdgeInsets.zero,
+      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+    ),
+  );
 
-  Widget _card(
-    BuildContext context,
-    MonthData month,
-    AppSettings settings,
-  ) =>
+  Widget _card(BuildContext context, MonthData month, AppSettings settings) =>
       ClipRRect(
         borderRadius: BorderRadius.circular(_cardRadius),
         child: Container(
@@ -1000,10 +1111,10 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
                   children: <Widget>[
                     _header(context, month),
                     _weekdays(context, month, settings),
-                    Expanded(child: _grid(context, month, settings)),
-                    if (_paletteTarget != _ColorTarget.none &&
-                        _popupDate == null)
-                      _paletteStrip(),
+                    Expanded(child: _DesktopGrid(this, month, settings)),
+                    if (_ed.paletteTarget != _ColorTarget.none &&
+                        _ed.popupDate == null)
+                      _PaletteStrip(this),
                     _quickInput(context),
                     _toolbar(context),
                   ],
@@ -1018,64 +1129,64 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
   /// 四条边 + 四个角的透明热区；右下角显示可见握柄作为操作提示。
   /// 热区都在卡片矩形内，不会被 `SetWindowRgn` 裁掉。
   List<Widget> _resizeHandles() => <Widget>[
-        _resizeHandle(
-          _ResizeEdge.left,
-          left: 0,
-          top: _resizeCorner,
-          bottom: _resizeCorner,
-          width: _resizeHit,
-        ),
-        _resizeHandle(
-          _ResizeEdge.right,
-          right: 0,
-          top: _resizeCorner,
-          bottom: _resizeCorner,
-          width: _resizeHit,
-        ),
-        _resizeHandle(
-          _ResizeEdge.top,
-          top: 0,
-          left: _resizeCorner,
-          right: _resizeCorner,
-          height: _resizeHit,
-        ),
-        _resizeHandle(
-          _ResizeEdge.bottom,
-          bottom: 0,
-          left: _resizeCorner,
-          right: _resizeCorner,
-          height: _resizeHit,
-        ),
-        _resizeHandle(
-          _ResizeEdge.topLeft,
-          left: 0,
-          top: 0,
-          width: _resizeCorner,
-          height: _resizeCorner,
-        ),
-        _resizeHandle(
-          _ResizeEdge.topRight,
-          right: 0,
-          top: 0,
-          width: _resizeCorner,
-          height: _resizeCorner,
-        ),
-        _resizeHandle(
-          _ResizeEdge.bottomLeft,
-          left: 0,
-          bottom: 0,
-          width: _resizeCorner,
-          height: _resizeCorner,
-        ),
-        _resizeHandle(
-          _ResizeEdge.bottomRight,
-          right: 0,
-          bottom: 0,
-          width: _resizeCorner,
-          height: _resizeCorner,
-          showGrip: true,
-        ),
-      ];
+    _resizeHandle(
+      _ResizeEdge.left,
+      left: 0,
+      top: _resizeCorner,
+      bottom: _resizeCorner,
+      width: _resizeHit,
+    ),
+    _resizeHandle(
+      _ResizeEdge.right,
+      right: 0,
+      top: _resizeCorner,
+      bottom: _resizeCorner,
+      width: _resizeHit,
+    ),
+    _resizeHandle(
+      _ResizeEdge.top,
+      top: 0,
+      left: _resizeCorner,
+      right: _resizeCorner,
+      height: _resizeHit,
+    ),
+    _resizeHandle(
+      _ResizeEdge.bottom,
+      bottom: 0,
+      left: _resizeCorner,
+      right: _resizeCorner,
+      height: _resizeHit,
+    ),
+    _resizeHandle(
+      _ResizeEdge.topLeft,
+      left: 0,
+      top: 0,
+      width: _resizeCorner,
+      height: _resizeCorner,
+    ),
+    _resizeHandle(
+      _ResizeEdge.topRight,
+      right: 0,
+      top: 0,
+      width: _resizeCorner,
+      height: _resizeCorner,
+    ),
+    _resizeHandle(
+      _ResizeEdge.bottomLeft,
+      left: 0,
+      bottom: 0,
+      width: _resizeCorner,
+      height: _resizeCorner,
+    ),
+    _resizeHandle(
+      _ResizeEdge.bottomRight,
+      right: 0,
+      bottom: 0,
+      width: _resizeCorner,
+      height: _resizeCorner,
+      showGrip: true,
+    ),
+  ];
 
   Widget _resizeHandle(
     _ResizeEdge edge, {
@@ -1086,54 +1197,49 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
     double? width,
     double? height,
     bool showGrip = false,
-  }) =>
-      Positioned(
-        left: left,
-        top: top,
-        right: right,
-        bottom: bottom,
-        width: width,
-        height: height,
-        child: MouseRegion(
-          cursor: _resizeCursor(edge),
-          child: Listener(
-            behavior: HitTestBehavior.opaque,
-            onPointerDown: (PointerDownEvent e) =>
-                _beginResize(edge, e.position),
-            onPointerMove: (PointerMoveEvent e) =>
-                _updateResize(e.position),
-            onPointerUp: (_) => _endResize(),
-            onPointerCancel: (_) => _endResize(),
-            child: showGrip
-                ? Container(
-                    alignment: Alignment.center,
-                    decoration: const BoxDecoration(
-                      color: BasePalette.white6,
-                      borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(AppRadius.xs),
-                      ),
-                    ),
-                    child: const Icon(
-                      LucideIcons.grip,
-                      size: 11,
-                      color: BasePalette.grayLight4,
-                    ),
-                  )
-                : const SizedBox.expand(),
-          ),
-        ),
-      );
+  }) => Positioned(
+    left: left,
+    top: top,
+    right: right,
+    bottom: bottom,
+    width: width,
+    height: height,
+    child: MouseRegion(
+      cursor: _resizeCursor(edge),
+      child: Listener(
+        behavior: HitTestBehavior.opaque,
+        onPointerDown: (PointerDownEvent e) => _beginResize(edge, e.position),
+        onPointerMove: (PointerMoveEvent e) => _updateResize(e.position),
+        onPointerUp: (_) => _endResize(),
+        onPointerCancel: (_) => _endResize(),
+        child: showGrip
+            ? Container(
+                alignment: Alignment.center,
+                decoration: const BoxDecoration(
+                  color: BasePalette.white6,
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(AppRadius.xs),
+                  ),
+                ),
+                child: const Icon(
+                  LucideIcons.grip,
+                  size: 11,
+                  color: BasePalette.grayLight4,
+                ),
+              )
+            : const SizedBox.expand(),
+      ),
+    ),
+  );
 
   MouseCursor _resizeCursor(_ResizeEdge edge) => switch (edge) {
-        _ResizeEdge.left || _ResizeEdge.right =>
-          SystemMouseCursors.resizeLeftRight,
-        _ResizeEdge.top || _ResizeEdge.bottom =>
-          SystemMouseCursors.resizeUpDown,
-        _ResizeEdge.topLeft || _ResizeEdge.bottomRight =>
-          SystemMouseCursors.resizeUpLeftDownRight,
-        _ResizeEdge.topRight || _ResizeEdge.bottomLeft =>
-          SystemMouseCursors.resizeUpRightDownLeft,
-      };
+    _ResizeEdge.left || _ResizeEdge.right => SystemMouseCursors.resizeLeftRight,
+    _ResizeEdge.top || _ResizeEdge.bottom => SystemMouseCursors.resizeUpDown,
+    _ResizeEdge.topLeft ||
+    _ResizeEdge.bottomRight => SystemMouseCursors.resizeUpLeftDownRight,
+    _ResizeEdge.topRight ||
+    _ResizeEdge.bottomLeft => SystemMouseCursors.resizeUpRightDownLeft,
+  };
 
   /// 收起桌面组件：不能只调本地 hide，否则子窗口隐藏了但共享设置里
   /// `desktopWidgetEnabled` 仍是 true，托盘「显示桌面日历窗口」改写设置时
@@ -1141,63 +1247,57 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
   /// 这里改为写共享设置（经 DataHub 广播让主窗口同步状态并复用同一 engine）；
   /// 本地 hide 只作为即时反馈，主窗口随后再 hide 是幂等的。
   Future<void> _collapseDesktopWidget() async {
-    await ref.read(settingsControllerProvider.notifier).update(
-          (AppSettings s) => s.copyWith(desktopWidgetEnabled: false),
-        );
+    await ref
+        .read(settingsControllerProvider.notifier)
+        .update((AppSettings s) => s.copyWith(desktopWidgetEnabled: false));
     await ref.read(multiWindowGatewayProvider).hideCurrentWindow();
   }
 
   Widget _header(BuildContext context, MonthData month) => Listener(
-        onPointerDown: (PointerDownEvent e) => _beginDrag(e.position),
-        onPointerMove: (PointerMoveEvent e) => _updateDrag(e.position),
-        onPointerUp: (_) => _endDrag(),
-        onPointerCancel: (_) => _endDrag(),
-        behavior: HitTestBehavior.opaque,
-        child: Container(
-          height: _headerHeight,
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
-          decoration: const BoxDecoration(
-            border: Border(bottom: BorderSide(color: BasePalette.white6)),
+    onPointerDown: (PointerDownEvent e) => _beginDrag(e.position),
+    onPointerMove: (PointerMoveEvent e) => _updateDrag(e.position),
+    onPointerUp: (_) => _endDrag(),
+    onPointerCancel: (_) => _endDrag(),
+    behavior: HitTestBehavior.opaque,
+    child: Container(
+      height: _headerHeight,
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+      decoration: const BoxDecoration(
+        border: Border(bottom: BorderSide(color: BasePalette.white6)),
+      ),
+      child: Row(
+        children: <Widget>[
+          const Icon(LucideIcons.grip, size: 16, color: BasePalette.grayLight5),
+          const SizedBox(width: AppSpacing.xxs),
+          Text(
+            '${month.anchor.year}年${month.anchor.month}月',
+            style: const TextStyle(
+              fontSize: AppTypography.subtitle,
+              fontWeight: AppTypography.bold,
+              color: BasePalette.grayLight1,
+            ),
           ),
-          child: Row(
-            children: <Widget>[
-              const Icon(LucideIcons.grip,
-                  size: 16, color: BasePalette.grayLight5),
-              const SizedBox(width: AppSpacing.xxs),
-              Text(
-                '${month.anchor.year}年${month.anchor.month}月',
-                style: const TextStyle(
-                  fontSize: AppTypography.subtitle,
-                  fontWeight: AppTypography.bold,
-                  color: BasePalette.grayLight1,
-                ),
-              ),
-              const Spacer(),
-              _iconButton(
-                LucideIcons.chevronLeft,
-                '上一月',
-                () =>
-                    ref.read(monthNavigationProvider.notifier).previous(),
-              ),
-              _iconButton(
-                LucideIcons.calendarCheck2,
-                '回到今天',
-                () => ref.read(monthNavigationProvider.notifier).today(),
-              ),
-              _iconButton(
-                LucideIcons.chevronRight,
-                '下一月',
-                () => ref.read(monthNavigationProvider.notifier).next(),
-              ),
-              _iconButton(
-                LucideIcons.x,
-                '收起桌面组件',
-                _collapseDesktopWidget,
-              ),
-            ],
+          const Spacer(),
+          _iconButton(
+            LucideIcons.chevronLeft,
+            '上一月',
+            () => ref.read(monthNavigationProvider.notifier).previous(),
           ),
-        ),
-      );
+          _iconButton(
+            LucideIcons.calendarCheck2,
+            '回到今天',
+            () => ref.read(monthNavigationProvider.notifier).today(),
+          ),
+          _iconButton(
+            LucideIcons.chevronRight,
+            '下一月',
+            () => ref.read(monthNavigationProvider.notifier).next(),
+          ),
+          _iconButton(LucideIcons.x, '收起桌面组件', _collapseDesktopWidget),
+        ],
+      ),
+    ),
+  );
 
   Widget _iconButton(IconData icon, String tooltip, VoidCallback onPressed) =>
       IconButton(
@@ -1213,45 +1313,38 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
     BuildContext context,
     MonthData month,
     AppSettings settings,
-  ) =>
-      SizedBox(
-        height: _weekdayHeight,
-        child: Row(
-          children: <Widget>[
-            for (int i = 0; i < month.weekdayHeaders.length; i++)
-              Expanded(
-                child: Center(
-                  child: Text(
-                    month.weekdayHeaders[i],
-                    style: TextStyle(
-                      fontSize: AppTypography.caption,
-                      color: _isWeekendColumn(i, settings)
-                          ? BasePalette.orangeLight3
-                          : BasePalette.grayLight5,
-                      fontWeight: _isWeekendColumn(i, settings)
-                          ? AppTypography.medium
-                          : AppTypography.regular,
-                    ),
-                  ),
+  ) => SizedBox(
+    height: _weekdayHeight,
+    child: Row(
+      children: <Widget>[
+        for (int i = 0; i < month.weekdayHeaders.length; i++)
+          Expanded(
+            child: Center(
+              child: Text(
+                month.weekdayHeaders[i],
+                style: TextStyle(
+                  fontSize: AppTypography.caption,
+                  color: _isWeekendColumn(i, settings)
+                      ? BasePalette.orangeLight3
+                      : BasePalette.grayLight5,
+                  fontWeight: _isWeekendColumn(i, settings)
+                      ? AppTypography.medium
+                      : AppTypography.regular,
                 ),
               ),
-          ],
-        ),
-      );
+            ),
+          ),
+      ],
+    ),
+  );
 
   /// 第 [index] 列表头对应的 weekday（1=周一…7=周日），按用户设置的
   /// 每周起始日旋转；不要在渲染里硬编码「第 6、7 列」。
   bool _isWeekendColumn(int index, AppSettings settings) =>
       settings.showRestDays &&
-      settings.restDays.contains(
-        ((settings.startOfWeek - 1 + index) % 7) + 1,
-      );
+      settings.restDays.contains(((settings.startOfWeek - 1 + index) % 7) + 1);
 
-  Widget _grid(
-    BuildContext context,
-    MonthData month,
-    AppSettings settings,
-  ) {
+  Widget _grid(BuildContext context, MonthData month, AppSettings settings) {
     final days = month.columns.isEmpty
         ? const <CalendarDayModel>[]
         : month.columns.first;
@@ -1263,8 +1356,10 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
         final cellWidth =
             (constraints.maxWidth - 2 * _gridPadding - 6 * _gridSpacing) / 7;
         final cellHeight =
-            (constraints.maxHeight - 2 * _gridPadding - (rows - 1) * _gridSpacing) /
-                rows;
+            (constraints.maxHeight -
+                2 * _gridPadding -
+                (rows - 1) * _gridSpacing) /
+            rows;
         return GridView.builder(
           physics: const NeverScrollableScrollPhysics(),
           padding: const EdgeInsets.all(_gridPadding),
@@ -1275,13 +1370,8 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
             mainAxisSpacing: _gridSpacing,
           ),
           itemCount: count,
-          itemBuilder: (BuildContext context, int index) => _dayCell(
-            context,
-            days[index],
-            settings,
-            cellWidth,
-            cellHeight,
-          ),
+          itemBuilder: (BuildContext context, int index) =>
+              _dayCell(context, days[index], settings, cellWidth, cellHeight),
         );
       },
     );
@@ -1296,24 +1386,27 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
   ) {
     // 卡片被拉大/缩小时，格子本身由 LayoutBuilder 重算；字号同步等比缩放，
     // 同时限制上下限避免过窄卡片里文字挤爆或过宽卡片里文字过大。
-    final scale =
-        (cellWidth / _referenceCellWidth).clamp(0.85, 1.5).toDouble();
+    final scale = (cellWidth / _referenceCellWidth).clamp(0.85, 1.5).toDouble();
     // 单击只高亮选中；编辑态只存在于浮层里，格子内始终只读展示。
-    final selected = _selectedDate == day.date || _editingDate == day.date;
+    final selected =
+        _ed.selectedDate == day.date || _ed.editingDate == day.date;
     // MonthData 已把 DayCell 聚合进每个 CalendarDayModel，直接用它，
     // 避免 42 个格子各自线性扫描整个 cells 列表（N+1）。
     final cell = day.cell;
     final customColor = cell?.backgroundColor;
     final inMonth = day.isCurrentMonth;
-    final weekend = settings.showRestDays &&
-        settings.restDays.contains(day.date.weekday);
+    final weekend =
+        settings.showRestDays && settings.restDays.contains(day.date.weekday);
     final background = _cellBackground(day, customColor, weekend);
     final defaultText = _defaultTextOn(background);
     final dimText = defaultText.withValues(alpha: 0.42);
     final subText = defaultText.withValues(alpha: inMonth ? 0.72 : 0.42);
     final lineText = defaultText.withValues(alpha: inMonth ? 1.0 : 0.62);
-    final weekendText =
-        Color.lerp(defaultText, BasePalette.orangeLight3, 0.55)!;
+    final weekendText = Color.lerp(
+      defaultText,
+      BasePalette.orangeLight3,
+      0.55,
+    )!;
     final visibleLines = (cell?.lines ?? const <RichLine>[])
         .where((RichLine l) => settings.showCompleted || !l.completed)
         .where((RichLine l) => l.text.trim().isNotEmpty)
@@ -1322,8 +1415,9 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
       ...day.events
           .map((EventOccurrence e) => e.event.content.trim())
           .where((String t) => t.isNotEmpty),
-      ...day.subscriptionEvents
-          .map((SubscriptionEvent e) => e.title.trim())
+      ...day.tags
+          .where((TimelineTag t) => t.kind == TimelineTagKind.subscription)
+          .map((TimelineTag t) => t.text.trim())
           .where((String t) => t.isNotEmpty),
     ];
     return GestureDetector(
@@ -1332,8 +1426,7 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
       // 不用 onDoubleTap，避免桌面鼠标下与 onTap 竞争失败。
       onLongPress: () => _openPopup(day.date, context),
       // 桌面端右键最稳定，作为长按/双击之外的第三条触发路径。
-      onSecondaryTapDown: (TapDownDetails _) =>
-          _openPopup(day.date, context),
+      onSecondaryTapDown: (TapDownDetails _) => _openPopup(day.date, context),
       child: Container(
         decoration: BoxDecoration(
           color: background,
@@ -1342,10 +1435,10 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
             color: selected
                 ? BasePalette.themeDark6
                 : day.isToday
-                    ? BasePalette.themeDark6
-                    : weekend
-                        ? BasePalette.orangeLight3.withValues(alpha: 0.42)
-                        : BasePalette.white6,
+                ? BasePalette.themeDark6
+                : weekend
+                ? BasePalette.orangeLight3.withValues(alpha: 0.42)
+                : BasePalette.white6,
             width: selected ? 2 : 1,
           ),
         ),
@@ -1365,8 +1458,8 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
                     color: !inMonth
                         ? dimText
                         : weekend
-                            ? weekendText
-                            : defaultText,
+                        ? weekendText
+                        : defaultText,
                   ),
                 ),
                 const SizedBox(width: AppSpacing.xxs),
@@ -1390,36 +1483,36 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
             ),
             Expanded(
               child: SingleChildScrollView(
-                      physics: const NeverScrollableScrollPhysics(),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: <Widget>[
-                          for (int i = 0; i < visibleLines.length; i++)
-                            Text(
-                              '${i + 1}. ${visibleLines[i].text.trim()}',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: AppTypography.label * scale,
-                                color: _lineColor(visibleLines[i], lineText),
-                                decoration: visibleLines[i].completed
-                                    ? TextDecoration.lineThrough
-                                    : null,
-                              ),
-                            ),
-                          for (final extra in extras)
-                            Text(
-                              '· $extra',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: AppTypography.label * scale,
-                                color: subText,
-                              ),
-                            ),
-                        ],
+                physics: const NeverScrollableScrollPhysics(),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    for (int i = 0; i < visibleLines.length; i++)
+                      Text(
+                        '${i + 1}. ${visibleLines[i].text.trim()}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: AppTypography.label * scale,
+                          color: _lineColor(visibleLines[i], lineText),
+                          decoration: visibleLines[i].completed
+                              ? TextDecoration.lineThrough
+                              : null,
+                        ),
                       ),
-                    ),
+                    for (final extra in extras)
+                      Text(
+                        '· $extra',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: AppTypography.label * scale,
+                          color: subText,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
             ),
           ],
         ),
@@ -1477,57 +1570,57 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
     RichLine line,
     Color defaultText,
     double scale,
-  ) =>
-      SizedBox(
-        key: ValueKey<String>(line.id),
-        height: 26 * scale,
-        child: Row(
-          children: <Widget>[
-            InkWell(
-              onTap: () => _toggleLine(date, line.id),
-              child: Icon(
-                line.completed ? LucideIcons.squareCheck : LucideIcons.square,
-                size: 14 * scale,
-                color: line.completed
-                    ? BasePalette.themeDark6
-                    : defaultText.withValues(alpha: 0.7),
-              ),
-            ),
-            SizedBox(width: 3 * scale),
-            Expanded(
-              child: Focus(
-                onFocusChange: (bool focused) {
-                  if (focused) _activeLineId = line.id;
-                },
-                child: TextFormField(
-                  key: ValueKey<String>(line.id),
-                  initialValue: line.text,
-                  maxLines: 1,
-                  style: TextStyle(
-                    fontSize: AppTypography.label * scale,
-                    color: _lineTextColor(line, defaultText),
-                    decoration: line.completed
-                        ? TextDecoration.lineThrough
-                        : null,
-                  ),
-                  decoration: const InputDecoration(
-                    isDense: true,
-                    border: InputBorder.none,
-                    contentPadding: EdgeInsets.zero,
-                  ),
-                  onChanged: (String value) =>
-                      _updateLineText(date, line.id, value),
-                ),
-              ),
-            ),
-            InkWell(
-              onTap: () => _removeLine(date, line.id),
-              child: Icon(LucideIcons.x,
-                  size: 12 * scale, color: BasePalette.redLight4),
-            ),
-          ],
+  ) => SizedBox(
+    key: ValueKey<String>(line.id),
+    height: 26 * scale,
+    child: Row(
+      children: <Widget>[
+        InkWell(
+          onTap: () => _toggleLine(date, line.id),
+          child: Icon(
+            line.completed ? LucideIcons.squareCheck : LucideIcons.square,
+            size: 14 * scale,
+            color: line.completed
+                ? BasePalette.themeDark6
+                : defaultText.withValues(alpha: 0.7),
+          ),
         ),
-      );
+        SizedBox(width: 3 * scale),
+        Expanded(
+          child: Focus(
+            onFocusChange: (bool focused) {
+              if (focused) _activeLineId = line.id;
+            },
+            child: TextFormField(
+              key: ValueKey<String>(line.id),
+              initialValue: line.text,
+              maxLines: 1,
+              style: TextStyle(
+                fontSize: AppTypography.label * scale,
+                color: _lineTextColor(line, defaultText),
+                decoration: line.completed ? TextDecoration.lineThrough : null,
+              ),
+              decoration: const InputDecoration(
+                isDense: true,
+                border: InputBorder.none,
+                contentPadding: EdgeInsets.zero,
+              ),
+              onChanged: (String value) =>
+                  _updateLineText(date, line.id, value),
+            ),
+          ),
+        ),
+        InkWell(
+          onTap: () => _removeLine(date, line.id),
+          child: Icon(
+            LucideIcons.x,
+            size: 12 * scale,
+            color: BasePalette.redLight4,
+          ),
+        ),
+      ],
+    ),
+  );
 
   Color _lineTextColor(RichLine line, Color defaultText) {
     if (line.color.isTransparent ||
@@ -1538,132 +1631,132 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
   }
 
   Widget _quickInput(BuildContext context) => Container(
-        height: _quickInputHeight,
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.sm,
-          vertical: AppSpacing.xxs,
+    height: _quickInputHeight,
+    padding: const EdgeInsets.symmetric(
+      horizontal: AppSpacing.sm,
+      vertical: AppSpacing.xxs,
+    ),
+    decoration: const BoxDecoration(
+      border: Border(top: BorderSide(color: BasePalette.white6)),
+    ),
+    child: Row(
+      children: <Widget>[
+        Text(
+          '${_targetDate.month}/${_targetDate.day}',
+          style: const TextStyle(
+            fontSize: AppTypography.caption,
+            color: BasePalette.grayLight5,
+          ),
         ),
-        decoration: const BoxDecoration(
-          border: Border(top: BorderSide(color: BasePalette.white6)),
-        ),
-        child: Row(
-          children: <Widget>[
-            Text(
-              '${_targetDate.month}/${_targetDate.day}',
-              style: const TextStyle(
+        const SizedBox(width: AppSpacing.xs),
+        Expanded(
+          child: TextField(
+            controller: _input,
+            style: const TextStyle(
+              fontSize: AppTypography.caption,
+              color: BasePalette.grayLight1,
+            ),
+            decoration: const InputDecoration(
+              isDense: true,
+              hintText: '直接在桌面输入待办，回车添加…',
+              hintStyle: TextStyle(
                 fontSize: AppTypography.caption,
-                color: BasePalette.grayLight5,
+                color: BasePalette.grayLight7,
               ),
+              border: InputBorder.none,
             ),
-            const SizedBox(width: AppSpacing.xs),
-            Expanded(
-              child: TextField(
-                controller: _input,
-                style: const TextStyle(
-                  fontSize: AppTypography.caption,
-                  color: BasePalette.grayLight1,
-                ),
-                decoration: const InputDecoration(
-                  isDense: true,
-                  hintText: '直接在桌面输入待办，回车添加…',
-                  hintStyle: TextStyle(
-                    fontSize: AppTypography.caption,
-                    color: BasePalette.grayLight7,
-                  ),
-                  border: InputBorder.none,
-                ),
-                onSubmitted: (_) => _addFromQuickInput(),
-              ),
-            ),
-            IconButton(
-              tooltip: '添加到选中日期',
-              iconSize: 18,
-              color: BasePalette.themeDark6,
-              icon: const Icon(LucideIcons.circlePlus),
-              onPressed: _addFromQuickInput,
-            ),
-          ],
+            onSubmitted: (_) => _addFromQuickInput(),
+          ),
         ),
-      );
+        IconButton(
+          tooltip: '添加到选中日期',
+          iconSize: 18,
+          color: BasePalette.themeDark6,
+          icon: const Icon(LucideIcons.circlePlus),
+          onPressed: _addFromQuickInput,
+        ),
+      ],
+    ),
+  );
 
   /// 底部常驻编辑栏：对齐旧版「文字颜色 / 单元格颜色」等一排按钮。
   Widget _toolbar(BuildContext context) => Container(
-        height: _toolbarHeight,
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
-        decoration: const BoxDecoration(
-          border: Border(top: BorderSide(color: BasePalette.white6)),
+    height: _toolbarHeight,
+    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+    decoration: const BoxDecoration(
+      border: Border(top: BorderSide(color: BasePalette.white6)),
+    ),
+    child: Row(
+      children: <Widget>[
+        Text(
+          '编辑 ${_targetDate.month}/${_targetDate.day}',
+          style: const TextStyle(
+            fontSize: AppTypography.caption,
+            color: BasePalette.grayLight5,
+          ),
         ),
-        child: Row(
-          children: <Widget>[
-            Text(
-              '编辑 ${_targetDate.month}/${_targetDate.day}',
-              style: const TextStyle(
-                fontSize: AppTypography.caption,
-                color: BasePalette.grayLight5,
-              ),
-            ),
-            const SizedBox(width: AppSpacing.xs),
-            _toolButton(
-              icon: LucideIcons.plus,
-              label: '添加一行',
-              tooltip: '在当前日期的格子内新增一行',
-              onPressed: _focusNewLine,
-            ),
-            _toolButton(
-              icon: LucideIcons.type,
-              label: '文字颜色',
-              tooltip: '选中行则改该行，否则改整格文字',
-              active: _paletteTarget == _ColorTarget.text,
-              onPressed: () => _openPalette(_ColorTarget.text),
-            ),
-            _toolButton(
-              icon: LucideIcons.paintBucket,
-              label: '单元格颜色',
-              tooltip: '设置当前日期的单元格背景色',
-              active: _paletteTarget == _ColorTarget.cell,
-              onPressed: () => _openPalette(_ColorTarget.cell),
-            ),
-            _toolButton(
-              icon: LucideIcons.checkCheck,
-              label: '标记完成',
-              tooltip: '切换选中行或整格的完成状态',
-              onPressed: _toggleComplete,
-            ),
-            _toolButton(
-              icon: LucideIcons.repeat,
-              label: '提升为任务',
-              tooltip: '把选中的一行提升为日历任务',
-              onPressed: _promoteActiveLine,
-            ),
-            _toolButton(
-              icon: LucideIcons.eraser,
-              label: _confirmClear ? '确认清空' : '清空本日',
-              tooltip: '清空当前日期的全部行（需二次确认）',
-              color: _confirmClear
-                  ? BasePalette.redLight4
-                  : BasePalette.grayLight4,
-              onPressed: _clearCell,
-            ),
-            _toolButton(
-              icon: LucideIcons.maximize2,
-              label: '浮层编辑',
-              tooltip: '在格子旁弹出完整编辑器（也可长按 / 双击 / 右键格子）',
-              active: _popupDate != null,
-              onPressed: _openPopupFromToolbar,
-            ),
-            _toolButton(
-              icon: LucideIcons.check,
-              label: '完成编辑',
-              tooltip: '退出当前格子的编辑态',
-              active: _editingDate != null,
-              onPressed: () {
-                _closePopup();
-                _closeEditor();
-              },
-            ),
-          ],
+        const SizedBox(width: AppSpacing.xs),
+        _toolButton(
+          icon: LucideIcons.plus,
+          label: '添加一行',
+          tooltip: '在当前日期的格子内新增一行',
+          onPressed: _focusNewLine,
         ),
-      );
+        _toolButton(
+          icon: LucideIcons.type,
+          label: '文字颜色',
+          tooltip: '选中行则改该行，否则改整格文字',
+          active: _ed.paletteTarget == _ColorTarget.text,
+          onPressed: () => _openPalette(_ColorTarget.text),
+        ),
+        _toolButton(
+          icon: LucideIcons.paintBucket,
+          label: '单元格颜色',
+          tooltip: '设置当前日期的单元格背景色',
+          active: _ed.paletteTarget == _ColorTarget.cell,
+          onPressed: () => _openPalette(_ColorTarget.cell),
+        ),
+        _toolButton(
+          icon: LucideIcons.checkCheck,
+          label: '标记完成',
+          tooltip: '切换选中行或整格的完成状态',
+          onPressed: _toggleComplete,
+        ),
+        _toolButton(
+          icon: LucideIcons.repeat,
+          label: '提升为任务',
+          tooltip: '把选中的一行提升为日历任务',
+          onPressed: _promoteActiveLine,
+        ),
+        _toolButton(
+          icon: LucideIcons.eraser,
+          label: _ed.confirmClear ? '确认清空' : '清空本日',
+          tooltip: '清空当前日期的全部行（需二次确认）',
+          color: _ed.confirmClear
+              ? BasePalette.redLight4
+              : BasePalette.grayLight4,
+          onPressed: _clearCell,
+        ),
+        _toolButton(
+          icon: LucideIcons.maximize2,
+          label: '浮层编辑',
+          tooltip: '在格子旁弹出完整编辑器（也可长按 / 双击 / 右键格子）',
+          active: _ed.popupDate != null,
+          onPressed: _openPopupFromToolbar,
+        ),
+        _toolButton(
+          icon: LucideIcons.check,
+          label: '完成编辑',
+          tooltip: '退出当前格子的编辑态',
+          active: _ed.editingDate != null,
+          onPressed: () {
+            _closePopup();
+            _closeEditor();
+          },
+        ),
+      ],
+    ),
+  );
 
   Widget _toolButton({
     required IconData icon,
@@ -1672,56 +1765,57 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
     required VoidCallback onPressed,
     Color color = BasePalette.grayLight4,
     bool active = false,
-  }) =>
-      Expanded(
-        child: Tooltip(
-          message: tooltip,
-          child: InkWell(
-            onTap: onPressed,
+  }) => Expanded(
+    child: Tooltip(
+      message: tooltip,
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(AppRadius.xs),
+        child: Container(
+          height: 44,
+          decoration: BoxDecoration(
+            color: active
+                ? BasePalette.themeDark6.withValues(alpha: 0.25)
+                : Colors.transparent,
             borderRadius: BorderRadius.circular(AppRadius.xs),
-            child: Container(
-              height: 44,
-              decoration: BoxDecoration(
-                color: active
-                    ? BasePalette.themeDark6.withValues(alpha: 0.25)
-                    : Colors.transparent,
-                borderRadius: BorderRadius.circular(AppRadius.xs),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: <Widget>[
+              Icon(
+                icon,
+                size: 16,
+                color: active ? BasePalette.themeDark8 : color,
               ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  Icon(icon,
-                      size: 16,
-                      color: active ? BasePalette.themeDark8 : color),
-                  const SizedBox(height: 2),
-                  Text(
-                    label,
-                    maxLines: 1,
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: active ? BasePalette.themeDark8 : color,
-                    ),
-                  ),
-                ],
+              const SizedBox(height: 2),
+              Text(
+                label,
+                maxLines: 1,
+                style: TextStyle(
+                  fontSize: 10,
+                  color: active ? BasePalette.themeDark8 : color,
+                ),
               ),
-            ),
+            ],
           ),
         ),
-      );
+      ),
+    ),
+  );
 
   /// 调色板内嵌在卡片底部，避免 showDialog 被 SetWindowRgn 裁掉。
   Widget _paletteStrip({bool light = false}) {
+    final recentColors = _ed.recentColors;
     final swatches = <EventColor>[
-      ..._recentColors,
+      ...recentColors,
       ...EventColor.palette.where(
-        (EventColor c) =>
-            !_recentColors.any((EventColor r) => r.argb == c.argb),
+        (EventColor c) => !recentColors.any((EventColor r) => r.argb == c.argb),
       ),
     ];
     EventColor selected = EventColor.transparent;
-    if (_paletteTarget == _ColorTarget.cell) {
-      selected = _cellOf(_targetDate)?.backgroundColor ??
-          EventColor.transparent;
+    if (_ed.paletteTarget == _ColorTarget.cell) {
+      selected =
+          _cellOf(_targetDate)?.backgroundColor ?? EventColor.transparent;
     } else if (_activeLineId != null) {
       for (final line in _linesOf(_targetDate)) {
         if (line.id == _activeLineId) selected = line.color;
@@ -1740,7 +1834,7 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
       child: Row(
         children: <Widget>[
           Text(
-            _paletteTarget == _ColorTarget.cell ? '单元格颜色' : '文字颜色',
+            _ed.paletteTarget == _ColorTarget.cell ? '单元格颜色' : '文字颜色',
             style: TextStyle(
               fontSize: AppTypography.caption,
               color: light ? BasePalette.grayDark4 : BasePalette.grayLight5,
@@ -1763,7 +1857,8 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
           _popupTool(
             LucideIcons.x,
             '关闭调色板',
-            () => setState(() => _paletteTarget = _ColorTarget.none),
+            () =>
+                _editing.value = _ed.copyWith(paletteTarget: _ColorTarget.none),
             light: light,
           ),
         ],
@@ -1806,8 +1901,69 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
       );
 
   ThemeMode _toMaterialThemeMode(AppThemeMode mode) => switch (mode) {
-        AppThemeMode.light => ThemeMode.light,
-        AppThemeMode.dark => ThemeMode.dark,
-        AppThemeMode.system => ThemeMode.system,
-      };
+    AppThemeMode.light => ThemeMode.light,
+    AppThemeMode.dark => ThemeMode.dark,
+    AppThemeMode.system => ThemeMode.system,
+  };
+}
+
+/// 卡片内容（月历网格 + 工具栏）：监听月份/设置数据域与编辑态域，
+/// 不监听几何域——作为几何 [ValueListenableBuilder] 的缓存 child，
+/// 拖动/缩放时整张卡片（含 42 格）不重建。
+final class _DesktopCard extends ConsumerWidget {
+  const _DesktopCard(this.state);
+
+  final _DesktopWidgetAppState state;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final month = ref.watch(monthDataProvider);
+    final settings = ref.watch(settingsControllerProvider);
+    return ValueListenableBuilder<_Editing>(
+      valueListenable: state._editing,
+      builder: (BuildContext context, _Editing ed, Widget? child) =>
+          state._card(context, month, settings),
+    );
+  }
+}
+
+/// 月历网格：独立 widget，由卡片在编辑态/数据变化时重建。
+final class _DesktopGrid extends StatelessWidget {
+  const _DesktopGrid(this.state, this.month, this.settings);
+
+  final _DesktopWidgetAppState state;
+  final MonthData month;
+  final AppSettings settings;
+
+  @override
+  Widget build(BuildContext context) => state._grid(context, month, settings);
+}
+
+/// 编辑器浮层：独立 widget，只监听编辑态域。
+final class _PopupEditor extends StatelessWidget {
+  const _PopupEditor(this.state);
+
+  final _DesktopWidgetAppState state;
+
+  @override
+  Widget build(BuildContext context) => ValueListenableBuilder<_Editing>(
+    valueListenable: state._editing,
+    builder: (BuildContext context, _Editing ed, Widget? child) =>
+        state._popupEditor(),
+  );
+}
+
+/// 调色板：独立 widget，卡片底部与浮层内复用同一实现。
+final class _PaletteStrip extends StatelessWidget {
+  const _PaletteStrip(this.state, {this.light = false});
+
+  final _DesktopWidgetAppState state;
+  final bool light;
+
+  @override
+  Widget build(BuildContext context) => ValueListenableBuilder<_Editing>(
+    valueListenable: state._editing,
+    builder: (BuildContext context, _Editing ed, Widget? child) =>
+        state._paletteStrip(light: light),
+  );
 }

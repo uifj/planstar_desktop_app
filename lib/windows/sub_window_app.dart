@@ -8,12 +8,13 @@ import 'dart:async';
 
 import 'package:core_design_system/core_design_system.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../bootstrap/core_providers.dart';
 import '../core/ports.dart';
 import '../core/value_objects.dart';
+import '../features/calendar/application/sound_reaction.dart';
 import '../features/countdown/application/countdown_controller.dart';
 import '../features/history/application/history_controller.dart';
 import '../features/notes/application/notes_controller.dart';
@@ -41,10 +42,11 @@ final class _SubWindowAppState extends ConsumerState<SubWindowApp> {
     // 子窗口 engine 也要留痕：便签/倒数日的编辑在此 engine 内分发领域事件，
     // 不初始化 HistoryController 的话这些改动在主窗口历史页会「静默丢失」。
     ref.read(historyControllerProvider);
-    _commands = ref
-        .read(multiWindowGatewayProvider)
-        .incoming
-        .listen((MultiWindowCommand command) {
+    // 完成提示音只在操作发起 engine 响（ADR-0005 跨 engine 不变量）。
+    ref.read(soundReactionProvider);
+    _commands = ref.read(multiWindowGatewayProvider).incoming.listen((
+      MultiWindowCommand command,
+    ) {
       if (command.method != 'refresh') return;
       ref.read(notesControllerProvider.notifier).load();
       ref.read(countdownControllerProvider.notifier).load();
@@ -72,7 +74,9 @@ final class _SubWindowAppState extends ConsumerState<SubWindowApp> {
             _SubWindowTitleBar(title: kind == 'note' ? '便签' : '倒数日'),
             Expanded(
               child: kind == 'note'
-                  ? _NoteWindow(noteId: widget.arguments['noteId'] as String? ?? '')
+                  ? _NoteWindow(
+                      noteId: widget.arguments['noteId'] as String? ?? '',
+                    )
                   : const _CountdownWindow(),
             ),
           ],
@@ -173,10 +177,7 @@ final class _NoteWindowState extends ConsumerState<_NoteWindow> {
     final colors = context.appColors;
     if (note == null) {
       return Center(
-        child: Text(
-          '暂无便签',
-          style: TextStyle(color: colors.textTertiary),
-        ),
+        child: Text('暂无便签', style: TextStyle(color: colors.textTertiary)),
       );
     }
     _syncControllers(note.lines);
@@ -266,9 +267,7 @@ final class _CountdownWindow extends ConsumerWidget {
               ),
               const SizedBox(height: AppSpacing.xxs),
               Text(
-                item.displayText(
-                  DateKey.today(ref.read(clockProvider).now()),
-                ),
+                item.displayText(DateKey.today(ref.read(clockProvider).now())),
                 style: TextStyle(
                   fontSize: AppTypography.title,
                   fontWeight: AppTypography.bold,

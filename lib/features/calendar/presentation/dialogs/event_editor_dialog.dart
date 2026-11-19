@@ -3,7 +3,7 @@ library;
 
 import 'package:core_design_system/core_design_system.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../../../core/value_objects.dart';
 import '../../../../shared/widgets/common.dart';
@@ -38,15 +38,14 @@ Future<EventEditorResult?> showEventEditorDialog(
   CalendarEvent? event,
   DateKey? initialDate,
   String initialContent = '',
-}) async =>
-    showDialog<EventEditorResult>(
-      context: context,
-      builder: (BuildContext context) => EventEditorDialog(
-        event: event,
-        initialDate: initialDate,
-        initialContent: initialContent,
-      ),
-    );
+}) async => showDialog<EventEditorResult>(
+  context: context,
+  builder: (BuildContext context) => EventEditorDialog(
+    event: event,
+    initialDate: initialDate,
+    initialContent: initialContent,
+  ),
+);
 
 final class EventEditorDialog extends StatefulWidget {
   const EventEditorDialog({
@@ -82,9 +81,8 @@ final class _EventEditorDialogState extends State<EventEditorDialog> {
     _contentController = TextEditingController(
       text: event?.content ?? widget.initialContent,
     );
-    _startDate = event?.startDate ??
-        widget.initialDate ??
-        DateKey.today(DateTime.now());
+    _startDate =
+        event?.startDate ?? widget.initialDate ?? DateKey.today(DateTime.now());
     _type = event?.type ?? CalendarEventType.task;
     _color = event?.color ?? EventColor.defaultText;
     _backgroundColor = event?.backgroundColor ?? EventColor.transparent;
@@ -113,10 +111,7 @@ final class _EventEditorDialogState extends State<EventEditorDialog> {
           onPressed: () => Navigator.of(context).pop(),
           child: const Text('取消'),
         ),
-        FilledButton(
-          onPressed: _submit,
-          child: const Text('保存'),
-        ),
+        FilledButton(onPressed: _submit, child: const Text('保存')),
       ],
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -141,11 +136,11 @@ final class _EventEditorDialogState extends State<EventEditorDialog> {
                   decoration: const InputDecoration(labelText: '类型'),
                   items: CalendarEventType.values
                       .map(
-                        (CalendarEventType t) => DropdownMenuItem<
-                            CalendarEventType>(
-                          value: t,
-                          child: Text(t.label),
-                        ),
+                        (CalendarEventType t) =>
+                            DropdownMenuItem<CalendarEventType>(
+                              value: t,
+                              child: Text(t.label),
+                            ),
                       )
                       .toList(),
                   onChanged: (CalendarEventType? value) =>
@@ -228,8 +223,7 @@ final class _EventEditorDialogState extends State<EventEditorDialog> {
             children: <Widget>[
               Switch(
                 value: _hasReminder,
-                onChanged: (bool value) =>
-                    setState(() => _hasReminder = value),
+                onChanged: (bool value) => setState(() => _hasReminder = value),
               ),
               const SizedBox(width: AppSpacing.xs),
               OutlinedButton(
@@ -284,8 +278,11 @@ final class _EventEditorDialogState extends State<EventEditorDialog> {
                   );
                   if (picked != null) setState(() => _color = picked);
                 },
-                child: Icon(LucideIcons.palette,
-                    size: 16, color: _color.toColor()),
+                child: Icon(
+                  LucideIcons.palette,
+                  size: 16,
+                  color: _color.toColor(),
+                ),
               ),
               const SizedBox(width: AppSpacing.md),
               const Text('单元格颜色'),
@@ -310,9 +307,9 @@ final class _EventEditorDialogState extends State<EventEditorDialog> {
   }
 
   TextStyle _label(BuildContext context) => TextStyle(
-        fontSize: AppTypography.caption,
-        color: context.appColors.textTertiary,
-      );
+    fontSize: AppTypography.caption,
+    color: context.appColors.textTertiary,
+  );
 
   Future<void> _pickDate() async {
     final picked = await showDatePicker(
@@ -361,13 +358,6 @@ final class _EventEditorDialogState extends State<EventEditorDialog> {
 
 /// 只用于星期文案的小工具，避免对话框再引入整份日历数学。
 abstract final class CalendarMathShort {
-  static String label(int weekday) => const <String>[
-        '一',
-        '二',
-        '三',
-        '四',
-        '五',
-        '六',
-        '日',
-      ][weekday - 1];
+  static String label(int weekday) =>
+      const <String>['一', '二', '三', '四', '五', '六', '日'][weekday - 1];
 }

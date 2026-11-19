@@ -3,7 +3,7 @@ library;
 
 import 'package:core_design_system/core_design_system.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../bootstrap/core_providers.dart';
@@ -45,8 +45,7 @@ final class TimetablePage extends ConsumerWidget {
                 onPressed: () async {
                   await controller.create(
                     name: '新建课程表',
-                    startDate:
-                        DateKey.today(ref.read(clockProvider).now()),
+                    startDate: DateKey.today(ref.read(clockProvider).now()),
                   );
                 },
                 icon: const Icon(LucideIcons.plus, size: 16),
@@ -142,9 +141,8 @@ final class _TimetableCard extends ConsumerWidget {
       subtitle: '${timetable.startDate.cnFull} 开学 · ${timetable.weeks} 周',
       trailing: IconButton(
         icon: Icon(LucideIcons.trash2, size: 16, color: colors.error),
-        onPressed: () => ref
-            .read(timetableControllerProvider.notifier)
-            .remove(timetable.id),
+        onPressed: () =>
+            ref.read(timetableControllerProvider.notifier).remove(timetable.id),
       ),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
@@ -158,13 +156,9 @@ final class _TimetableCard extends ConsumerWidget {
             for (final period in timetable.periods)
               DataRow(
                 cells: <DataCell>[
-                  DataCell(
-                    Text('${period.index}\n${period.startLabel}'),
-                  ),
+                  DataCell(Text('${period.index}\n${period.startLabel}')),
                   for (var day = 1; day <= dayCount; day++)
-                    DataCell(
-                      _lessonCell(context, ref, day, period.index),
-                    ),
+                    DataCell(_lessonCell(context, ref, day, period.index)),
                 ],
               ),
           ],
@@ -180,9 +174,7 @@ final class _TimetableCard extends ConsumerWidget {
     int period,
   ) {
     final matches = timetable.lessons
-        .where(
-          (Lesson l) => l.weekday == weekday && l.period == period,
-        )
+        .where((Lesson l) => l.weekday == weekday && l.period == period)
         .toList();
     if (matches.isEmpty) {
       return InkWell(
@@ -233,8 +225,7 @@ final class _TimetableCard extends ConsumerWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (BuildContext context) => StatefulBuilder(
-        builder: (BuildContext context, StateSetter setState) =>
-            AppDialogFrame(
+        builder: (BuildContext context, StateSetter setState) => AppDialogFrame(
           title: '添加课程（周$weekday 第$period节）',
           actions: <Widget>[
             TextButton(
@@ -274,7 +265,9 @@ final class _TimetableCard extends ConsumerWidget {
       ),
     );
     if (confirmed != true || nameController.text.trim().isEmpty) return;
-    await ref.read(timetableControllerProvider.notifier).addLesson(
+    await ref
+        .read(timetableControllerProvider.notifier)
+        .addLesson(
           timetable.id,
           Lesson(
             id: ref.read(idGeneratorProvider).next(),

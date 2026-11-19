@@ -1,6 +1,7 @@
-/// 日历仓储的本地实现：复用 `core` 的 `JsonListStore` / `KeyValueStore`。
+/// 日历仓储的本地实现：两个 [JsonEntityStore]（事件 / 单元格）。
 ///
-/// 持久化成功后才分发聚合上积攒的领域事件，避免「事件发了但事务没落盘」。
+/// 「读改写 → 落盘成功后分发领域事件」统一走共享存储原语（ADR-0002b），
+/// 本类只做聚合 ↔ JSON 的契约适配，不再自带第二套持久化 / 分发流程。
 library;
 
 import 'package:core/domain.dart';
@@ -10,13 +11,21 @@ import 'package:core/storage.dart';
 
 import '../../../core/app_events.dart';
 import '../../../core/ports.dart';
-import '../../../core/result_x.dart';
 import '../../../core/value_objects.dart';
+import '../../../infrastructure/json_entity_store.dart';
 import '../domain/calendar_event.dart';
 import '../domain/day_cell.dart';
 import '../domain/repositories.dart';
 
-typedef _Json = Map<String, Object?>;
+/// 日历事件的持久化键。
+const String calendarEventsStoreKey = 'planstar.calendar.events.v1';
+
+/// 单元格（逐日清单）的持久化键。
+const String calendarCellsStoreKey = 'planstar.calendar.cells.v1';
+
+/// 日历的全部键共享一个重载分组（前缀注册）。
+void registerCalendarReloadTargets(ReloadTargetRegistry registry) =>
+    registry.registerPrefix('planstar.calendar.', 'calendar');
 
 final class LocalCalendarRepository implements CalendarRepository {
   LocalCalendarRepository({
@@ -24,40 +33,36 @@ final class LocalCalendarRepository implements CalendarRepository {
     required DomainEventBus bus,
     required Clock clock,
     required AppLogger logger,
-  })  : _bus = bus,
-        _clock = clock,
-        _logger = logger,
-        _events = JsonListStore<_Json>(
-          store: store,
-          key: _eventsKey,
-          fromJson: (_Json json) => json,
-          toJson: (_Json value) => value,
-        ),
-        _cells = JsonListStore<_Json>(
-          store: store,
-          key: _cellsKey,
-          fromJson: (_Json json) => json,
-          toJson: (_Json value) => value,
-        );
+  }) : _clock = clock,
+       _events = JsonEntityStore<CalendarEvent>(
+         store: store,
+         key: calendarEventsStoreKey,
+         bus: bus,
+         clock: clock,
+         fromJson: CalendarEvent.fromJson,
+         toJson: (CalendarEvent e) => e.toJson(),
+         idOf: (CalendarEvent e) => e.id,
+         logger: logger,
+       ),
+       // 单元格以 date 字段为主键（toJson 里没有 id）。
+       _cells = JsonEntityStore<DayCell>(
+         store: store,
+         key: calendarCellsStoreKey,
+         bus: bus,
+         clock: clock,
+         fromJson: DayCell.fromJson,
+         toJson: (DayCell c) => c.toJson(),
+         idOf: (DayCell c) => c.date.key,
+         idField: 'date',
+         logger: logger,
+       );
 
-  static const String _eventsKey = 'planstar.calendar.events.v1';
-  static const String _cellsKey = 'planstar.calendar.cells.v1';
-
-  final DomainEventBus _bus;
   final Clock _clock;
-  final AppLogger _logger;
-  final JsonListStore<_Json> _events;
-  final JsonListStore<_Json> _cells;
+  final JsonEntityStore<CalendarEvent> _events;
+  final JsonEntityStore<DayCell> _cells;
 
   @override
-  Future<Result<List<CalendarEvent>>> allEvents() async {
-    final result = await guardAsync<List<_Json>>(() => _events.readAll());
-    return result.map(
-      (List<_Json> items) => items
-          .map(CalendarEvent.fromJson)
-          .toList(growable: false),
-    );
-  }
+  Future<Result<List<CalendarEvent>>> allEvents() => _events.all();
 
   @override
   Future<Result<CalendarEvent?>> eventById(String id) async {
@@ -71,45 +76,30 @@ final class LocalCalendarRepository implements CalendarRepository {
   }
 
   @override
-  Future<Result<void>> saveEvent(CalendarEvent event) async {
-    final current = await guardAsync<List<_Json>>(() => _events.readAll());
-    if (current case Fail<List<_Json>>(:final Failure failure)) {
-      return Fail<void>(failure);
-    }
-    final items = current.requireData;
-    final next = List<_Json>.of(items)
-      ..removeWhere((_Json item) => item['id'] == event.id)
-      ..add(event.toJson());
-    return _persist(
-      () => _events.writeAll(next),
-      event.pullDomainEvents(),
+  Future<Result<void>> saveEvent(CalendarEvent event) =>
+      _events.upsert(event, events: event.pullDomainEvents());
+
+  @override
+  Future<Result<void>> saveEvents(List<CalendarEvent> events) {
+    if (events.isEmpty) return Future.value(const Success<void>(null));
+    return _events.upsertAll(
+      events,
+      events: events
+          .expand((CalendarEvent e) => e.pullDomainEvents())
+          .toList(growable: false),
     );
   }
 
   @override
-  Future<Result<void>> deleteEvent(String id) async {
-    final current = await guardAsync<List<_Json>>(() => _events.readAll());
-    if (current case Fail<List<_Json>>(:final Failure failure)) {
-      return Fail<void>(failure);
-    }
-    final next = List<_Json>.of(current.requireData)
-      ..removeWhere((_Json item) => item['id'] == id);
-    return _persist(
-      () => _events.writeAll(next),
-      <DomainEvent>[
-        CalendarEventRemoved(aggregateId: id, occurredAt: _clock.now()),
-      ],
-    );
-  }
+  Future<Result<void>> deleteEvent(String id) => _events.delete(
+    id,
+    events: <DomainEvent>[
+      CalendarEventRemoved(aggregateId: id, occurredAt: _clock.now()),
+    ],
+  );
 
   @override
-  Future<Result<List<DayCell>>> allCells() async {
-    final result = await guardAsync<List<_Json>>(() => _cells.readAll());
-    return result.map(
-      (List<_Json> items) =>
-          items.map(DayCell.fromJson).toList(growable: false),
-    );
-  }
+  Future<Result<List<DayCell>>> allCells() => _cells.all();
 
   @override
   Future<Result<DayCell?>> cellByDate(DateKey date) async {
@@ -123,64 +113,26 @@ final class LocalCalendarRepository implements CalendarRepository {
   }
 
   @override
-  Future<Result<void>> saveCell(DayCell cell) async {
-    final current = await guardAsync<List<_Json>>(() => _cells.readAll());
-    if (current case Fail<List<_Json>>(:final Failure failure)) {
-      return Fail<void>(failure);
-    }
-    final next = List<_Json>.of(current.requireData)
-      ..removeWhere((_Json item) => item['date'] == cell.date.key)
-      ..add(cell.toJson());
-    return _persist(
-      () => _cells.writeAll(next),
-      cell.pullDomainEvents(),
-    );
-  }
+  Future<Result<void>> saveCell(DayCell cell) =>
+      _cells.upsert(cell, events: cell.pullDomainEvents());
 
   @override
-  Future<Result<void>> deleteCell(DateKey date) async {
-    final current = await guardAsync<List<_Json>>(() => _cells.readAll());
-    if (current case Fail<List<_Json>>(:final Failure failure)) {
-      return Fail<void>(failure);
-    }
-    final next = List<_Json>.of(current.requireData)
-      ..removeWhere((_Json item) => item['date'] == date.key);
-    return _persist(
-      () => _cells.writeAll(next),
-      <DomainEvent>[
-        DayCellChanged(
-          aggregateId: date.key,
-          occurredAt: _clock.now(),
-          date: date,
-          snapshot: '',
-        ),
-      ],
-    );
-  }
+  Future<Result<void>> deleteCell(DateKey date) => _cells.delete(
+    date.key,
+    events: <DomainEvent>[
+      DayCellChanged(
+        aggregateId: date.key,
+        occurredAt: _clock.now(),
+        date: date,
+        snapshot: '',
+      ),
+    ],
+  );
 
   @override
   Future<Result<void>> clear() async {
-    final events = await guardAsync<void>(() => _events.clear());
-    final cells = await guardAsync<void>(() => _cells.clear());
+    final events = await _events.deleteAll();
+    final cells = await _cells.deleteAll();
     return events.isFailure ? events : cells;
-  }
-
-  Future<Result<void>> _persist(
-    Future<void> Function() write,
-    List<DomainEvent> events,
-  ) async {
-    final written = await guardAsync<void>(write);
-    return switch (written) {
-      Fail<void>(:final Failure failure) => Fail<void>(failure),
-      Success<void>() => await _dispatch(events),
-    };
-  }
-
-  Future<Result<void>> _dispatch(List<DomainEvent> events) async {
-    await _bus.dispatch(events);
-    if (events.isNotEmpty) {
-      _logger.debug('领域事件已分发：${events.length} 条');
-    }
-    return const Success<void>(null);
   }
 }

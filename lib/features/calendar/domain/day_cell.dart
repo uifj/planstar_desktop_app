@@ -56,6 +56,25 @@ final class DayCell extends AggregateRoot<String> {
         snapshot: nextLines.map((RichLine l) => l.text).join('\n'),
       ),
     );
+    // 按行 id 对比前后状态：只有「既存行从未完成变完成」才是完成事实。
+    // 改色/删行/新增即完成的行都不发 TaskCompleted（ADR-0005）。
+    final before = <String, RichLine>{
+      for (final RichLine line in lines) line.id: line,
+    };
+    for (final RichLine line in nextLines) {
+      if (!line.completed) continue;
+      final old = before[line.id];
+      if (old != null && !old.completed) {
+        cell.raiseDomainEvent(
+          TaskCompleted(
+            aggregateId: date.key,
+            occurredAt: occurredAt,
+            date: date,
+            source: TaskCompletionSource.cellLine,
+          ),
+        );
+      }
+    }
     return cell;
   }
 
@@ -65,25 +84,22 @@ final class DayCell extends AggregateRoot<String> {
   String get snapshot => lines.map((RichLine l) => l.text).join('\n');
 
   Map<String, Object?> toJson() => <String, Object?>{
-        'date': date.key,
-        'lines': lines.map((RichLine l) => l.toJson()).toList(),
-        'backgroundColor': backgroundColor.argb,
-        'updatedAt': updatedAt.toIso8601String(),
-      };
+    'date': date.key,
+    'lines': lines.map((RichLine l) => l.toJson()).toList(),
+    'backgroundColor': backgroundColor.argb,
+    'updatedAt': updatedAt.toIso8601String(),
+  };
 
   factory DayCell.fromJson(Map<String, Object?> json) => DayCell._(
-        date: DateKey.parse(json['date']! as String),
-        lines: (json['lines'] as List? ?? const <Object?>[])
-            .map(
-              (Object? l) => RichLine.fromJson(
-                Map<String, Object?>.from(l! as Map),
-              ),
-            )
-            .toList(),
-        backgroundColor: EventColor(
-          json['backgroundColor'] as int? ?? 0x00000000,
-        ),
-        updatedAt: DateTime.tryParse(json['updatedAt'] as String? ?? '') ??
-            DateTime.now(),
-      );
+    date: DateKey.parse(json['date']! as String),
+    lines: (json['lines'] as List? ?? const <Object?>[])
+        .map(
+          (Object? l) =>
+              RichLine.fromJson(Map<String, Object?>.from(l! as Map)),
+        )
+        .toList(),
+    backgroundColor: EventColor(json['backgroundColor'] as int? ?? 0x00000000),
+    updatedAt:
+        DateTime.tryParse(json['updatedAt'] as String? ?? '') ?? DateTime.now(),
+  );
 }

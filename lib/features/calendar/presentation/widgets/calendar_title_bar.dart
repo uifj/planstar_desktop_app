@@ -3,18 +3,15 @@ library;
 
 import 'package:core_design_system/core_design_system.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../settings/application/settings_controller.dart';
 import '../../../settings/domain/app_settings.dart';
-import '../../application/calendar_controllers.dart';
+import '../calendar_providers.dart';
 
 final class CalendarTitleBar extends ConsumerWidget {
-  const CalendarTitleBar({
-    super.key,
-    required this.onNewEvent,
-  });
+  const CalendarTitleBar({super.key, required this.onNewEvent});
 
   final VoidCallback onNewEvent;
 
@@ -49,10 +46,7 @@ final class CalendarTitleBar extends ConsumerWidget {
             icon: const Icon(LucideIcons.chevronLeft),
             onPressed: navigation.previous,
           ),
-          OutlinedButton(
-            onPressed: navigation.today,
-            child: const Text('今天'),
-          ),
+          OutlinedButton(onPressed: navigation.today, child: const Text('今天')),
           IconButton(
             tooltip: '下一页',
             icon: const Icon(LucideIcons.chevronRight),
@@ -68,18 +62,18 @@ final class CalendarTitleBar extends ConsumerWidget {
               underline: const SizedBox.shrink(),
               items: CalendarDisplayMode.values
                   .map(
-                    (CalendarDisplayMode mode) => DropdownMenuItem<
-                        CalendarDisplayMode>(
-                      value: mode,
-                      child: Text(mode.label),
-                    ),
+                    (CalendarDisplayMode mode) =>
+                        DropdownMenuItem<CalendarDisplayMode>(
+                          value: mode,
+                          child: Text(mode.label),
+                        ),
                   )
                   .toList(),
               onChanged: (CalendarDisplayMode? value) {
                 if (value == null) return;
-                ref.read(settingsControllerProvider.notifier).update(
-                      (AppSettings s) => s.copyWith(displayMode: value),
-                    );
+                ref
+                    .read(settingsControllerProvider.notifier)
+                    .update((AppSettings s) => s.copyWith(displayMode: value));
               },
             ),
           ),

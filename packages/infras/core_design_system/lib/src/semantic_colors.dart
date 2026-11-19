@@ -4,7 +4,7 @@
 /// 音视频通话专属槽（气泡、通话按钮、标签色阶等）不引入。
 library;
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'palette.dart';
 
@@ -310,31 +310,31 @@ final class AppColors extends ThemeExtension<AppColors> {
 
   @override
   int get hashCode => Object.hashAll(<Object>[
-        textPrimary,
-        textSecondary,
-        textTertiary,
-        textDisabled,
-        bgPage,
-        bgCard,
-        bgSubtle,
-        bgOverlay,
-        divider,
-        border,
-        brand,
-        brandPressed,
-        brandDisabled,
-        brandSubtle,
-        onBrand,
-        price,
-        success,
-        warning,
-        warningBg,
-        error,
-        info,
-        skeleton,
-        tabActive,
-        tabInactive,
-      ]);
+    textPrimary,
+    textSecondary,
+    textTertiary,
+    textDisabled,
+    bgPage,
+    bgCard,
+    bgSubtle,
+    bgOverlay,
+    divider,
+    border,
+    brand,
+    brandPressed,
+    brandDisabled,
+    brandSubtle,
+    onBrand,
+    price,
+    success,
+    warning,
+    warningBg,
+    error,
+    info,
+    skeleton,
+    tabActive,
+    tabInactive,
+  ]);
 }
 
 /// 便捷取用：`context.appColors.price`。

@@ -5,22 +5,34 @@ library;
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io' show Platform;
-import 'dart:ui' show Rect, Size;
+import 'dart:ui' show Offset, Rect, Size;
 
 import 'package:audioplayers/audioplayers.dart';
 import 'package:core/logger.dart';
 import 'package:desktop_multi_window/desktop_multi_window.dart';
 import 'package:flutter/foundation.dart';
 import 'package:launch_at_startup/launch_at_startup.dart';
+// 三大桌面插件均已基于 nativeapi 重写，统一走各包公开的新 API。
+import 'package:screen_retriever/screen_retriever.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
+// Application（quit）未被上面三个包导出，兜底退出仅此一处退回 nativeapi。
+import 'package:nativeapi/nativeapi.dart' as nativeapi;
 
 import '../core/ports.dart';
 
-/// [WindowGateway] 的 window_manager 实现。
-final class WindowManagerGateway
-    with WindowListener
-    implements WindowGateway {
+/// 原生库未加载时（如 widget test 的 Dart VM）符号查找抛 ArgumentError，
+/// 与 window_manager / tray_manager legacy 桥的 tryNative 同样降级为 null。
+T? _tryNative<T>(T Function() body) {
+  try {
+    return body();
+  } on ArgumentError {
+    return null;
+  }
+}
+
+/// [WindowGateway] 的 window_manager 0.7 新 API 实现。
+final class WindowManagerGateway implements WindowGateway {
   WindowManagerGateway({required this.logger});
 
   final AppLogger logger;
@@ -29,232 +41,326 @@ final class WindowManagerGateway
   void Function()? onCloseIntercepted;
 
   bool _ready = false;
+  bool _preventClose = false;
+  bool _destroying = false;
+  Window? _window;
+  ListenerId? _listenerId;
+
+  /// 平台当前视为「本应用自己的」窗口；首个窗口存在前为 null。
+  Window? get _target => _window ??= _tryNative<Window?>(
+    () => WindowManager.instance.getCurrent(),
+  );
 
   Future<void> ensureInitialized() async {
     if (_ready || kIsWeb) return;
     if (!(Platform.isWindows || Platform.isLinux || Platform.isMacOS)) return;
-    await windowManager.ensureInitialized();
+    _window ??= _tryNative<Window?>(() => WindowManager.instance.getCurrent());
     _ready = true;
   }
 
   @override
   Future<void> initializeMainWindow() async {
     await ensureInitialized();
-    if (!_ready) return;
-    // 右上角 X / Alt+F4 不再直接退出：拦截原生关闭信号，改为隐藏到托盘。
+    final window = _target;
+    if (!_ready || window == null) return;
+    // 右上角 X / Alt+F4 不再直接退出：取消原生关闭请求，改为隐藏到托盘。
     // 托盘菜单里的「退出」会调用 destroy() 绕过拦截。
-    await windowManager.setPreventClose(true);
-    windowManager.addListener(this);
-    const options = WindowOptions(
-      size: Size(1320, 860),
-      minimumSize: Size(1024, 680),
-      center: true,
-      title: '企划星 · 桌面日历清单',
-      titleBarStyle: TitleBarStyle.hidden,
-      skipTaskbar: false,
-    );
-    // 不能 await：该调用要等首帧，而在 runApp 之前首帧永远不会到来。
-    unawaited(
-      windowManager.waitUntilReadyToShow(options, () async {
-        await windowManager.show();
-        await windowManager.focus();
-      }),
-    );
+    _preventClose = true;
+    _wireEvents();
+    window.titleBarStyle = TitleBarStyle.hidden;
+    window.isWindowControlButtonsVisible = true;
+    if (window.isFullScreen) window.isFullScreen = false;
+    if (window.isMaximized) window.unmaximize();
+    if (window.isMinimized) window.restore();
+    window.setSize(const Size(1320, 860).toNative(), false);
+    _center(window);
+    window.minimumSize = const Size(1024, 680).toNative();
+    window.isVisibleInTaskbar = true;
+    window.title = '企划星 · 桌面日历清单';
+    window.show();
+    window.focus();
   }
 
   @override
   Future<void> initializeSubWindow(String title, WindowRect rect) async {
     await ensureInitialized();
-    if (!_ready) return;
-    unawaited(windowManager.waitUntilReadyToShow(
-      WindowOptions(
-        size: Size(rect.width, rect.height),
-        minimumSize: const Size(280, 260),
-        title: title,
-        titleBarStyle: TitleBarStyle.hidden,
-        skipTaskbar: true,
-      ),
-      () async {
-        await windowManager.setBounds(
-          Rect.fromLTWH(rect.x, rect.y, rect.width, rect.height),
-        );
-        await windowManager.show();
-        await windowManager.focus();
-      },
-    ));
+    final window = _target;
+    if (!_ready || window == null) return;
+    window.titleBarStyle = TitleBarStyle.hidden;
+    window.isWindowControlButtonsVisible = true;
+    window.setSize(Size(rect.width, rect.height).toNative(), false);
+    window.minimumSize = const Size(280, 260).toNative();
+    window.isVisibleInTaskbar = false;
+    window.title = title;
+    window.bounds = Rect.fromLTWH(
+      rect.x,
+      rect.y,
+      rect.width,
+      rect.height,
+    ).toNative();
+    window.show();
+    window.focus();
+  }
+
+  /// 居中到光标所在显示器的工作区（与 legacy 桥的 calcWindowPosition 一致）。
+  void _center(Window window) {
+    final manager = DisplayManager.instance;
+    final cursor = manager.getCursorPosition().toOffset();
+    Display? current;
+    for (final display in manager.getAll()) {
+      final bounds = display.position.toOffset() & display.size.toSize();
+      if (bounds.contains(cursor)) {
+        current = display;
+        break;
+      }
+    }
+    current ??= manager.getPrimary();
+    if (current == null) return;
+    final workArea = current.workArea.toRect();
+    final size = window.size.toSize();
+    final position = Offset(
+      workArea.left + (workArea.width - size.width) / 2,
+      workArea.top + (workArea.height - size.height) / 2,
+    );
+    window.bounds = (position & size).toNative();
+  }
+
+  void _wireEvents() {
+    if (_listenerId != null) return;
+    final window = _target;
+    if (window == null) return;
+    _listenerId = _tryNative(() => window.addListener(_onWindowEvent));
+  }
+
+  void _onWindowEvent(WindowEvent event) {
+    if (event is! WindowCloseRequestedEvent) return;
+    if (_destroying) {
+      _destroying = false;
+      return;
+    }
+    if (_preventClose) {
+      event.request.cancel();
+      onCloseIntercepted?.call();
+      unawaited(hide());
+    }
   }
 
   @override
   Future<WindowRect> bounds() async {
     if (!_ready) return const WindowRect(100, 100, 1320, 860);
-    final rect = await windowManager.getBounds();
-    return WindowRect(
-      rect.left,
-      rect.top,
-      rect.width,
-      rect.height,
-    );
+    final rect = _target?.bounds.toRect() ?? Rect.zero;
+    return WindowRect(rect.left, rect.top, rect.width, rect.height);
   }
 
   @override
   Future<void> setBounds(WindowRect rect) async {
     if (!_ready) return;
-    await windowManager.setBounds(
-      Rect.fromLTWH(rect.x, rect.y, rect.width, rect.height),
-    );
+    _target?.bounds = Rect.fromLTWH(
+      rect.x,
+      rect.y,
+      rect.width,
+      rect.height,
+    ).toNative();
   }
 
   @override
   Future<void> setAlwaysOnTop(bool value) async {
-    if (_ready) await windowManager.setAlwaysOnTop(value);
+    if (_ready) _target?.isAlwaysOnTop = value;
   }
 
   @override
   Future<void> setOpacity(double value) async {
-    if (_ready) await windowManager.setOpacity(value.clamp(0.05, 1.0));
+    if (_ready) _target?.opacity = value.clamp(0.05, 1.0);
   }
 
   @override
   Future<void> startDragging() async {
-    if (_ready) await windowManager.startDragging();
+    if (_ready) _target?.startDragging();
   }
 
   @override
   Future<void> show() async {
-    if (_ready) await windowManager.show();
+    if (!_ready) return;
+    final window = _target;
+    if (window == null) return;
+    if (window.isMinimized) window.restore();
+    window.show();
   }
 
   @override
   Future<void> hide() async {
-    if (_ready) await windowManager.hide();
+    if (_ready) _target?.hide();
   }
 
   @override
   Future<void> minimize() async {
-    if (_ready) await windowManager.minimize();
+    if (_ready) _target?.minimize();
   }
 
   @override
   Future<void> toggleMaximize() async {
     if (!_ready) return;
-    if (await windowManager.isMaximized()) {
-      await windowManager.unmaximize();
+    final window = _target;
+    if (window == null) return;
+    if (window.isMaximized) {
+      if (window.isMaximizedVertically) window.setMaximizedVertically(false);
+      window.unmaximize();
     } else {
-      await windowManager.maximize();
+      window.maximize();
     }
   }
 
   @override
   Future<void> close() async {
-    if (_ready) await windowManager.close();
+    if (!_ready) return;
+    final window = _target;
+    final closing =
+        window != null &&
+        (_tryNative(() {
+              if (!Window.isCloseSupported()) return false;
+              _wireEvents();
+              return window.close();
+            }) ??
+            false);
+    if (closing) return;
+    // 平台不支持原生关闭时的兜底：与 legacy 桥一致，
+    // 拦截态报告并隐藏，否则直接退出应用。
+    final destroying = _destroying;
+    _destroying = false;
+    if (!destroying) {
+      onCloseIntercepted?.call();
+      if (_preventClose) {
+        await hide();
+        return;
+      }
+    }
+    _tryNative(() => nativeapi.Application.instance.quit(0));
   }
 
   @override
   Future<void> destroy() async {
-    if (_ready) await windowManager.destroy();
-  }
-
-  /// window_manager 的关闭拦截回调：只隐藏，托盘「退出」才真正结束进程。
-  @override
-  void onWindowClose() {
-    onCloseIntercepted?.call();
-    unawaited(hide());
+    if (!_ready) return;
+    _destroying = true;
+    await close();
   }
 }
 
-/// tray_manager 0.5.3 有两个必须自己补的行为：
-/// 1. `_methodCallHandler` 把菜单点击的 `onClick` 分发放在 `_listeners`
-///    循环**内部**，不注册 listener 时菜单项点击永远到不了 Dart；
-/// 2. Windows 原生层不会自动弹出右键菜单（`TrackPopupMenu` 只在
-///    `popUpContextMenu` 里调用），必须监听托盘点击事件后主动弹出。
-final class _TrayEventSink with TrayListener {
-  @override
-  void onTrayIconMouseDown() {
-    unawaited(trayManager.popUpContextMenu());
-  }
-
-  @override
-  void onTrayIconRightMouseDown() {
-    unawaited(trayManager.popUpContextMenu());
-  }
-}
-
-/// [TrayGateway] 的 tray_manager 实现。
+/// [TrayGateway] 的 tray_manager 0.9 新 API 实现。
 final class TrayManagerGateway implements TrayGateway {
   TrayManagerGateway({this.logger});
 
   final AppLogger? logger;
-  TrayListener? _listener;
+  TrayIcon? _trayIcon;
+  Image? _icon;
+  Menu? _menu;
+  final List<(MenuItem, ListenerId)> _menuItems = [];
+  ListenerId? _trayListenerId;
 
   @override
   Future<void> initialize(void Function(TrayAction action) onAction) async {
     if (kIsWeb) return;
     if (!(Platform.isWindows || Platform.isLinux || Platform.isMacOS)) return;
 
-    final listener = _TrayEventSink();
-    _listener = listener;
-    trayManager.addListener(listener);
+    final trayIcon = _tryNative(TrayIcon.create);
+    if (trayIcon == null) {
+      logger?.warn('创建托盘图标失败');
+      return;
+    }
+    _trayIcon = trayIcon;
+    trayIcon.setVisible(true);
 
     // Windows 原生层用 LoadImage(IMAGE_ICON, LR_LOADFROMFILE) 加载图标，
     // 只能识别 .ico；传 PNG 会得到 NULL HICON，托盘图标和右键菜单都不出现。
     try {
-      await trayManager.setIcon('assets/app_icons/tray_icon.ico');
+      final icon = ImageAsset.fromAsset('assets/app_icons/tray_icon.ico');
+      if (icon == null) throw ArgumentError('无法加载托盘图标资源');
+      trayIcon.icon = icon;
+      _icon?.dispose();
+      _icon = icon;
     } catch (error) {
       logger?.warn('设置托盘图标失败', error: error);
     }
     try {
-      await trayManager.setToolTip('企划星 · 桌面日历清单');
+      trayIcon.setTooltip('企划星 · 桌面日历清单');
     } catch (error) {
       logger?.warn('设置托盘提示失败', error: error);
     }
 
-    MenuItem item(TrayAction action, String label) => MenuItem(
-          key: action.name,
-          label: label,
-          onClick: (MenuItem _) => onAction(action),
-        );
     // 菜单注册独立于图标：即使图标能力降级，右键菜单仍应可用。
     try {
-      await trayManager.setContextMenu(
-        Menu(
-          items: <MenuItem>[
-            item(TrayAction.show, '显示主窗口'),
-            item(TrayAction.hide, '隐藏主窗口'),
-            MenuItem.separator(),
-            // 桌面日历窗口的两个独立一键项，右键即可明确显示或隐藏。
-            item(TrayAction.showDesktopWidget, '显示桌面日历窗口'),
-            item(TrayAction.hideDesktopWidget, '隐藏桌面日历窗口'),
-            MenuItem.separator(),
-            item(TrayAction.sync, '手动同步'),
-            item(TrayAction.settings, '日历设置'),
-            // 课程表 / 订阅暂时隐藏：TrayAction 与模块代码保留，仅不放入菜单。
-            item(TrayAction.notes, '便签'),
-            item(TrayAction.refreshWallpaper, '生成静态壁纸快照（可选）'),
-            MenuItem.separator(),
-            item(TrayAction.about, '关于'),
-            // 唯一能真正结束进程的入口。
-            item(TrayAction.exit, '退出企划星'),
-          ],
-        ),
-      );
+      final menu = Menu.create();
+      if (menu == null) throw StateError('无法创建托盘菜单');
+      void item(TrayAction action, String label) {
+        final menuItem = MenuItem.createWithLabelAndType(
+          label,
+          MenuItemType.normal,
+        );
+        if (menuItem == null) return;
+        final listenerId = menuItem.addListener((event) {
+          if (event is MenuItemClickedEvent) onAction(action);
+        });
+        menu.addItem(menuItem);
+        _menuItems.add((menuItem, listenerId));
+      }
+
+      item(TrayAction.show, '显示主窗口');
+      item(TrayAction.hide, '隐藏主窗口');
+      menu.addSeparator();
+      // 桌面日历窗口的两个独立一键项，右键即可明确显示或隐藏。
+      item(TrayAction.showDesktopWidget, '显示桌面日历窗口');
+      item(TrayAction.hideDesktopWidget, '隐藏桌面日历窗口');
+      menu.addSeparator();
+      item(TrayAction.sync, '手动同步');
+      item(TrayAction.settings, '日历设置');
+      // 课程表 / 订阅暂时隐藏：TrayAction 与模块代码保留，仅不放入菜单。
+      item(TrayAction.notes, '便签');
+      item(TrayAction.refreshWallpaper, '生成静态壁纸快照（可选）');
+      menu.addSeparator();
+      item(TrayAction.about, '关于');
+      // 唯一能真正结束进程的入口。
+      item(TrayAction.exit, '退出企划星');
+
+      trayIcon.setContextMenu(menu);
+      _menu = menu;
     } catch (error) {
       logger?.warn('设置托盘菜单失败', error: error);
     }
+
+    // Windows 原生层不会自动弹出右键菜单（默认 trigger 为 none），
+    // 监听托盘点击后主动弹出，沿用旧版行为（左键 / 右键都弹）。
+    _trayListenerId = trayIcon.addListener((event) {
+      if (event is TrayIconClickedEvent || event is TrayIconRightClickedEvent) {
+        trayIcon.openContextMenu();
+      }
+    });
   }
 
   @override
   Future<void> dispose() async {
     if (kIsWeb) return;
-    final listener = _listener;
-    if (listener != null) {
-      trayManager.removeListener(listener);
-      _listener = null;
+    final trayIcon = _trayIcon;
+    final trayListenerId = _trayListenerId;
+    if (trayIcon != null && trayListenerId != null) {
+      trayIcon.removeListener(trayListenerId);
     }
-    try {
-      await trayManager.destroy();
-    } catch (_) {
-      // ignore
-    }
+    _trayListenerId = null;
+    final menu = _menu;
+    final menuItems = List.of(_menuItems);
+    _menu = null;
+    _menuItems.clear();
+    // dispose 可能从菜单项点击回调里被调用（托盘「退出」），
+    // 原生项必须活过当前回调，延后一拍释放（与 legacy 桥一致）。
+    Timer.run(() {
+      for (final (item, listenerId) in menuItems) {
+        item.removeListener(listenerId);
+        item.dispose();
+      }
+      menu?.dispose();
+    });
+    _icon?.dispose();
+    _icon = null;
+    trayIcon?.dispose();
+    _trayIcon = null;
   }
 }
 
@@ -297,26 +403,25 @@ final class DesktopMultiWindowGateway implements MultiWindowGateway {
   }
 
   @override
-  Future<String> openNoteWindow(String noteId, {WindowRect? rect}) =>
-      _create(
-        kind: 'note',
-        noteId: noteId,
-        rect: rect ?? const WindowRect(180, 160, 360, 420),
-      );
+  Future<String> openNoteWindow(String noteId, {WindowRect? rect}) => _create(
+    kind: 'note',
+    noteId: noteId,
+    rect: rect ?? const WindowRect(180, 160, 360, 420),
+  );
 
   @override
   Future<String> openCountdownWindow({WindowRect? rect}) => _create(
-        kind: 'countdown',
-        noteId: '',
-        rect: rect ?? const WindowRect(220, 200, 320, 220),
-      );
+    kind: 'countdown',
+    noteId: '',
+    rect: rect ?? const WindowRect(220, 200, 320, 220),
+  );
 
   @override
   Future<String> openDesktopWidget() => _create(
-        kind: 'desktop',
-        noteId: '',
-        rect: const WindowRect(0, 0, 1920, 1080),
-      );
+    kind: 'desktop',
+    noteId: '',
+    rect: const WindowRect(0, 0, 1920, 1080),
+  );
 
   @override
   Future<void> hideCurrentWindow() async {
@@ -363,13 +468,11 @@ final class DesktopMultiWindowGateway implements MultiWindowGateway {
 
   @override
   Future<void> sendTo(String windowId, MultiWindowCommand command) async {
-    await WindowController.fromWindowId(windowId).invokeMethod(
-      'command',
-      <String, Object?>{
-        'method': command.method,
-        'arguments': command.arguments,
-      },
-    );
+    await WindowController.fromWindowId(windowId)
+        .invokeMethod('command', <String, Object?>{
+          'method': command.method,
+          'arguments': command.arguments,
+        });
   }
 }
 
@@ -418,14 +521,25 @@ final class LaunchAtStartupGateway implements AutoStartGateway {
 final class AudioPlayersSoundGateway implements SoundGateway {
   AudioPlayersSoundGateway({required this.logger});
 
+  /// asset 路径是基础设施细节，只在这里出现（ADR-0003）。
+  /// dong 与 ding 同文件是旧版遗留行为，保持不动，待产品确认。
+  static const Map<SoundTone, String> _toneAssets = <SoundTone, String>{
+    SoundTone.ding: 'audio/audio_ding.mp3',
+    SoundTone.ding2: 'audio/audio_ding2.mp3',
+    SoundTone.ding3: 'audio/audio_ding3.mp3',
+    SoundTone.dong: 'audio/audio_ding.mp3',
+    SoundTone.littleStar: 'audio/audio_alarm_littlestar.mp3',
+  };
+
   final AppLogger logger;
   final AudioPlayer _player = AudioPlayer();
 
   @override
   Future<void> play(SoundTone tone) async {
-    if (kIsWeb || tone.asset == null) return;
+    final asset = _toneAssets[tone];
+    if (kIsWeb || asset == null) return;
     try {
-      await _player.play(AssetSource(tone.asset!));
+      await _player.play(AssetSource(asset));
     } catch (error) {
       logger.warn('提示音播放失败：${tone.name}', error: error);
     }

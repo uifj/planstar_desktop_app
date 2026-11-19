@@ -5,11 +5,13 @@ publish_to: none
 resolution: workspace
 
 environment:
-  sdk: ^3.11.5
+  sdk: ^3.14.0
 
 dependencies:
   dio: ^5.11.1
 
 dev_dependencies:
-  lints: ^6.0.0
+  lints: ^6.1.0
+  # 1.33.0 要求 test_api 0.7.15，与 SDK 3.50 flutter_test 钉扎的 0.7.14 互斥；
+  # workspace 统一解析下最高只能到 1.32.0。
   test: ^1.25.0

@@ -3,7 +3,7 @@ library;
 
 import 'package:core_design_system/core_design_system.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../application/reminder_controller.dart';
@@ -49,9 +49,8 @@ final class ReminderOverlay extends ConsumerWidget {
                   const Spacer(),
                   IconButton(
                     icon: const Icon(LucideIcons.x, size: 16),
-                    onPressed: () => ref
-                        .read(reminderControllerProvider.notifier)
-                        .dismiss(),
+                    onPressed: () =>
+                        ref.read(reminderControllerProvider.notifier).dismiss(),
                   ),
                 ],
               ),
@@ -76,16 +75,14 @@ final class ReminderOverlay extends ConsumerWidget {
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: <Widget>[
                   TextButton(
-                    onPressed: () => ref
-                        .read(reminderControllerProvider.notifier)
-                        .dismiss(),
+                    onPressed: () =>
+                        ref.read(reminderControllerProvider.notifier).dismiss(),
                     child: const Text('不再显示窗口'),
                   ),
                   const SizedBox(width: AppSpacing.xs),
                   FilledButton(
-                    onPressed: () => ref
-                        .read(reminderControllerProvider.notifier)
-                        .dismiss(),
+                    onPressed: () =>
+                        ref.read(reminderControllerProvider.notifier).dismiss(),
                     child: const Text('知道了'),
                   ),
                 ],

@@ -6,16 +6,24 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../bootstrap/core_providers.dart';
 import '../../../core/list_state.dart';
+import '../../../core/ports.dart';
 import '../../../core/value_objects.dart';
 import '../../../infrastructure/json_entity_store.dart';
 import '../domain/timetable.dart';
 import '../infrastructure/local_timetable_repository.dart';
 
+/// 课程表的持久化键。
+const String timetablesStoreKey = 'planstar.timetables.v1';
+
+/// 课程表键的重载分组注册。
+void registerTimetableReloadTargets(ReloadTargetRegistry registry) =>
+    registry.registerKey(timetablesStoreKey, 'timetable');
+
 final timetableRepositoryProvider = Provider<TimetableRepository>(
   (Ref ref) => LocalTimetableRepository(
     store: JsonEntityStore<Timetable>(
       store: ref.watch(keyValueStoreProvider),
-      key: 'planstar.timetables.v1',
+      key: timetablesStoreKey,
       bus: ref.watch(domainEventBusProvider),
       clock: ref.watch(clockProvider),
       fromJson: Timetable.fromJson,
@@ -27,29 +35,23 @@ final timetableRepositoryProvider = Provider<TimetableRepository>(
 
 final timetableControllerProvider =
     NotifierProvider<TimetableController, AsyncListState<Timetable>>(
-  TimetableController.new,
-);
+      TimetableController.new,
+    );
 
-final class TimetableController
-    extends Notifier<AsyncListState<Timetable>> {
+final class TimetableController extends Notifier<AsyncListState<Timetable>> {
   @override
   AsyncListState<Timetable> build() {
     Future.microtask(load);
     return AsyncListState<Timetable>();
   }
 
-  TimetableRepository get _repository =>
-      ref.read(timetableRepositoryProvider);
+  TimetableRepository get _repository => ref.read(timetableRepositoryProvider);
 
   Future<void> load() async {
     final result = await _repository.all();
     switch (result) {
       case Success<List<Timetable>>(:final List<Timetable> data):
-        state = state.copyWith(
-          items: data,
-          loading: false,
-          clearError: true,
-        );
+        state = state.copyWith(items: data, loading: false, clearError: true);
       case Fail<List<Timetable>>(:final failure):
         state = state.copyWith(loading: false, error: failure.message);
     }
@@ -97,9 +99,7 @@ final class TimetableController
       return;
     }
     await save(
-      timetable.copyWith(
-        lessons: <Lesson>[...timetable.lessons, lesson],
-      ),
+      timetable.copyWith(lessons: <Lesson>[...timetable.lessons, lesson]),
     );
   }
 
@@ -122,3 +122,15 @@ final class TimetableController
       .expand((Timetable t) => t.lessonsOn(date))
       .toList(growable: false);
 }
+
+/// 对月历读模型的贡献（ADR-0004）：只读自身状态，按日推导课程。
+final timetableContributionProvider = Provider<TimelineContribution>((Ref ref) {
+  ref.watch(timetableControllerProvider);
+  final controller = ref.read(timetableControllerProvider.notifier);
+  return TimelineContribution(
+    tagsOn: (DateTime date) => <TimelineTag>[
+      for (final lesson in controller.lessonsOn(DateKey(date)))
+        TimelineTag(kind: TimelineTagKind.lesson, text: lesson.name),
+    ],
+  );
+});

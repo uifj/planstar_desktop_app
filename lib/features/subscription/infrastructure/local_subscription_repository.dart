@@ -10,14 +10,11 @@ import '../domain/subscription.dart';
 
 final class LocalSubscriptionRepository implements SubscriptionRepository {
   const LocalSubscriptionRepository({
-    required JsonEntityStore<Subscription> store,
-    required ApiClient api,
-    required AppLogger logger,
-    required String endpoint,
-  })  : _store = store,
-        _api = api,
-        _logger = logger,
-        _endpoint = endpoint;
+    required this._store,
+    required this._api,
+    required this._logger,
+    required this._endpoint,
+  });
 
   final JsonEntityStore<Subscription> _store;
   final ApiClient _api;
@@ -29,9 +26,9 @@ final class LocalSubscriptionRepository implements SubscriptionRepository {
 
   @override
   Future<Result<void>> save(Subscription subscription) => _store.upsert(
-        subscription,
-        events: subscription.pullDomainEvents().toList(),
-      );
+    subscription,
+    events: subscription.pullDomainEvents().toList(),
+  );
 
   @override
   Future<Result<void>> delete(String id) => _store.delete(id);
@@ -53,8 +50,7 @@ final class LocalSubscriptionRepository implements SubscriptionRepository {
             .map(
               (Map<Object?, Object?> e) => SubscriptionEvent.fromJson(
                 e.map(
-                  (Object? k, Object? v) =>
-                      MapEntry<String, Object?>('$k', v),
+                  (Object? k, Object? v) => MapEntry<String, Object?>('$k', v),
                 ),
               ),
             )

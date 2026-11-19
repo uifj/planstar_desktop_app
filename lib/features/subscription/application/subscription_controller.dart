@@ -6,16 +6,24 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../bootstrap/core_providers.dart';
 import '../../../core/list_state.dart';
+import '../../../core/ports.dart';
 import '../../../core/value_objects.dart';
 import '../../../infrastructure/json_entity_store.dart';
 import '../domain/subscription.dart';
 import '../infrastructure/local_subscription_repository.dart';
 
+/// 订阅的持久化键。
+const String subscriptionsStoreKey = 'planstar.subscriptions.v1';
+
+/// 订阅键的重载分组注册。
+void registerSubscriptionReloadTargets(ReloadTargetRegistry registry) =>
+    registry.registerKey(subscriptionsStoreKey, 'subscription');
+
 final subscriptionRepositoryProvider = Provider<SubscriptionRepository>(
   (Ref ref) => LocalSubscriptionRepository(
     store: JsonEntityStore<Subscription>(
       store: ref.watch(keyValueStoreProvider),
-      key: 'planstar.subscriptions.v1',
+      key: subscriptionsStoreKey,
       bus: ref.watch(domainEventBusProvider),
       clock: ref.watch(clockProvider),
       fromJson: Subscription.fromJson,
@@ -24,17 +32,19 @@ final subscriptionRepositoryProvider = Provider<SubscriptionRepository>(
     ),
     api: ref.watch(apiClientProvider),
     logger: ref.watch(loggerProvider),
-    endpoint: ref
-        .watch(appConfigProvider)
-        .section('cloud')
-        .getString('subscriptionEndpoint') ?? 'subscriptions/',
+    endpoint:
+        ref
+            .watch(appConfigProvider)
+            .section('cloud')
+            .getString('subscriptionEndpoint') ??
+        'subscriptions/',
   ),
 );
 
 final subscriptionControllerProvider =
     NotifierProvider<SubscriptionController, AsyncListState<Subscription>>(
-  SubscriptionController.new,
-);
+      SubscriptionController.new,
+    );
 
 final class SubscriptionController
     extends Notifier<AsyncListState<Subscription>> {
@@ -51,11 +61,7 @@ final class SubscriptionController
     final result = await _repository.all();
     switch (result) {
       case Success<List<Subscription>>(:final List<Subscription> data):
-        state = state.copyWith(
-          items: data,
-          loading: false,
-          clearError: true,
-        );
+        state = state.copyWith(items: data, loading: false, clearError: true);
       case Fail<List<Subscription>>(:final failure):
         state = state.copyWith(loading: false, error: failure.message);
     }
@@ -86,7 +92,9 @@ final class SubscriptionController
     for (final subscription in targets) {
       final result = await _repository.fetchRemote(subscription);
       switch (result) {
-        case Success<List<SubscriptionEvent>>(:final List<SubscriptionEvent> data):
+        case Success<List<SubscriptionEvent>>(
+          :final List<SubscriptionEvent> data,
+        ):
           await _repository.save(
             subscription.withEvents(data, ref.read(clockProvider).now()),
           );
@@ -119,3 +127,23 @@ final class SubscriptionController
       .where((SubscriptionEvent e) => e.date == date)
       .toList(growable: false);
 }
+
+/// 对月历读模型的贡献（ADR-0004）：只读自身状态，启用订阅的事件按日预计算。
+final subscriptionContributionProvider = Provider<TimelineContribution>((
+  Ref ref,
+) {
+  final items = ref.watch(subscriptionControllerProvider).items;
+  final byDay = <DateTime, List<TimelineTag>>{};
+  for (final subscription in items) {
+    if (!subscription.enabled) continue;
+    for (final item in subscription.events) {
+      (byDay.putIfAbsent(
+        item.date.date,
+        () => <TimelineTag>[],
+      )).add(TimelineTag(kind: TimelineTagKind.subscription, text: item.title));
+    }
+  }
+  return TimelineContribution(
+    tagsOn: (DateTime date) => byDay[date] ?? const <TimelineTag>[],
+  );
+});

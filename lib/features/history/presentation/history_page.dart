@@ -3,7 +3,7 @@ library;
 
 import 'package:core_design_system/core_design_system.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/value_objects.dart';
@@ -48,13 +48,15 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
     final controller = ref.read(historyControllerProvider.notifier);
 
     // 内存筛选：历史条目规模有限，无需下推到仓储；保留全量 items 供导出等复用。
-    final visible = state.items.where((HistoryEntry e) {
-      if (_kindFilter != null && e.kind != _kindFilter) return false;
-      if (_keyword.isEmpty) return true;
-      return e.content.toLowerCase().contains(_keyword) ||
-          e.targetId.toLowerCase().contains(_keyword) ||
-          _kindLabel(e.kind).contains(_keyword);
-    }).toList(growable: false);
+    final visible = state.items
+        .where((HistoryEntry e) {
+          if (_kindFilter != null && e.kind != _kindFilter) return false;
+          if (_keyword.isEmpty) return true;
+          return e.content.toLowerCase().contains(_keyword) ||
+              e.targetId.toLowerCase().contains(_keyword) ||
+              _kindLabel(e.kind).contains(_keyword);
+        })
+        .toList(growable: false);
     final groups = _groupsOf(visible).entries.toList(growable: false);
 
     return Column(
@@ -82,8 +84,10 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
                 onPressed: state.items.isEmpty
                     ? null
                     : () async {
-                        final confirmed =
-                            await showClearConfirmDialog(context, '历史记录');
+                        final confirmed = await showClearConfirmDialog(
+                          context,
+                          '历史记录',
+                        );
                         if (confirmed && mounted) await controller.clear();
                       },
                 icon: const Icon(LucideIcons.eraser, size: 16),
@@ -120,9 +124,7 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
                 Padding(
                   padding: const EdgeInsets.only(right: AppSpacing.xs),
                   child: ChoiceChip(
-                    label: Text(
-                      filter == null ? '全部' : _kindLabel(filter),
-                    ),
+                    label: Text(filter == null ? '全部' : _kindLabel(filter)),
                     selected: _kindFilter == filter,
                     onSelected: (bool selected) =>
                         setState(() => _kindFilter = selected ? filter : null),
@@ -148,51 +150,51 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
                 onRetry: () => controller.load(),
               ),
             false when state.items.isEmpty => const EmptyState(
-                icon: LucideIcons.history,
-                title: '暂无历史记录',
-                hint: '编辑日历格子或便签会自动留痕',
-              ),
+              icon: LucideIcons.history,
+              title: '暂无历史记录',
+              hint: '编辑日历格子或便签会自动留痕',
+            ),
             false when visible.isEmpty => const EmptyState(
-                icon: LucideIcons.searchX,
-                title: '没有匹配的历史',
-                hint: '换个关键词或筛选条件试试',
-              ),
+              icon: LucideIcons.searchX,
+              title: '没有匹配的历史',
+              hint: '换个关键词或筛选条件试试',
+            ),
             false => ListView.builder(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.md,
-                  AppSpacing.xs,
-                  AppSpacing.md,
-                  AppSpacing.md,
-                ),
-                itemCount: groups.length,
-                itemBuilder: (BuildContext context, int groupIndex) {
-                  final group = groups[groupIndex];
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                          vertical: AppSpacing.sm,
-                        ),
-                        child: Text(
-                          _groupLabel(group.key),
-                          style: TextStyle(
-                            fontSize: AppTypography.label,
-                            fontWeight: AppTypography.bold,
-                            color: colors.textSecondary,
-                          ),
-                        ),
-                      ),
-                      ...group.value.map(
-                        (HistoryEntry entry) => Padding(
-                          padding: const EdgeInsets.only(bottom: AppSpacing.xs),
-                          child: _entryTile(context, controller, entry),
-                        ),
-                      ),
-                    ],
-                  );
-                },
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.md,
+                AppSpacing.xs,
+                AppSpacing.md,
+                AppSpacing.md,
               ),
+              itemCount: groups.length,
+              itemBuilder: (BuildContext context, int groupIndex) {
+                final group = groups[groupIndex];
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: AppSpacing.sm,
+                      ),
+                      child: Text(
+                        _groupLabel(group.key),
+                        style: TextStyle(
+                          fontSize: AppTypography.label,
+                          fontWeight: AppTypography.bold,
+                          color: colors.textSecondary,
+                        ),
+                      ),
+                    ),
+                    ...group.value.map(
+                      (HistoryEntry entry) => Padding(
+                        padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+                        child: _entryTile(context, controller, entry),
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
           },
         ),
       ],
@@ -276,10 +278,7 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
     );
     if (confirmed != true || !context.mounted) return;
 
-    final outcome = await controller.revertCell(
-      entry,
-      overwriteNewer: newer,
-    );
+    final outcome = await controller.revertCell(entry, overwriteNewer: newer);
     if (!context.mounted) return;
     final message = switch (outcome) {
       RevertOutcome.success => '已恢复到 ${date.cnDate}',
@@ -318,22 +317,25 @@ final class _HistoryPageState extends ConsumerState<HistoryPage> {
   String _relativeTime(DateTime time) {
     final now = DateTime.now();
     final diff = now.difference(time);
-    final hhmm = '${time.hour.toString().padLeft(2, '0')}:'
+    final hhmm =
+        '${time.hour.toString().padLeft(2, '0')}:'
         '${time.minute.toString().padLeft(2, '0')}';
     if (diff.inMinutes < 1) return '刚刚';
     if (diff.inHours < 1) return '${diff.inMinutes} 分钟前 · $hhmm';
-    final days = DateTime(now.year, now.month, now.day)
-        .difference(DateTime(time.year, time.month, time.day))
-        .inDays;
+    final days = DateTime(
+      now.year,
+      now.month,
+      now.day,
+    ).difference(DateTime(time.year, time.month, time.day)).inDays;
     if (days == 0) return '今天 $hhmm';
     if (days == 1) return '昨天 $hhmm';
     return '${time.month}月${time.day}日 $hhmm';
   }
 
   String _kindLabel(HistoryKind kind) => switch (kind) {
-        HistoryKind.cell => '日历格子',
-        HistoryKind.note => '便签',
-      };
+    HistoryKind.cell => '日历格子',
+    HistoryKind.note => '便签',
+  };
 }
 
 final class _ErrorState extends StatelessWidget {
@@ -344,23 +346,19 @@ final class _ErrorState extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Icon(
-              LucideIcons.circleAlert,
-              size: 32,
-              color: context.appColors.error,
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            Text('加载失败：$message'),
-            const SizedBox(height: AppSpacing.sm),
-            OutlinedButton.icon(
-              onPressed: onRetry,
-              icon: const Icon(LucideIcons.refreshCw, size: 16),
-              label: const Text('重试'),
-            ),
-          ],
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        Icon(LucideIcons.circleAlert, size: 32, color: context.appColors.error),
+        const SizedBox(height: AppSpacing.sm),
+        Text('加载失败：$message'),
+        const SizedBox(height: AppSpacing.sm),
+        OutlinedButton.icon(
+          onPressed: onRetry,
+          icon: const Icon(LucideIcons.refreshCw, size: 16),
+          label: const Text('重试'),
         ),
-      );
+      ],
+    ),
+  );
 }

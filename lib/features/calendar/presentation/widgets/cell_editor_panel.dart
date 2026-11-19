@@ -3,14 +3,14 @@ library;
 
 import 'package:core_design_system/core_design_system.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../bootstrap/core_providers.dart';
 import '../../../../core/value_objects.dart';
 import '../../../../shared/widgets/common.dart';
-import '../../application/calendar_controllers.dart';
-import '../../domain/day_cell.dart';
+import '../../application/calendar_controller.dart';
+import '../calendar_providers.dart';
 import '../dialogs/context_dialogs.dart';
 import '../dialogs/event_editor_dialog.dart';
 
@@ -23,10 +23,7 @@ final class CellEditorPanel extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = context.appColors;
     final state = ref.watch(calendarControllerProvider);
-    final cell = state.cells.where((DayCell c) => c.date == date).toList();
-    final lines = cell.isEmpty
-        ? const <RichLine>[]
-        : cell.first.lines;
+    final lines = state.cells[date]?.lines ?? const <RichLine>[];
     final controller = ref.read(calendarControllerProvider.notifier);
 
     return Container(
@@ -72,10 +69,8 @@ final class CellEditorPanel extends ConsumerWidget {
                         children: <Widget>[
                           Checkbox(
                             value: line.completed,
-                            onChanged: (_) => controller.toggleLineCompleted(
-                              date,
-                              line.id,
-                            ),
+                            onChanged: (_) =>
+                                controller.toggleLineCompleted(date, line.id),
                           ),
                           Expanded(
                             child: TextFormField(
@@ -95,15 +90,15 @@ final class CellEditorPanel extends ConsumerWidget {
                               ),
                               onChanged: (String value) =>
                                   controller.saveCellLines(
-                                date,
-                                lines
-                                    .map(
-                                      (RichLine l) => l.id == line.id
-                                          ? l.copyWith(text: value)
-                                          : l,
-                                    )
-                                    .toList(),
-                              ),
+                                    date,
+                                    lines
+                                        .map(
+                                          (RichLine l) => l.id == line.id
+                                              ? l.copyWith(text: value)
+                                              : l,
+                                        )
+                                        .toList(),
+                                  ),
                             ),
                           ),
                           IconButton(
@@ -157,16 +152,13 @@ final class CellEditorPanel extends ConsumerWidget {
               runSpacing: AppSpacing.xs,
               children: <Widget>[
                 FilledButton.icon(
-                  onPressed: () => controller.saveCellLines(
-                    date,
-                    <RichLine>[
-                      ...lines,
-                      RichLine(
-                        id: ref.read(idGeneratorProvider).next(),
-                        text: '',
-                      ),
-                    ],
-                  ),
+                  onPressed: () => controller.saveCellLines(date, <RichLine>[
+                    ...lines,
+                    RichLine(
+                      id: ref.read(idGeneratorProvider).next(),
+                      text: '',
+                    ),
+                  ]),
                   icon: const Icon(LucideIcons.plus, size: 16),
                   label: const Text('添加一行'),
                 ),
@@ -185,13 +177,12 @@ final class CellEditorPanel extends ConsumerWidget {
                 ),
                 OutlinedButton.icon(
                   onPressed: () async {
-                    final confirmed =
-                        await showClearConfirmDialog(context, '本日内容');
+                    final confirmed = await showClearConfirmDialog(
+                      context,
+                      '本日内容',
+                    );
                     if (confirmed) {
-                      await controller.saveCellLines(
-                        date,
-                        const <RichLine>[],
-                      );
+                      await controller.saveCellLines(date, const <RichLine>[]);
                     }
                   },
                   icon: const Icon(LucideIcons.eraser, size: 16),
@@ -216,7 +207,9 @@ final class CellEditorPanel extends ConsumerWidget {
       initialContent: line.text,
     );
     if (result == null) return;
-    await ref.read(calendarControllerProvider.notifier).promoteLineToEvent(
+    await ref
+        .read(calendarControllerProvider.notifier)
+        .promoteLineToEvent(
           date,
           line.id,
           result.type,

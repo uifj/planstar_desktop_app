@@ -1,0 +1,210 @@
+明确要求：
+优先重构，使用最新的依赖，实在没有，再考虑使用 native_api.
+保持 CleanDDD目录
+// 三大桌面插件均已基于 nativeapi 重写，统一走各包公开的新 API。
+import 'package:screen_retriever/screen_retriever.dart';
+import 'package:tray_manager/tray_manager.dart';
+import 'package:window_manager/window_manager.dart';
+
+结论先行
+
+性能瓶颈不是渲染，是写路径的全量放大和重复规则展开的 O(4000) 逐日推进。架构上最贵的债是 core/ports.dart 反向依赖了下游的持久化键名。
+
+一、性能
+
+P0-1 RecurrencePolicy.occurrences 是全项目最大的热点
+
+calendar_controllers.dart 的 monthDataProvider 里：
+
+for (final event in calendar.events) {
+  for (final date in RecurrencePolicy.occurrences(event, range)) {
+
+
+而 occurrences（recurrence_policy.dart:19）是从 event.startDate 开始 cursor.addDays(1) 逐日推进到 hardEnd，上限 maxDays = 4000。它不会快进到 range.start——一个三年前建的事件，要先做约 1100 次 _matches 才进入可见区间，其中绝大部分是白算的。
+
+N 个事件 = N × 最多 4000 次 _matches。每轮循环条件还要调一次 cursor.differenceInDays(hardEnd)，_matches 内部又调一次 date.differenceInDays(origin)，两次 DateTime.difference() + .inDays.round()。
+
+而 RecurrencePolicy.happensOn(event, date)（第 52 行）已经写好了，全项目零调用。
+
+网格天数是固定的：columns.clamp(1,6) × rows.clamp(1,8) × 7，上限 336 天，常见配置 42–126 天。把循环反过来——「对每个可见日 × 每个事件调 happensOn」——就是 126×N 而不是 4000×N。N=100 时从 40 万次 _matches 降到 1.26 万次，约 30×。
+
+但有个坑必须先补：happensOn 少了 rule.count 约束。occurrences 里有 if (rule.count != null && emitted > rule.count!) break;，happensOn 完全不检查 count——直接替换会让「重复 N 次后停止」的事件超期渲染。（event.recurrenceUntil 不用担心，happensOn 第一行调 isExcludedOn，而 isExcludedOn 已经覆盖了 recurrenceUntil，我确认过 calendar_event.dart:126-128。）
+
+所以正确顺序是：给 happensOn 补 count 判定 → 加一条对拍测试（同一事件同一区间，occurrences 结果集 == 逐日 happensOn 结果集）→ 再换调用方。
+
+P0-2 CalendarMath.metaOf 零缓存，且被热点路径反复调用
+
+calendar_math.dart:111 每次调用做：Solar.fromDate + getLunar() + getJieQi() + getFestivals()×2 + HolidayUtil.getHoliday() + getDayYi() + getDayJi() + weekNumberOf()。
+
+它是 (DateKey, firstWeekOffset) 的纯函数，却没有任何缓存，被两处调用：
+
+monthDataProvider 每个可见日一次（calendar_controllers.dart:457）
+_matches 的 legalWorkday 分支每次步进一次（recurrence_policy.dart:101）
+
+第二条是致命的：一个「每个法定工作日」的事件，一次 monthDataProvider 重算就要做最多 4000 次完整农历 + 节假日表查询。叠上 P0-1，这是同一个热点的两层放大。
+
+进程级 Map<String, CalendarDayMeta>（key 用 date.key，节假日表按年失效）就能压到接近零。
+
+P0-3 yi / ji 是纯死计算
+
+metaOf 无条件算 lunar.getDayYi() 和 getDayJi()，但 grep 全项目，CalendarDayMeta.yi / .ji 没有任何读取点——只有 calendar_math.dart 里的字段声明自己。subtitle() 也不用它们。
+
+删掉这两个字段，metaOf 每次少两个 lunar 调用，零风险。
+
+P1-1 lunarYearly 的循环不变量没外提
+
+recurrence_policy.dart _matches：
+
+case RecurrenceKind.lunarYearly:
+  final current = Solar.fromDate(date.date).getLunar();
+  final start = Solar.fromDate(origin.date).getLunar();   // origin 全程不变
+
+
+start 在整个逐日循环里是常量，却每天重算一次完整农历转换。提到 occurrences 外面算一次传进去。
+
+P1-2 写路径的全量放大（勾选一个 checkbox 的真实代价）
+
+完整链路：
+
+_cellOf(date) 对 state.cells 线性扫描
+LocalCalendarRepository.saveCell → _cells.readAll() = 整个 cells 数组 jsonDecode
+→ writeAll(next) = 整个数组 jsonEncode → store.write
+→ DataHub C++ 侧序列化整个 entries map + MoveFileExW(MOVEFILE_WRITE_THROUGH) 同步写穿盘 + 广播全部 engine
+→ _bus.dispatch(events)，提醒/历史/同步订阅者可能各自再写
+await load() → allEvents() = 整个 events 数组 jsonDecode + 每个 CalendarEvent.fromJson；allCells() = 整个 cells 数组再 jsonDecode 一次 + 每个 DayCell.fromJson
+state.copyWith 换新 list → monthDataProvider 全量重算（回到 P0-1）→ 全部单元格重建
+第 4 步的广播到达其他 engine，各自再跑一遍 6–7
+
+合计：3 次全量 jsonDecode + 1 次全量 jsonEncode + 1 次 C++ 侧全量序列化 + 1 次写穿盘 + N engine 广播 + 全月历重算 + 全部单元格重建。每勾一次。
+
+三个可以分开做的修复：
+
+_cellOf 换 Map<DateKey, DayCell>。DateKey 继承 ValueObject，props => [key]，==/hashCode 都是正确的（我核对过 value_objects.dart:54 和 core 包的 value_object.dart:31-38），直接当 key 没问题。O(n)→O(1)。
+load() 改增量。saveCell 明确知道只动了一个 date，本地可以乐观更新 state.cells 里那一项，把全量 load() 留给跨 engine 广播触发的那条路径（那条才是真的需要重读）。
+JsonListStore 缺内存缓存层。它的类注释写着「这类数据量小（几十条）、读写频率低」——这个假设已经不成立了：cells 每天最多一条、events 随使用无限增长，三年就是一千多条，而读写频率是「每次勾选」。加一层 List<T>? _cache，失效条件只有两个（自己写、收到 DataHub 广播），就能把重复 jsonDecode 全消掉。这是投入产出比最高的一处。
+
+P1-3 autoDelayUncompleted 是 N 次独立全量写
+
+calendar_controllers.dart 里对每个待顺延事件 await _repository.saveEvent(...)，每次都完整跑一遍上面 1–8，最后再来一次 load()。
+
+JsonEntityStore 已经有 upsertAll 批量能力，LocalCalendarRepository 却没有对应的 saveEvents。补一个，一次写盘。
+
+顺带，这段：
+
+var hasCompletion = false;
+for (final date in event.completedDates) {
+  if (date == event.startDate) hasCompletion = true;
+}
+if (hasCompletion) continue;
+
+
+没有 break，扫完全量。event.completedDates.contains(event.startDate) 一行搞定（completedDates 是 List<DateKey>，contains 走的正是那套值相等）。
+
+P2-1 单元格重建范围完全没有收敛
+
+CalendarDayModel / EventOccurrence / MonthData 都是 const 构造但没有重载 == → 身份相等 → monthDataProvider 每次重算产出 126 个全新对象 → MonthGrid 里 126 个 DayCellWidget 全部重建，哪怕只有一天变了。
+
+两个放大因素：
+
+MonthGrid._column 每个 cell 现造 5 个闭包（onTap: () => onTap(day) 等），任何 widget 级短路都不可能生效
+全项目 ref.watch 60+ 处，.select() 只有 3 处
+
+按成本递增：
+
+给 CalendarDayModel 加值相等——项目里已经有 ValueObject 基类和 _deepEquals 深比较，直接继承就行，不用引 freezed
+MonthGrid 的回调改成把 day 往上抛（onTap(day) 而非 onTap: () => ...），闭包数从 126×5 降到 5
+CalendarPage.build 里 ref.watch(calendarControllerProvider) 只为读 error 和 loading，但 events/cells 一变整个 Column（连带 MonthGrid）就重建。用 .select() 把这两个字段拆出来
+终极方案：monthDataProvider 拆成 visibleDaysProvider（只算日期骨架，依赖 settings + navigation）+ dayModelProvider(date) family（依赖 events/cells）。翻月和改数据就不再互相牵连
+
+P2-2 每个单元格一个 SingleChildScrollView
+
+day_cell_widget.dart 里 Expanded(child: SingleChildScrollView(child: Column(...)))。3 列 × 6 行 × 7 = 126 个 cell，就是 126 个独立 viewport + ScrollController + RenderViewport 布局，每帧都参与。
+
+单元格高度是写死的（112 / 96），内容超出应该裁剪而不是滚动。换 ClipRect + Column 能省掉一整层的布局开销。
+
+P2-3 desktop_widget_app.dart 是 1750 行的单 State
+
+_DesktopWidgetAppState 从第 57 行一直到文件末尾 1806 行，17 处 setState，其中多处是 setState(() {})（328、474 行）或只改一个字段（_activeLineId、_confirmClear、_paletteTarget）。任一字段变化 → 整个桌面组件树含完整月历网格重建。
+
+这个窗口是常驻桌面的，重建成本会持续付，不像主窗口切走就停了。至少把「卡片几何（位置/尺寸/拖动）」「编辑器浮层」「调色板」「月历网格」拆成独立 widget，几何状态用 ValueNotifier 或局部 provider 隔离出 setState 域。
+
+一个反面不用改：_pushRegion() → setRegion → SetWindowRgn 那条链，拖动时先 setRegion(rects: [], dragging: true) 放开整窗、松手再重推——这个已经做对了。
+
+二、Clean Architecture
+
+A1 core/ports.dart 反向依赖了下游（最该先还的债）
+
+376 行塞了 12 个互不相关的端口 + 5 个 DTO + 1 个枚举 + 1 个顶层函数。三处具体越界：
+
+reloadTargetFor(String key)（第 44 行） —— core 端口层硬编码了 'planstar.settings.v1'、'planstar.notes.v1'、'planstar.desktop.card.v2' 这些具体持久化键名，还硬编码了每个 feature 的重载分组名。加任何新 feature 都必须回来改 core。依赖方向是反的：应该各 feature 注册自己的 key→target 映射，core 只暴露一个注册表端口。
+
+SoundTone.asset —— 'audio/audio_ding.mp3' 是 Flutter asset bundle 路径，属基础设施细节。core 只该有语义（ding / littleStar），路径映射放 infrastructure 的 SoundGateway 实现里。顺带 dong 和 ding 指向同一个文件，看着像复制粘贴漏改。
+
+TrayAction —— 枚举了 14 个具体导航目标（settings / timetable / notes / about / embedDesktop…）。core 在枚举 UI 目的地。
+
+拆法：按能力域切成 ports/storage.dart、ports/window.dart、ports/notification.dart、ports/desktop.dart、ports/file.dart，DTO 跟各自端口同居。
+
+A2 calendar 横向依赖了 4 个兄弟 feature
+
+calendar_controllers.dart import 了 countdown、subscription、timetable、settings 四个 feature 的 controller 和 domain，monthDataProvider 直接 ref.watch 它们的 state 做聚合。
+
+calendar 因此知道所有其他 feature 的存在，加一个新 feature 就得改 calendar。这跟项目自称的「垂直切片」正好相反。
+
+正解：跨 feature 聚合上移到一个显式的 CalendarReadModelAssembler（application 层），各 feature 只提供「某日有什么」的端口（TimelineContributor 之类），calendar 消费一个 List<TimelineContributor>。新 feature 在组合根注册进来即可，calendar 一行不改。
+
+A3 MonthData / CalendarDayModel / EventOccurrence 放错层
+
+它们在 application/calendar_controllers.dart，但内容全是表现层塑形：weekdayHeaders（中文星期表头）、isCurrentMonth（供淡化渲染）、countdownBar 按 daysLeft.abs() 排序、isRestDay 派生。这是视图模型，不是应用服务。
+
+而且这一个文件同时装了五种职责：provider 组合（calendarRepositoryProvider）、写侧命令（CalendarController）、导航状态（MonthNavigation）、选中态（SelectedDateController）、读模型（4 个类 + monthDataProvider）。
+
+拆成 application/calendar_controller.dart（只留命令）、presentation/read_model/month_data.dart、presentation/calendar_providers.dart。这一步和 A2 是同一次改动，一起做划算。
+
+A4 有 DomainEventBus，副作用却绕过它
+
+// toggleEventCompleted
+await _repository.saveEvent(next);
+await ref.read(soundGatewayProvider).play(settings.taskCompleteTone);
+await load();
+
+
+LocalCalendarRepository._dispatch 做得很正确——「落盘成功才分发事件」。但播放提示音被硬编码进了命令方法，于是：应用服务知道了音频网关；声音和 load() 时序耦合（toggleLineCompleted 里声音在重载之后才响，而 toggleEventCompleted 里在之前——两个方法时序还不一致）；测命令逻辑必须 mock soundGatewayProvider。
+
+README 自己写了「提醒/历史/同步控制器订阅领域事件，彼此不直接依赖」。那就把声音也纳入同一套机制，别开特例：命令只发事件，一个 SoundReactionHandler 订阅总线决定要不要响。
+
+A5 SharedPreferencesStore 是死代码
+
+全项目唯一实例化点是 bootstrap.dart:54 的 FlutterSecureStorageAdapter。SharedPreferencesStore 从未被 new——DataHubStore 已经把 KeyValueStore + StorageReloader + CrossEngineSync 三个端口全包了，bootstrap.dart 的注释也明说「不再使用 SharedPreferences」。
+
+但 pubspec.yaml 还留着 shared_preferences: ^2.5.6（data_hub.dart 只用到旧文件名常量做迁移，不需要这个包）。删掉适配器，并确认能否移除依赖——pubspec 里那两条注释正在为 win32 5 vs 6 的版本冲突打补丁（file_picker 锁 11.0.3、flutter_secure_storage 锁 10.3.4 都是为此），少一个 win32 依赖方就少一处约束。
+
+A6 JsonEntityStore 和 LocalCalendarRepository 是两套并行实现
+
+JsonEntityStore 内部套了个 JsonListStore<JsonMap>，fromJson/toJson 都传恒等函数，外层再套真正的 _fromJson/_toJson——双层映射，每次 all() 走两遍，每次 upsert 读全列表再写全列表。
+
+更根本的是：calendar 走 LocalCalendarRepository，notes/countdown/timetable/subscription/history 走 JsonEntityStore，而两者的 _persist / _dispatch 几乎逐字重复（对比 json_entity_store.dart:88-105 与 local_calendar_repository.dart:150-172）。将来改批量写、改缓存（P1-2 第三条）、改错误语义，要改两遍且极易漏一边。
+
+给 JsonEntityStore 加多列表支持，让 LocalCalendarRepository 建立在它之上（calendar 的特殊性只是「两个列表 + 需要 pullDomainEvents」）。
+
+A7 Result 失败传播的五件套重复 7 次
+
+final current = await guardAsync<List<_Json>>(() => _events.readAll());
+if (current case Fail<List<_Json>>(:final Failure failure)) {
+  return Fail<void>(failure);
+}
+final items = current.requireData;
+
+
+LocalCalendarRepository 出现 4 次、JsonEntityStore 3 次。result_x.dart 已经有 guardAsync 和 requireData，缺一个 flatMap/andThen。补上之后每处塌成一行，也消掉「先手动 pattern match Fail、紧接着又 requireData 强解」这种自相矛盾的写法。
+
+A8 CalendarState.copyWith 的 error 双开关
+
+error ?? this.error + clearError 两个参数控制同一件事，copyWith(error: null) 永远清不掉。要么统一成 nullable 包装，要么状态类交给 freezed 生成。
+
+三、如果只做三件事
+
+P0 全套：happensOn 补 count 后反转循环 + metaOf 加缓存 + 删 yi/ji + lunarYearly 外提不变量。改动只落在 calendar_math.dart / recurrence_policy.dart / monthDataProvider 三处，纯性能无行为变化，有对拍测试兜底，最容易验证收益。
+写路径：JsonListStore 加内存缓存 + _cellOf 换 Map + load() 改增量。用户体感最直接（勾选延迟）。
+A1：拆 core/ports.dart，把 reloadTargetFor 的键名映射反转到 feature 侧。这是唯一「越晚改越贵」的债——每加一个 feature 都在加深它。其余架构项都可以慢慢来。
+
+要不要我挑第 1 件（重复规则展开 + 农历缓存）走一遍完整设计——包含 happensOn 补 count 的语义边界、对拍测试怎么写、缓存的失效策略，以及改动会波及哪几个文件？按流程我会先出方案给你确认，不直接动代码。

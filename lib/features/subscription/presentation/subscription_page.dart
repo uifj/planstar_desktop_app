@@ -3,7 +3,7 @@ library;
 
 import 'package:core_design_system/core_design_system.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
 
@@ -72,8 +72,7 @@ final class SubscriptionPage extends ConsumerWidget {
                   itemBuilder: (BuildContext context, int index) {
                     final item = state.items[index];
                     return Padding(
-                      padding:
-                          const EdgeInsets.only(bottom: AppSpacing.sm),
+                      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                       child: AppSectionCard(
                         title: item.name,
                         subtitle:
@@ -117,8 +116,7 @@ final class SubscriptionPage extends ConsumerWidget {
                               ),
                             ),
                             OutlinedButton(
-                              onPressed: () =>
-                                  controller.refresh(item.id),
+                              onPressed: () => controller.refresh(item.id),
                               child: const Text('同步'),
                             ),
                           ],
@@ -139,8 +137,7 @@ final class SubscriptionPage extends ConsumerWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (BuildContext context) => StatefulBuilder(
-        builder: (BuildContext context, StateSetter setState) =>
-            AppDialogFrame(
+        builder: (BuildContext context, StateSetter setState) => AppDialogFrame(
           title: '添加订阅日历',
           actions: <Widget>[
             TextButton(
@@ -162,9 +159,7 @@ final class SubscriptionPage extends ConsumerWidget {
               const SizedBox(height: AppSpacing.sm),
               TextField(
                 controller: linkController,
-                decoration: const InputDecoration(
-                  labelText: '分享链接（留空则生成本地订阅）',
-                ),
+                decoration: const InputDecoration(labelText: '分享链接（留空则生成本地订阅）'),
               ),
               const SizedBox(height: AppSpacing.sm),
               DropdownButton<SubscriptionSource>(
@@ -175,9 +170,9 @@ final class SubscriptionPage extends ConsumerWidget {
                     .map(
                       (SubscriptionSource s) =>
                           DropdownMenuItem<SubscriptionSource>(
-                        value: s,
-                        child: Text(s.label),
-                      ),
+                            value: s,
+                            child: Text(s.label),
+                          ),
                     )
                     .toList(),
                 onChanged: (SubscriptionSource? v) =>
@@ -189,7 +184,9 @@ final class SubscriptionPage extends ConsumerWidget {
       ),
     );
     if (confirmed != true || nameController.text.trim().isEmpty) return;
-    await ref.read(subscriptionControllerProvider.notifier).create(
+    await ref
+        .read(subscriptionControllerProvider.notifier)
+        .create(
           name: nameController.text.trim(),
           shareLink: linkController.text.trim(),
           source: source,

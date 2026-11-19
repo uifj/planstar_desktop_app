@@ -9,7 +9,6 @@ import 'package:core/storage.dart';
 
 import '../../../core/app_events.dart';
 import '../../../core/ports.dart';
-import '../../../core/result_x.dart';
 import '../domain/app_settings.dart';
 
 abstract interface class SettingsRepository {
@@ -18,14 +17,16 @@ abstract interface class SettingsRepository {
   Future<Result<void>> save(AppSettings settings);
 }
 
+/// 设置键的重载分组注册。
+void registerSettingsReloadTargets(ReloadTargetRegistry registry) =>
+    registry.registerKey(LocalSettingsRepository.key, 'settings');
+
 final class LocalSettingsRepository implements SettingsRepository {
   LocalSettingsRepository({
-    required KeyValueStore store,
-    required DomainEventBus bus,
-    required Clock clock,
-  })  : _store = store,
-        _bus = bus,
-        _clock = clock;
+    required this._store,
+    required this._bus,
+    required this._clock,
+  });
 
   static const String key = 'planstar.settings.v1';
 
@@ -45,10 +46,8 @@ final class LocalSettingsRepository implements SettingsRepository {
       if (json.containsKey('desktopWidgetEnabled')) {
         return AppSettings.fromJson(json);
       }
-      final migrated = AppSettings.fromJson(json).copyWith(
-        wallpaperAutoRender: false,
-        desktopWidgetEnabled: true,
-      );
+      final migrated = AppSettings.fromJson(json)
+          .copyWith(wallpaperAutoRender: false, desktopWidgetEnabled: true);
       unawaited(save(migrated));
       return migrated;
     });
@@ -59,15 +58,11 @@ final class LocalSettingsRepository implements SettingsRepository {
     final written = await guardAsync<void>(
       () => _store.writeJson(key, settings.toJson()),
     );
-    if (written case Fail<void>(:final Failure failure)) {
-      return Fail<void>(failure);
-    }
-    await _bus.dispatch(<DomainEvent>[
-      SettingsChanged(
-        aggregateId: key,
-        occurredAt: _clock.now(),
-      ),
-    ]);
-    return const Success<void>(null);
+    return written.flatMapAsync((_) async {
+      await _bus.dispatch(<DomainEvent>[
+        SettingsChanged(aggregateId: key, occurredAt: _clock.now()),
+      ]);
+      return const Success<void>(null);
+    });
   }
 }

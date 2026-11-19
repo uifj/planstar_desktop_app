@@ -73,51 +73,50 @@ final class RecurrenceRule extends ValueObject {
     bool? lunar,
     bool clearCount = false,
     bool clearUntil = false,
-  }) =>
-      RecurrenceRule(
-        kind: kind ?? this.kind,
-        interval: interval ?? this.interval,
-        weekdays: weekdays ?? this.weekdays,
-        monthDays: monthDays ?? this.monthDays,
-        nthWeekday: nthWeekday ?? this.nthWeekday,
-        count: clearCount ? null : (count ?? this.count),
-        until: clearUntil ? null : (until ?? this.until),
-        lunar: lunar ?? this.lunar,
-      );
+  }) => RecurrenceRule(
+    kind: kind ?? this.kind,
+    interval: interval ?? this.interval,
+    weekdays: weekdays ?? this.weekdays,
+    monthDays: monthDays ?? this.monthDays,
+    nthWeekday: nthWeekday ?? this.nthWeekday,
+    count: clearCount ? null : (count ?? this.count),
+    until: clearUntil ? null : (until ?? this.until),
+    lunar: lunar ?? this.lunar,
+  );
 
   Map<String, Object?> toJson() => <String, Object?>{
-        'kind': kind.name,
-        'interval': interval,
-        'weekdays': weekdays,
-        'monthDays': monthDays,
-        'nthWeekday': nthWeekday,
-        'count': count,
-        'until': until?.key,
-        'lunar': lunar,
-      };
+    'kind': kind.name,
+    'interval': interval,
+    'weekdays': weekdays,
+    'monthDays': monthDays,
+    'nthWeekday': nthWeekday,
+    'count': count,
+    'until': until?.key,
+    'lunar': lunar,
+  };
 
   factory RecurrenceRule.fromJson(Map<String, Object?> json) => RecurrenceRule(
-        kind: RecurrenceKind.fromName(json['kind'] as String?),
-        interval: (json['interval'] as num?)?.toInt() ?? 1,
-        weekdays: (json['weekdays'] as List?)?.cast<int>() ?? const <int>[],
-        monthDays: (json['monthDays'] as List?)?.cast<int>() ?? const <int>[],
-        nthWeekday: (json['nthWeekday'] as num?)?.toInt() ?? 0,
-        count: (json['count'] as num?)?.toInt(),
-        until: json['until'] == null
-            ? null
-            : DateKey.parse(json['until']! as String),
-        lunar: json['lunar'] as bool? ?? false,
-      );
+    kind: RecurrenceKind.fromName(json['kind'] as String?),
+    interval: (json['interval'] as num?)?.toInt() ?? 1,
+    weekdays: (json['weekdays'] as List?)?.cast<int>() ?? const <int>[],
+    monthDays: (json['monthDays'] as List?)?.cast<int>() ?? const <int>[],
+    nthWeekday: (json['nthWeekday'] as num?)?.toInt() ?? 0,
+    count: (json['count'] as num?)?.toInt(),
+    until: json['until'] == null
+        ? null
+        : DateKey.parse(json['until']! as String),
+    lunar: json['lunar'] as bool? ?? false,
+  );
 
   @override
   List<Object?> get props => <Object?>[
-        kind,
-        interval,
-        weekdays,
-        monthDays,
-        nthWeekday,
-        count,
-        until,
-        lunar,
-      ];
+    kind,
+    interval,
+    weekdays,
+    monthDays,
+    nthWeekday,
+    count,
+    until,
+    lunar,
+  ];
 }

@@ -3,7 +3,7 @@ library;
 
 import 'package:core_design_system/core_design_system.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../bootstrap/core_providers.dart';
@@ -57,8 +57,7 @@ final class SearchPage extends ConsumerWidget {
               if (state.range == SearchRange.custom)
                 OutlinedButton(
                   onPressed: () async {
-                    final today =
-                        DateKey.today(ref.read(clockProvider).now());
+                    final today = DateKey.today(ref.read(clockProvider).now());
                     final picked = await showDateRangePicker(
                       context: context,
                       firstDate: DateTime(1900),

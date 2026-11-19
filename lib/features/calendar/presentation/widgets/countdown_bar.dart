@@ -1,29 +1,28 @@
 /// 日历底部倒数日条（旧版 `calendar bottom countdown`）。
+///
+/// 条目是贡献侧预计算好的 [TimelineBarEntry]，本组件不 import countdown。
 library;
 
 import 'package:core_design_system/core_design_system.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../bootstrap/core_providers.dart';
-import '../../../../core/value_objects.dart';
+import '../../../../core/ports/timeline.dart';
 import '../../../../shared/widgets/common.dart';
-import '../../../countdown/domain/countdown.dart';
 import '../../../desktop/application/desktop_controller.dart';
+import '../calendar_providers.dart';
 
 final class CountdownBar extends ConsumerWidget {
-  const CountdownBar({super.key, required this.items});
-
-  final List<CountdownItem> items;
+  const CountdownBar({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = context.appColors;
+    final items = ref.watch(countdownBarProvider);
     if (items.isEmpty) {
       return const SizedBox.shrink();
     }
-    final today = DateKey.today(ref.watch(clockProvider).now());
     return Container(
       height: 62,
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
@@ -39,10 +38,10 @@ final class CountdownBar extends ConsumerWidget {
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               itemCount: items.length,
-              separatorBuilder: (_, _) =>
-                  const SizedBox(width: AppSpacing.sm),
+              separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.sm),
               itemBuilder: (BuildContext context, int index) {
                 final item = items[index];
+                final color = Color(item.colorArgb);
                 return InkWell(
                   onTap: () => ref
                       .read(desktopControllerProvider.notifier)
@@ -53,7 +52,7 @@ final class CountdownBar extends ConsumerWidget {
                       vertical: AppSpacing.xs,
                     ),
                     decoration: BoxDecoration(
-                      color: item.color.toColor().withValues(alpha: 0.10),
+                      color: color.withValues(alpha: 0.10),
                       borderRadius: BorderRadius.circular(AppRadius.sm),
                     ),
                     child: Row(
@@ -68,11 +67,11 @@ final class CountdownBar extends ConsumerWidget {
                         ),
                         const SizedBox(width: AppSpacing.xs),
                         Text(
-                          item.displayText(today),
+                          item.displayText,
                           style: TextStyle(
                             fontSize: AppTypography.body,
                             fontWeight: AppTypography.medium,
-                            color: item.color.toColor(),
+                            color: color,
                           ),
                         ),
                       ],

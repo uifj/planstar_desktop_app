@@ -13,7 +13,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../bootstrap/core_providers.dart';
 import '../../../core/ports.dart';
 import '../../../core/value_objects.dart';
-import '../../calendar/application/calendar_controllers.dart';
+import '../../calendar/presentation/read_model/month_data.dart';
 import '../../settings/domain/app_settings.dart';
 import 'wallpaper_renderer.dart';
 
@@ -99,10 +99,7 @@ final class WallpaperService {
     await images.writeOriginalWallpaper(current);
   }
 
-  Future<ui.Image?> _background(
-    AppSettings settings,
-    DateTime now,
-  ) async {
+  Future<ui.Image?> _background(AppSettings settings, DateTime now) async {
     switch (settings.wallpaperMode) {
       case WallpaperMode.solidColor:
         return null;
@@ -118,11 +115,10 @@ final class WallpaperService {
         return _decode(await images.readImage(path));
       case WallpaperMode.rotation:
         if (settings.wallpaperImageDirectory.isEmpty) return null;
-        final files = await images.listImages(
-          settings.wallpaperImageDirectory,
-        );
+        final files = await images.listImages(settings.wallpaperImageDirectory);
         if (files.isEmpty) return null;
-        final slot = now.millisecondsSinceEpoch ~/
+        final slot =
+            now.millisecondsSinceEpoch ~/
             (settings.wallpaperIntervalMinutes.clamp(1, 720) * 60000);
         final path = settings.wallpaperShowAll
             ? files[slot % files.length]

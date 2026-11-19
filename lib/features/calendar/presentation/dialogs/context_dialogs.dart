@@ -2,7 +2,7 @@
 library;
 
 import 'package:core_design_system/core_design_system.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../../../core/value_objects.dart';
 import '../../../../shared/widgets/common.dart';
@@ -11,24 +11,23 @@ import '../../domain/calendar_event.dart';
 Future<EventColor?> showColorPickerDialog(
   BuildContext context, {
   required EventColor selected,
-}) =>
-    showDialog<EventColor>(
-      context: context,
-      builder: (BuildContext context) => AppDialogFrame(
-        title: '选择颜色',
-        width: 420,
-        actions: <Widget>[
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('取消'),
-          ),
-        ],
-        child: ColorSwatchPicker(
-          selected: selected,
-          onSelected: (EventColor color) => Navigator.of(context).pop(color),
-        ),
+}) => showDialog<EventColor>(
+  context: context,
+  builder: (BuildContext context) => AppDialogFrame(
+    title: '选择颜色',
+    width: 420,
+    actions: <Widget>[
+      TextButton(
+        onPressed: () => Navigator.of(context).pop(),
+        child: const Text('取消'),
       ),
-    );
+    ],
+    child: ColorSwatchPicker(
+      selected: selected,
+      onSelected: (EventColor color) => Navigator.of(context).pop(color),
+    ),
+  ),
+);
 
 Future<DeleteScope?> showDeleteScopeDialog(BuildContext context) =>
     showDialog<DeleteScope>(
@@ -40,9 +39,7 @@ Future<DeleteScope?> showDeleteScopeDialog(BuildContext context) =>
             SimpleDialogOption(
               onPressed: () => Navigator.of(context).pop(scope),
               child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  vertical: AppSpacing.xs,
-                ),
+                padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
                 child: Text(scope.label),
               ),
             ),
@@ -64,7 +61,10 @@ Future<DeleteScope?> showDeleteScopeDialog(BuildContext context) =>
       ),
     );
 
-Future<bool> showClearConfirmDialog(BuildContext context, String target) async =>
+Future<bool> showClearConfirmDialog(
+  BuildContext context,
+  String target,
+) async =>
     await showDialog<bool>(
       context: context,
       builder: (BuildContext context) => AlertDialog(

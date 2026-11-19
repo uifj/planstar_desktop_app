@@ -3,7 +3,7 @@ library;
 
 import 'package:core_design_system/core_design_system.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../shared/widgets/common.dart';
@@ -26,9 +26,7 @@ final class AccountPage extends ConsumerWidget {
         AppSectionCard(
           title: '账号',
           subtitle: '登录后可以同步和备份日历清单',
-          trailing: state.account.isVip
-              ? const AppChip(label: 'VIP')
-              : null,
+          trailing: state.account.isVip ? const AppChip(label: 'VIP') : null,
           child: state.account.isLoggedIn
               ? Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -166,9 +164,9 @@ final class AccountPage extends ConsumerWidget {
   }
 
   String _statusLabel(SyncStatus status) => switch (status) {
-        SyncStatus.idle => '空闲',
-        SyncStatus.syncing => '同步中',
-        SyncStatus.success => '同步成功',
-        SyncStatus.failure => '同步失败',
-      };
+    SyncStatus.idle => '空闲',
+    SyncStatus.syncing => '同步中',
+    SyncStatus.success => '同步成功',
+    SyncStatus.failure => '同步失败',
+  };
 }

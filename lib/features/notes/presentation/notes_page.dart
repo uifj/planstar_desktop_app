@@ -3,7 +3,7 @@ library;
 
 import 'package:core_design_system/core_design_system.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../shared/widgets/common.dart';
@@ -51,24 +51,23 @@ final class NotesPage extends ConsumerWidget {
           child: state.loading
               ? const Center(child: CircularProgressIndicator())
               : state.items.isEmpty
-                  ? const EmptyState(
-                      icon: LucideIcons.stickyNote,
-                      title: '暂无便签',
-                      hint: '点击右上角新建，便签可以独立窗口置顶显示',
-                    )
-                  : GridView.builder(
-                      padding: const EdgeInsets.all(AppSpacing.md),
-                      gridDelegate:
-                          const SliverGridDelegateWithMaxCrossAxisExtent(
-                        maxCrossAxisExtent: 280,
-                        mainAxisExtent: 190,
-                        crossAxisSpacing: AppSpacing.sm,
-                        mainAxisSpacing: AppSpacing.sm,
-                      ),
-                      itemCount: state.items.length,
-                      itemBuilder: (BuildContext context, int index) =>
-                          _NoteCard(note: state.items[index]),
-                    ),
+              ? const EmptyState(
+                  icon: LucideIcons.stickyNote,
+                  title: '暂无便签',
+                  hint: '点击右上角新建，便签可以独立窗口置顶显示',
+                )
+              : GridView.builder(
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                    maxCrossAxisExtent: 280,
+                    mainAxisExtent: 190,
+                    crossAxisSpacing: AppSpacing.sm,
+                    mainAxisSpacing: AppSpacing.sm,
+                  ),
+                  itemCount: state.items.length,
+                  itemBuilder: (BuildContext context, int index) =>
+                      _NoteCard(note: state.items[index]),
+                ),
         ),
       ],
     );
@@ -148,8 +147,7 @@ final class _NoteCard extends ConsumerWidget {
                 ),
                 IconButton(
                   tooltip: '删除',
-                  icon: Icon(LucideIcons.trash2,
-                      size: 16, color: colors.error),
+                  icon: Icon(LucideIcons.trash2, size: 16, color: colors.error),
                   onPressed: () => controller.remove(note.id),
                 ),
               ],

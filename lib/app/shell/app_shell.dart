@@ -3,12 +3,12 @@ library;
 
 import 'package:core_design_system/core_design_system.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../features/calendar/application/calendar_controllers.dart';
+import '../../features/calendar/presentation/calendar_providers.dart';
 import '../../features/desktop/application/desktop_controller.dart';
 import '../../features/sync/application/sync_controller.dart';
 import 'window_title_bar.dart';
@@ -43,8 +43,12 @@ final class AppShell extends ConsumerWidget {
             ref.read(desktopControllerProvider.notifier).hide(),
         const SingleActivator(LogicalKeyboardKey.keyF, control: true): () =>
             navigationShell.goBranch(0),
-        const SingleActivator(LogicalKeyboardKey.keyB,
-            control: true, alt: true): () => navigationShell.goBranch(1),
+        const SingleActivator(
+          LogicalKeyboardKey.keyB,
+          control: true,
+          alt: true,
+        ): () =>
+            navigationShell.goBranch(1),
         const SingleActivator(LogicalKeyboardKey.keyS, control: true): () =>
             ref.read(syncControllerProvider.notifier).syncNow(),
         const SingleActivator(LogicalKeyboardKey.arrowLeft, alt: true): () =>
@@ -65,9 +69,7 @@ final class AppShell extends ConsumerWidget {
                       width: 84,
                       decoration: BoxDecoration(
                         color: colors.bgCard,
-                        border: Border(
-                          right: BorderSide(color: colors.border),
-                        ),
+                        border: Border(right: BorderSide(color: colors.border)),
                       ),
                       child: ListView.builder(
                         padding: const EdgeInsets.symmetric(
@@ -84,19 +86,18 @@ final class AppShell extends ConsumerWidget {
                               horizontal: AppSpacing.xs,
                             ),
                             child: InkWell(
-                              borderRadius:
-                                  BorderRadius.circular(AppRadius.sm),
-                              onTap: () => navigationShell.goBranch(item.branch),
+                              borderRadius: BorderRadius.circular(AppRadius.sm),
+                              onTap: () =>
+                                  navigationShell.goBranch(item.branch),
                               child: Container(
                                 padding: const EdgeInsets.symmetric(
                                   vertical: AppSpacing.sm,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: selected
-                                      ? colors.brandSubtle
-                                      : null,
-                                  borderRadius:
-                                      BorderRadius.circular(AppRadius.sm),
+                                  color: selected ? colors.brandSubtle : null,
+                                  borderRadius: BorderRadius.circular(
+                                    AppRadius.sm,
+                                  ),
                                 ),
                                 child: Column(
                                   children: <Widget>[
@@ -136,8 +137,9 @@ final class AppShell extends ConsumerWidget {
                               bottom: AppSpacing.md,
                               child: Material(
                                 color: colors.bgOverlay,
-                                borderRadius:
-                                    BorderRadius.circular(AppRadius.sm),
+                                borderRadius: BorderRadius.circular(
+                                  AppRadius.sm,
+                                ),
                                 child: Padding(
                                   padding: const EdgeInsets.all(AppSpacing.sm),
                                   child: Text(

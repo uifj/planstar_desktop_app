@@ -1,5 +1,5 @@
 import 'package:core_design_system/core_design_system.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -60,8 +60,10 @@ void main() {
       expect(theme.textTheme.bodyMedium?.fontFamily, AppTypography.fontFamily);
       expect(theme.textTheme.titleMedium?.fontFamily, AppTypography.fontFamily);
       expect(theme.textTheme.labelSmall?.fontFamily, AppTypography.fontFamily);
-      expect(AppTheme.dark().textTheme.bodySmall?.fontFamily,
-          AppTypography.fontFamily);
+      expect(
+        AppTheme.dark().textTheme.bodySmall?.fontFamily,
+        AppTypography.fontFamily,
+      );
     });
   });
 

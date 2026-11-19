@@ -35,6 +35,11 @@ final crossEngineSyncProvider = Provider<CrossEngineSync>(
   (Ref ref) => throw UnimplementedError('crossEngineSyncProvider 未注入'),
 );
 
+/// 持久化键 → 重载分组注册表（feature 声明、组合根聚合）。
+final reloadTargetRegistryProvider = Provider<ReloadTargetRegistry>(
+  (Ref ref) => throw UnimplementedError('reloadTargetRegistryProvider 未注入'),
+);
+
 /// 安全存储（由 flutter_secure_storage 适配）。
 final secureStoreProvider = Provider<SecureStore>(
   (Ref ref) => throw UnimplementedError('secureStoreProvider 未注入'),
@@ -110,16 +115,12 @@ final fileGatewayProvider = Provider<FileGateway>(
 
 /// Windows 桌面层（WorkerW 嵌入 / SPI 壁纸设置）。
 final desktopWallpaperGatewayProvider = Provider<DesktopWallpaperGateway>(
-  (Ref ref) => throw UnimplementedError(
-    'desktopWallpaperGatewayProvider 未注入',
-  ),
+  (Ref ref) => throw UnimplementedError('desktopWallpaperGatewayProvider 未注入'),
 );
 
 /// 壁纸 PNG 的落盘 / 底图读取。
 final wallpaperImageGatewayProvider = Provider<WallpaperImageGateway>(
-  (Ref ref) => throw UnimplementedError(
-    'wallpaperImageGatewayProvider 未注入',
-  ),
+  (Ref ref) => throw UnimplementedError('wallpaperImageGatewayProvider 未注入'),
 );
 
 /// 启动参数 `--planstar-embed-desktop` 的单次覆盖（不写入用户设置）。

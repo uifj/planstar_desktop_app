@@ -8,15 +8,13 @@ class _RecentSearch {
   final String keyword;
   final int at;
 
-  static _RecentSearch fromJson(Map<String, Object?> json) => _RecentSearch(
-        json['keyword']! as String,
-        json['at']! as int,
-      );
+  static _RecentSearch fromJson(Map<String, Object?> json) =>
+      _RecentSearch(json['keyword']! as String, json['at']! as int);
 
   Map<String, Object?> toJson() => <String, Object?>{
-        'keyword': keyword,
-        'at': at,
-      };
+    'keyword': keyword,
+    'at': at,
+  };
 }
 
 void main() {
@@ -61,9 +59,15 @@ void main() {
 
     test('JSON 往返', () async {
       final store = MemoryKeyValueStore();
-      await store.writeJson('j', <String, Object?>{'a': 1, 'b': <int>[1, 2]});
+      await store.writeJson('j', <String, Object?>{
+        'a': 1,
+        'b': <int>[1, 2],
+      });
       final back = await store.readJson('j');
-      expect(back, <String, Object?>{'a': 1, 'b': <Object?>[1, 2]});
+      expect(back, <String, Object?>{
+        'a': 1,
+        'b': <Object?>[1, 2],
+      });
     });
 
     test('JSON 损坏返回 null（当作未命中，而不是崩）', () async {
@@ -143,10 +147,7 @@ void main() {
 
     test('forUser 返回隔离视图', () async {
       final prefs = MemoryKeyValueStore();
-      final store = AppStore(
-        preferences: prefs,
-        secure: MemorySecureStore(),
-      );
+      final store = AppStore(preferences: prefs, secure: MemorySecureStore());
       final u1 = store.forUser('u1');
       await u1.write('k', 'v');
       expect(await prefs.read('u1:k'), 'v');
@@ -154,10 +155,7 @@ void main() {
   });
 
   group('JsonListStore', () {
-    JsonListStore<_RecentSearch> build(
-      KeyValueStore store, {
-      int? maxItems,
-    }) =>
+    JsonListStore<_RecentSearch> build(KeyValueStore store, {int? maxItems}) =>
         JsonListStore<_RecentSearch>(
           store: store,
           key: 'recent',
@@ -195,7 +193,9 @@ void main() {
     });
 
     test('坏 JSON 返回空列表', () async {
-      final store = build(MemoryKeyValueStore(<String, String>{'recent': 'xx'}));
+      final store = build(
+        MemoryKeyValueStore(<String, String>{'recent': 'xx'}),
+      );
       expect(await store.readAll(), isEmpty);
     });
 
@@ -215,6 +215,105 @@ void main() {
       await store.append(const _RecentSearch('a', 1));
       await store.clear();
       expect(await inner.read('recent'), isNull);
+    });
+  });
+
+  group('JsonListStore 内存缓存', () {
+    JsonListStore<_RecentSearch> build(KeyValueStore store, {int? maxItems}) =>
+        JsonListStore<_RecentSearch>(
+          store: store,
+          key: 'recent',
+          fromJson: _RecentSearch.fromJson,
+          toJson: (_RecentSearch v) => v.toJson(),
+          maxItems: maxItems,
+        );
+
+    test('重复 readAll 命中缓存，不重复解码', () async {
+      var decodeCalls = 0;
+      final inner = MemoryKeyValueStore(<String, String>{
+        'recent': '[{"keyword":"a","at":1},{"keyword":"b","at":2}]',
+      });
+      final store = JsonListStore<_RecentSearch>(
+        store: inner,
+        key: 'recent',
+        fromJson: (Map<String, Object?> json) {
+          decodeCalls++;
+          return _RecentSearch.fromJson(json);
+        },
+        toJson: (_RecentSearch v) => v.toJson(),
+      );
+      await store.readAll();
+      await store.readAll();
+      expect(decodeCalls, 2, reason: '两条数据只应解码一次');
+    });
+
+    test('writeAll 同步更新缓存，读回不解码', () async {
+      var decodeCalls = 0;
+      final store = JsonListStore<_RecentSearch>(
+        store: MemoryKeyValueStore(),
+        key: 'recent',
+        fromJson: (Map<String, Object?> json) {
+          decodeCalls++;
+          return _RecentSearch.fromJson(json);
+        },
+        toJson: (_RecentSearch v) => v.toJson(),
+      );
+      await store.writeAll(<_RecentSearch>[const _RecentSearch('a', 1)]);
+      final back = await store.readAll();
+      expect(back.single.keyword, 'a');
+      expect(decodeCalls, 0, reason: '写入后缓存应直接可用');
+    });
+
+    test('readAll 返回防御性副本，调用方 mutation 不污染缓存', () async {
+      final store = build(MemoryKeyValueStore());
+      await store.writeAll(<_RecentSearch>[
+        const _RecentSearch('a', 1),
+        const _RecentSearch('b', 2),
+      ]);
+      final first = await store.readAll();
+      first
+        ..clear()
+        ..add(const _RecentSearch('脏数据', 99));
+      final second = await store.readAll();
+      expect(second.map((_RecentSearch e) => e.keyword), <String>['a', 'b']);
+    });
+
+    test('外部直写底层存储后 readAll 可见（跨 engine 广播路径）', () async {
+      final inner = MemoryKeyValueStore();
+      final store = build(inner);
+      await store.writeAll(<_RecentSearch>[const _RecentSearch('a', 1)]);
+      await store.readAll();
+      // 模拟另一个 engine 经 DataHub 广播更新了底层值。
+      await inner.write('recent', '[{"keyword":"远程","at":9}]');
+      final back = await store.readAll();
+      expect(back.single.keyword, '远程');
+    });
+
+    test('外部删除键后 readAll 回到空', () async {
+      final inner = MemoryKeyValueStore();
+      final store = build(inner);
+      await store.append(const _RecentSearch('a', 1));
+      await store.readAll();
+      await inner.delete('recent');
+      expect(await store.readAll(), isEmpty);
+    });
+
+    test('clear 后缓存不残留', () async {
+      final store = build(MemoryKeyValueStore());
+      await store.append(const _RecentSearch('a', 1));
+      await store.readAll();
+      await store.clear();
+      expect(await store.readAll(), isEmpty);
+    });
+
+    test('append 在缓存路径下仍追加到末尾并按 maxItems 裁剪', () async {
+      final store = build(MemoryKeyValueStore(), maxItems: 2);
+      await store.append(const _RecentSearch('a', 1));
+      await store.readAll();
+      await store.append(const _RecentSearch('b', 2));
+      await store.append(const _RecentSearch('c', 3));
+      final back = await store.readAll();
+      expect(back.map((_RecentSearch e) => e.keyword), <String>['b', 'c']);
     });
   });
 }

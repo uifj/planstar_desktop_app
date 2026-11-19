@@ -8,17 +8,25 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../bootstrap/core_providers.dart';
 import '../../../core/app_events.dart';
 import '../../../core/list_state.dart';
+import '../../../core/ports.dart';
 import '../../../core/value_objects.dart';
-import '../../../features/calendar/application/calendar_controllers.dart';
+import '../../../features/calendar/application/calendar_controller.dart';
 import '../../../infrastructure/json_entity_store.dart';
 import '../domain/history_entry.dart';
 import '../infrastructure/local_history_repository.dart';
+
+/// 历史记录的持久化键。
+const String historyStoreKey = 'planstar.history.v1';
+
+/// 历史记录键的重载分组注册。
+void registerHistoryReloadTargets(ReloadTargetRegistry registry) =>
+    registry.registerKey(historyStoreKey, 'history');
 
 final historyRepositoryProvider = Provider<HistoryRepository>(
   (Ref ref) => LocalHistoryRepository(
     store: JsonEntityStore<HistoryEntry>(
       store: ref.watch(keyValueStoreProvider),
-      key: 'planstar.history.v1',
+      key: historyStoreKey,
       bus: ref.watch(domainEventBusProvider),
       clock: ref.watch(clockProvider),
       fromJson: HistoryEntry.fromJson,
@@ -30,8 +38,8 @@ final historyRepositoryProvider = Provider<HistoryRepository>(
 
 final historyControllerProvider =
     NotifierProvider<HistoryController, AsyncListState<HistoryEntry>>(
-  HistoryController.new,
-);
+      HistoryController.new,
+    );
 
 /// 便签留痕的可读文案：用真实标题/摘要，而不是 `NoteChanged` 技术名。
 String noteHistoryContent({
@@ -50,14 +58,14 @@ String noteHistoryContent({
 /// 恢复历史快照的结果，供 UI 给出准确反馈。
 enum RevertOutcome {
   success,
+
   /// 当前单元格比这条历史更新，直接恢复会丢失较新内容。
   newerContent,
   invalidEntry,
   failed,
 }
 
-final class HistoryController
-    extends Notifier<AsyncListState<HistoryEntry>> {
+final class HistoryController extends Notifier<AsyncListState<HistoryEntry>> {
   @override
   AsyncListState<HistoryEntry> build() {
     // 仅由应用根 ref.read，需保活以持续记录领域事件留痕。
@@ -70,8 +78,7 @@ final class HistoryController
     return AsyncListState<HistoryEntry>();
   }
 
-  HistoryRepository get _repository =>
-      ref.read(historyRepositoryProvider);
+  HistoryRepository get _repository => ref.read(historyRepositoryProvider);
 
   Future<void> _onCellChanged(DomainEvent event) async {
     if (event is! DayCellChanged) return;
@@ -88,10 +95,7 @@ final class HistoryController
     // 便签事件携带真实标题/摘要，不再把 "NoteChanged" 这类技术名写进历史。
     final String content;
     if (event is NoteChanged) {
-      content = noteHistoryContent(
-        title: event.title,
-        summary: event.summary,
-      );
+      content = noteHistoryContent(title: event.title, summary: event.summary);
     } else if (event is NoteRemoved) {
       content = noteHistoryContent(
         title: event.title,
@@ -128,13 +132,11 @@ final class HistoryController
       case Success<void>():
         // 就地有序插入，避免每条留痕都全量重读磁盘 + 重排整个列表。
         final next = <HistoryEntry>[entry, ...state.items]
-          ..sort((HistoryEntry a, HistoryEntry b) =>
-              b.occurredAt.compareTo(a.occurredAt));
-        state = state.copyWith(
-          items: next,
-          loading: false,
-          clearError: true,
-        );
+          ..sort(
+            (HistoryEntry a, HistoryEntry b) =>
+                b.occurredAt.compareTo(a.occurredAt),
+          );
+        state = state.copyWith(items: next, loading: false, clearError: true);
       case Fail<void>(:final failure):
         state = state.copyWith(loading: false, error: failure.message);
     }
@@ -149,11 +151,7 @@ final class HistoryController
             (HistoryEntry a, HistoryEntry b) =>
                 b.occurredAt.compareTo(a.occurredAt),
           );
-        state = state.copyWith(
-          items: sorted,
-          loading: false,
-          clearError: true,
-        );
+        state = state.copyWith(items: sorted, loading: false, clearError: true);
       case Fail<List<HistoryEntry>>(:final failure):
         state = state.copyWith(loading: false, error: failure.message);
     }
@@ -186,10 +184,8 @@ final class HistoryController
   bool hasNewerContent(HistoryEntry entry) {
     if (entry.kind != HistoryKind.cell) return false;
     final date = DateKey.parse(entry.targetId);
-    for (final cell in ref.read(calendarControllerProvider).cells) {
-      if (cell.date == date) return cell.updatedAt.isAfter(entry.occurredAt);
-    }
-    return false;
+    final cell = ref.read(calendarControllerProvider).cells[date];
+    return cell != null && cell.updatedAt.isAfter(entry.occurredAt);
   }
 
   /// 把历史快照「恢复」回单元格（旧版 `IDS_DESKTOPCAL_HISTORY_BUTTON_REVERT`）。

@@ -9,9 +9,7 @@ import '../../../infrastructure/json_entity_store.dart';
 import '../domain/countdown.dart';
 
 final class LocalCountdownRepository implements CountdownRepository {
-  LocalCountdownRepository({
-    required JsonEntityStore<CountdownItem> store,
-  }) : _store = store;
+  LocalCountdownRepository({required this._store});
 
   final JsonEntityStore<CountdownItem> _store;
 
@@ -19,21 +17,16 @@ final class LocalCountdownRepository implements CountdownRepository {
   Future<Result<List<CountdownItem>>> all() => _store.all();
 
   @override
-  Future<Result<void>> save(CountdownItem item) => _store.upsert(
-        item,
-        events: item.pullDomainEvents().toList(),
-      );
+  Future<Result<void>> save(CountdownItem item) =>
+      _store.upsert(item, events: item.pullDomainEvents().toList());
 
   @override
   Future<Result<void>> delete(String id) => _store.delete(
-        id,
-        events: <DomainEvent>[
-          CountdownRemoved(
-            aggregateId: id,
-            occurredAt: _store.clock.now(),
-          ),
-        ],
-      );
+    id,
+    events: <DomainEvent>[
+      CountdownRemoved(aggregateId: id, occurredAt: _store.clock.now()),
+    ],
+  );
 
   @override
   Future<Result<void>> clear() => _store.deleteAll();

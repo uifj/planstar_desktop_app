@@ -1,16 +1,17 @@
 /// 日历数学与农历 / 节气 / 节假日适配。
 ///
-/// 纯计算，不持有状态。农历数据由 pub.dev 的 `lunar` 包提供，
-/// 覆盖旧版 `ShowLunarCalendar / Show24SolarTerms / ShowFestival /
-/// ShowHoliday / ShowJiYi` 全部开关所需的信息。
+/// 农历数据由 pub.dev 的 `lunar` 包提供，覆盖旧版 `ShowLunarCalendar /
+/// Show24SolarTerms / ShowFestival / ShowHoliday` 开关所需的信息。
+/// 旧版 `ShowJiYi`（忌宜）无渲染消费方，已随 yi/ji 字段一并移除（ADR-0001）。
 library;
 
+import 'package:core/domain.dart';
 import 'package:lunar/lunar.dart';
 
 import 'value_objects.dart';
 
 /// 某一天的展示元数据（读模型）。
-final class CalendarDayMeta {
+final class CalendarDayMeta extends ValueObject {
   const CalendarDayMeta({
     required this.date,
     required this.lunarLabel,
@@ -18,8 +19,6 @@ final class CalendarDayMeta {
     required this.festivals,
     required this.isRestDay,
     required this.isMakeupWorkday,
-    required this.yi,
-    required this.ji,
     required this.weekNumber,
   });
 
@@ -29,9 +28,18 @@ final class CalendarDayMeta {
   final List<String> festivals;
   final bool isRestDay;
   final bool isMakeupWorkday;
-  final String yi;
-  final String ji;
   final int weekNumber;
+
+  @override
+  List<Object?> get props => <Object?>[
+    date,
+    lunarLabel,
+    solarTerm,
+    festivals,
+    isRestDay,
+    isMakeupWorkday,
+    weekNumber,
+  ];
 
   /// 单元格副标题优先级：节气 > 节日 > 农历日。
   String subtitle({
@@ -91,10 +99,11 @@ abstract final class CalendarMath {
       final month = DateTime(anchor.year, anchor.month + column, 1);
       var firstVisible = startOfWeekOf(firstOfMonth(month), startOfWeek);
       if (passedWeeks > 0) {
-        firstVisible =
-            firstVisible.subtract(Duration(days: 7 * passedWeeks));
+        firstVisible = firstVisible.subtract(Duration(days: 7 * passedWeeks));
       }
-      if (singleLine && today.year == month.year && today.month == month.month) {
+      if (singleLine &&
+          today.year == month.year &&
+          today.month == month.month) {
         firstVisible = startOfWeekOf(today, startOfWeek);
       }
       result.add(
@@ -107,8 +116,19 @@ abstract final class CalendarMath {
     return result;
   }
 
-  /// 用 `lunar` 包解析农历 / 节气 / 节日 / 忌宜 / 法定假日。
+  /// 用 `lunar` 包解析农历 / 节气 / 节日 / 法定假日。
+  ///
+  /// 进程级 LRU 缓存：农历与节假日表是 lunar 包内置静态数据，
+  /// (日期, 周偏移) → 元信息是纯函数，可常驻；若未来引入自定义节假日
+  /// 数据源，必须按数据版本失效。
   static CalendarDayMeta metaOf(DateKey date, {int firstWeekOffset = 0}) {
+    final cacheKey = '${date.key}|$firstWeekOffset';
+    final cached = _metaCache.remove(cacheKey);
+    if (cached != null) {
+      _metaCache[cacheKey] = cached;
+      return cached;
+    }
+
     final solar = Solar.fromDate(date.date);
     final lunar = solar.getLunar();
     final jieQi = lunar.getJieQi();
@@ -123,21 +143,26 @@ abstract final class CalendarMath {
         : lunar.getDayInChinese();
 
     final holiday = HolidayUtil.getHoliday(date.key);
-    final yi = lunar.getDayYi();
-    final ji = lunar.getDayJi();
 
-    return CalendarDayMeta(
+    final meta = CalendarDayMeta(
       date: date,
       lunarLabel: lunarLabel,
       solarTerm: jieQi,
       festivals: festivals,
       isRestDay: holiday != null && !holiday.isWork(),
       isMakeupWorkday: holiday != null && holiday.isWork(),
-      yi: yi.isEmpty ? '' : yi.take(3).join('·'),
-      ji: ji.isEmpty ? '' : ji.take(3).join('·'),
       weekNumber: weekNumberOf(date.date, firstWeekOffset),
     );
+    if (_metaCache.length >= _metaCacheLimit) {
+      _metaCache.remove(_metaCache.keys.first);
+    }
+    _metaCache[cacheKey] = meta;
+    return meta;
   }
+
+  static const int _metaCacheLimit = 4096;
+  static final Map<String, CalendarDayMeta> _metaCache =
+      <String, CalendarDayMeta>{};
 
   /// 中文星期表头。
   static const List<String> weekdayShort = <String>[

@@ -3,7 +3,7 @@ library;
 
 import 'package:core_design_system/core_design_system.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../bootstrap/core_providers.dart';
@@ -60,14 +60,13 @@ final class SettingsPage extends ConsumerWidget {
                                 .map(
                                   (CalendarDisplayMode m) =>
                                       DropdownMenuItem<CalendarDisplayMode>(
-                                    value: m,
-                                    child: Text(m.label),
-                                  ),
+                                        value: m,
+                                        child: Text(m.label),
+                                      ),
                                 )
                                 .toList(),
                             onChanged: (CalendarDisplayMode? value) => update(
-                              (AppSettings s) =>
-                                  s.copyWith(displayMode: value),
+                              (AppSettings s) => s.copyWith(displayMode: value),
                             ),
                           ),
                           SettingSlider(
@@ -78,8 +77,7 @@ final class SettingsPage extends ConsumerWidget {
                             divisions: 7,
                             display: '${settings.maxRows} 行',
                             onChanged: (double v) => update(
-                              (AppSettings s) =>
-                                  s.copyWith(maxRows: v.round()),
+                              (AppSettings s) => s.copyWith(maxRows: v.round()),
                             ),
                           ),
                           SettingSlider(
@@ -105,16 +103,14 @@ final class SettingsPage extends ConsumerWidget {
                                 ),
                             ],
                             onChanged: (int? value) => update(
-                              (AppSettings s) =>
-                                  s.copyWith(startOfWeek: value),
+                              (AppSettings s) => s.copyWith(startOfWeek: value),
                             ),
                           ),
                           SettingSwitch(
                             label: '显示透明玻璃效果',
                             value: settings.showGlassEffect,
                             onChanged: (bool v) => update(
-                              (AppSettings s) =>
-                                  s.copyWith(showGlassEffect: v),
+                              (AppSettings s) => s.copyWith(showGlassEffect: v),
                             ),
                           ),
                           SettingSwitch(
@@ -150,8 +146,7 @@ final class SettingsPage extends ConsumerWidget {
                             label: '显示节气',
                             value: settings.showSolarTerms,
                             onChanged: (bool v) => update(
-                              (AppSettings s) =>
-                                  s.copyWith(showSolarTerms: v),
+                              (AppSettings s) => s.copyWith(showSolarTerms: v),
                             ),
                           ),
                           SettingSwitch(
@@ -165,8 +160,7 @@ final class SettingsPage extends ConsumerWidget {
                             label: '显示周序号',
                             value: settings.showWeekNumber,
                             onChanged: (bool v) => update(
-                              (AppSettings s) =>
-                                  s.copyWith(showWeekNumber: v),
+                              (AppSettings s) => s.copyWith(showWeekNumber: v),
                             ),
                           ),
                         ],
@@ -186,14 +180,13 @@ final class SettingsPage extends ConsumerWidget {
                                 .map(
                                   (BulletStyle b) =>
                                       DropdownMenuItem<BulletStyle>(
-                                    value: b,
-                                    child: Text(b.label),
-                                  ),
+                                        value: b,
+                                        child: Text(b.label),
+                                      ),
                                 )
                                 .toList(),
                             onChanged: (BulletStyle? value) => update(
-                              (AppSettings s) =>
-                                  s.copyWith(bulletStyle: value),
+                              (AppSettings s) => s.copyWith(bulletStyle: value),
                             ),
                           ),
                           SettingSlider(
@@ -250,8 +243,7 @@ final class SettingsPage extends ConsumerWidget {
                             value: settings.taskCompleteTone,
                             items: SoundTone.values
                                 .map(
-                                  (SoundTone t) =>
-                                      DropdownMenuItem<SoundTone>(
+                                  (SoundTone t) => DropdownMenuItem<SoundTone>(
                                     value: t,
                                     child: Text(t.label),
                                   ),
@@ -267,8 +259,7 @@ final class SettingsPage extends ConsumerWidget {
                             value: settings.reminderTone,
                             items: SoundTone.values
                                 .map(
-                                  (SoundTone t) =>
-                                      DropdownMenuItem<SoundTone>(
+                                  (SoundTone t) => DropdownMenuItem<SoundTone>(
                                     value: t,
                                     child: Text(t.label),
                                   ),
@@ -307,8 +298,7 @@ final class SettingsPage extends ConsumerWidget {
                             max: 24,
                             divisions: 14,
                             onChanged: (double v) => update(
-                              (AppSettings s) =>
-                                  s.copyWith(contentFontSize: v),
+                              (AppSettings s) => s.copyWith(contentFontSize: v),
                             ),
                           ),
                           SettingSlider(
@@ -378,9 +368,9 @@ final class SettingsPage extends ConsumerWidget {
                                 .map(
                                   (AppThemeMode m) =>
                                       DropdownMenuItem<AppThemeMode>(
-                                    value: m,
-                                    child: Text(m.label),
-                                  ),
+                                        value: m,
+                                        child: Text(m.label),
+                                      ),
                                 )
                                 .toList(),
                             onChanged: (AppThemeMode? value) => update(
@@ -392,11 +382,17 @@ final class SettingsPage extends ConsumerWidget {
                             value: settings.language,
                             items: const <DropdownMenuItem<String>>[
                               DropdownMenuItem<String>(
-                                  value: 'zh_CN', child: Text('简体中文')),
+                                value: 'zh_CN',
+                                child: Text('简体中文'),
+                              ),
                               DropdownMenuItem<String>(
-                                  value: 'zh_TW', child: Text('繁體中文')),
+                                value: 'zh_TW',
+                                child: Text('繁體中文'),
+                              ),
                               DropdownMenuItem<String>(
-                                  value: 'en', child: Text('English')),
+                                value: 'en',
+                                child: Text('English'),
+                              ),
                             ],
                             onChanged: (String? value) => update(
                               (AppSettings s) => s.copyWith(language: value),
@@ -407,11 +403,17 @@ final class SettingsPage extends ConsumerWidget {
                             value: settings.searchEngine,
                             items: const <DropdownMenuItem<String>>[
                               DropdownMenuItem<String>(
-                                  value: 'bing', child: Text('必应')),
+                                value: 'bing',
+                                child: Text('必应'),
+                              ),
                               DropdownMenuItem<String>(
-                                  value: 'baidu', child: Text('百度')),
+                                value: 'baidu',
+                                child: Text('百度'),
+                              ),
                               DropdownMenuItem<String>(
-                                  value: 'google', child: Text('Google')),
+                                value: 'google',
+                                child: Text('Google'),
+                              ),
                             ],
                             onChanged: (String? value) => update(
                               (AppSettings s) =>
@@ -422,16 +424,14 @@ final class SettingsPage extends ConsumerWidget {
                             label: '开机自启（随 Windows 启动）',
                             value: settings.startWithWindow,
                             onChanged: (bool v) => update(
-                              (AppSettings s) =>
-                                  s.copyWith(startWithWindow: v),
+                              (AppSettings s) => s.copyWith(startWithWindow: v),
                             ),
                           ),
                           SettingSwitch(
                             label: '自动检查更新',
                             value: settings.autoCheckUpdate,
                             onChanged: (bool v) => update(
-                              (AppSettings s) =>
-                                  s.copyWith(autoCheckUpdate: v),
+                              (AppSettings s) => s.copyWith(autoCheckUpdate: v),
                             ),
                           ),
                           SettingSwitch(
@@ -510,9 +510,9 @@ final class SettingsPage extends ConsumerWidget {
                                 .map(
                                   (WallpaperMode m) =>
                                       DropdownMenuItem<WallpaperMode>(
-                                    value: m,
-                                    child: Text(m.label),
-                                  ),
+                                        value: m,
+                                        child: Text(m.label),
+                                      ),
                                 )
                                 .toList(),
                             onChanged: (WallpaperMode? value) => update(
@@ -544,13 +544,11 @@ final class SettingsPage extends ConsumerWidget {
                           ),
                           SettingSlider(
                             label: '切换间隔（分钟）',
-                            value: settings.wallpaperIntervalMinutes
-                                .toDouble(),
+                            value: settings.wallpaperIntervalMinutes.toDouble(),
                             min: 5,
                             max: 120,
                             divisions: 23,
-                            display:
-                                '${settings.wallpaperIntervalMinutes} 分钟',
+                            display: '${settings.wallpaperIntervalMinutes} 分钟',
                             onChanged: (double v) => update(
                               (AppSettings s) => s.copyWith(
                                 wallpaperIntervalMinutes: v.round(),
@@ -590,8 +588,7 @@ final class SettingsPage extends ConsumerWidget {
                                   await update(
                                     (AppSettings s) => s.copyWith(
                                       wallpaperImageDirectory: directory,
-                                      wallpaperMode:
-                                          WallpaperMode.rotation,
+                                      wallpaperMode: WallpaperMode.rotation,
                                     ),
                                   );
                                 },
@@ -602,9 +599,8 @@ final class SettingsPage extends ConsumerWidget {
                                 tooltip: '清除图片目录',
                                 icon: const Icon(LucideIcons.x, size: 16),
                                 onPressed: () => update(
-                                  (AppSettings s) => s.copyWith(
-                                    wallpaperImageDirectory: '',
-                                  ),
+                                  (AppSettings s) =>
+                                      s.copyWith(wallpaperImageDirectory: ''),
                                 ),
                               ),
                             ],
@@ -654,16 +650,14 @@ final class SettingsPage extends ConsumerWidget {
                             max: 16,
                             divisions: 16,
                             onChanged: (double v) => update(
-                              (AppSettings s) =>
-                                  s.copyWith(noteLineSpacing: v),
+                              (AppSettings s) => s.copyWith(noteLineSpacing: v),
                             ),
                           ),
                           SettingSwitch(
                             label: '显示所有便签',
                             value: settings.showAllNotes,
                             onChanged: (bool v) => update(
-                              (AppSettings s) =>
-                                  s.copyWith(showAllNotes: v),
+                              (AppSettings s) => s.copyWith(showAllNotes: v),
                             ),
                           ),
                         ],
@@ -736,17 +730,10 @@ final class SettingsPage extends ConsumerWidget {
   }
 
   Widget _scroll(List<Widget> children) => ListView(
-        padding: const EdgeInsets.only(bottom: AppSpacing.huge),
-        children: children,
-      );
+    padding: const EdgeInsets.only(bottom: AppSpacing.huge),
+    children: children,
+  );
 
-  String _weekLabel(int day) => const <String>[
-        '一',
-        '二',
-        '三',
-        '四',
-        '五',
-        '六',
-        '日',
-      ][day - 1];
+  String _weekLabel(int day) =>
+      const <String>['一', '二', '三', '四', '五', '六', '日'][day - 1];
 }

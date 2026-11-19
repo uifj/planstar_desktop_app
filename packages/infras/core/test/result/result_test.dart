@@ -56,15 +56,17 @@ void main() {
       const bad = Result<int>.failure(Failure.timeout(message: '超时'));
 
       expect(ok.fold(onFailure: (_) => -1, onSuccess: (d) => d * 10), 20);
-      expect(bad.fold(onFailure: (f) => f.type.name, onSuccess: (_) => 'ok'),
-          'timeout');
+      expect(
+        bad.fold(onFailure: (f) => f.type.name, onSuccess: (_) => 'ok'),
+        'timeout',
+      );
     });
 
     test('sealed 可穷举 switch，不需要 default', () {
       String describe(Result<int> r) => switch (r) {
-            Success(:final data) => 'ok:$data',
-            Fail(:final failure) => 'fail:${failure.code}',
-          };
+        Success(:final data) => 'ok:$data',
+        Fail(:final failure) => 'fail:${failure.code}',
+      };
 
       expect(describe(const Result.success(1)), 'ok:1');
       expect(
@@ -136,6 +138,46 @@ void main() {
     test('值相等（便于测试断言）', () {
       expect(const Result.success(1), const Result.success(1));
       expect(const Result.success(1), isNot(const Result.success(2)));
+    });
+  });
+
+  group('Result 异步组合子', () {
+    test('flatMapAsync 串联异步步骤', () async {
+      const ok = Result<int>.success(2);
+      final chained = await ok.flatMapAsync(
+        (int d) async => Result<String>.success('v$d'),
+      );
+      expect(chained.requireData, 'v2');
+    });
+
+    test('flatMapAsync 失败透传，不执行 transform', () async {
+      var called = false;
+      const bad = Result<int>.failure(Failure.network(message: '断网'));
+      final chained = await bad.flatMapAsync((int d) async {
+        called = true;
+        return const Result<String>.success('x');
+      });
+      expect(called, isFalse);
+      expect(chained.failure!.message, '断网');
+    });
+
+    test('flatMapAsync 的 transform 自身失败时返回该失败', () async {
+      const ok = Result<int>.success(2);
+      final chained = await ok.flatMapAsync(
+        (int d) async =>
+            const Result<String>.failure(Failure.input(message: '第二步失败')),
+      );
+      expect(chained.failure!.message, '第二步失败');
+    });
+
+    test('guardAsync 收敛异步异常为 LOCAL_IO_ERROR', () async {
+      expect((await guardAsync(() async => 42)).requireData, 42);
+      final error = StateError('boom');
+      final failed = await guardAsync<int>(() async => throw error);
+      expect(failed.isFailure, isTrue);
+      expect(failed.failure!.code, 'LOCAL_IO_ERROR');
+      expect(failed.failure!.type, FailureType.data);
+      expect(failed.failure!.cause, same(error));
     });
   });
 }

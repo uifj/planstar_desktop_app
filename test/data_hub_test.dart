@@ -2,8 +2,17 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:planstar_desktop_app/bootstrap/reload_targets.dart';
 import 'package:planstar_desktop_app/core/ports.dart';
+import 'package:planstar_desktop_app/features/calendar/infrastructure/local_calendar_repository.dart';
+import 'package:planstar_desktop_app/features/countdown/application/countdown_controller.dart';
+import 'package:planstar_desktop_app/features/history/application/history_controller.dart';
+import 'package:planstar_desktop_app/features/notes/infrastructure/local_note_repository.dart';
+import 'package:planstar_desktop_app/features/settings/infrastructure/settings_repository.dart';
+import 'package:planstar_desktop_app/features/subscription/application/subscription_controller.dart';
+import 'package:planstar_desktop_app/features/timetable/application/timetable_controller.dart';
 import 'package:planstar_desktop_app/infrastructure/data_hub.dart';
+import 'package:planstar_desktop_app/windows/desktop_widget_app.dart';
 
 void main() {
   late Directory temp;
@@ -17,25 +26,31 @@ void main() {
   });
 
   group('端口契约', () {
-    test('按 key 映射到对应读模型', () {
-      expect(reloadTargetFor('planstar.calendar.cells.v1'), 'calendar');
-      expect(reloadTargetFor('planstar.calendar.events.v1'), 'calendar');
-      expect(reloadTargetFor('planstar.settings.v1'), 'settings');
-      expect(reloadTargetFor('planstar.notes.v1'), 'notes');
-      expect(reloadTargetFor('planstar.countdowns.v1'), 'countdown');
-      expect(reloadTargetFor('planstar.subscriptions.v1'), 'subscription');
-      expect(reloadTargetFor('planstar.timetables.v1'), 'timetable');
-      expect(reloadTargetFor('planstar.history.v1'), 'history');
-      expect(reloadTargetFor('planstar.desktop.card.v2'), 'position');
-      expect(reloadTargetFor('unknown.key'), isNull);
+    test('每个 feature 存储键都有注册项（漏注册守卫）', () {
+      final registry = buildReloadTargetRegistry();
+      expect(registry.targetFor(calendarCellsStoreKey), 'calendar');
+      expect(registry.targetFor(calendarEventsStoreKey), 'calendar');
+      expect(registry.targetFor(LocalSettingsRepository.key), 'settings');
+      expect(registry.targetFor(notesStoreKey), 'notes');
+      expect(registry.targetFor(countdownsStoreKey), 'countdown');
+      expect(registry.targetFor(subscriptionsStoreKey), 'subscription');
+      expect(registry.targetFor(timetablesStoreKey), 'timetable');
+      expect(registry.targetFor(historyStoreKey), 'history');
+      expect(registry.targetFor(desktopCardPositionKey), 'position');
+      expect(registry.targetFor('unknown.key'), isNull);
     });
 
     test('空 key 表示全量重载', () {
-      expect(const DataChange(key: '', revision: 1, origin: '').isFullReload,
-          isTrue);
       expect(
-        const DataChange(key: 'planstar.notes.v1', revision: 1, origin: 'a')
-            .isFullReload,
+        const DataChange(key: '', revision: 1, origin: '').isFullReload,
+        isTrue,
+      );
+      expect(
+        const DataChange(
+          key: 'planstar.notes.v1',
+          revision: 1,
+          origin: 'a',
+        ).isFullReload,
         isFalse,
       );
     });
@@ -74,7 +89,8 @@ void main() {
       final file = File('${temp.path}/$dataHubFileName');
       expect(await file.exists(), isTrue);
       expect(await File('${file.path}.tmp').exists(), isFalse);
-      final decoded = jsonDecode(await file.readAsString()) as Map<String, Object?>;
+      final decoded =
+          jsonDecode(await file.readAsString()) as Map<String, Object?>;
       expect(decoded['revision'], isA<int>());
       final entries = (decoded['entries'] as Map).cast<String, Object?>();
       expect(entries['planstar.calendar.cells.v1'], '中文"引号"与\n换行');

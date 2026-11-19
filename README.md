@@ -97,7 +97,6 @@ lib/
 │   ├── ports.dart                             # 所有驱动侧端口 + SoundTone / WindowRect 等 DTO
 │   ├── app_events.dart                        # 跨上下文领域事件
 │   ├── calendar_math.dart                     # 网格计算 + 农历/节气/节日/法定假日
-│   ├── result_x.dart                          # guardAsync（异常边界收敛为 Result）
 │   └── list_state.dart                        # AsyncListState<T> 列表页状态壳
 ├── infrastructure/
 │   ├── storage_adapters.dart                  # SharedPreferences / SecureStorage → core 端口 + 跨 engine reload

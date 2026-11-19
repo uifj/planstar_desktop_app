@@ -6,7 +6,7 @@ library;
 
 import 'package:core_design_system/core_design_system.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../core/value_objects.dart';
 
@@ -106,7 +106,10 @@ final class SettingSwitch extends StatelessWidget {
       dense: true,
       title: Text(
         label,
-        style: TextStyle(fontSize: AppTypography.body, color: colors.textPrimary),
+        style: TextStyle(
+          fontSize: AppTypography.body,
+          color: colors.textPrimary,
+        ),
       ),
       subtitle: description == null
           ? null
@@ -312,10 +315,7 @@ final class AppChip extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: TextStyle(
-          fontSize: AppTypography.label,
-          color: effective,
-        ),
+        style: TextStyle(fontSize: AppTypography.label, color: effective),
       ),
     );
   }
@@ -367,34 +367,34 @@ final class ColorSwatchPicker extends StatelessWidget {
   }
 
   Widget _swatchRow(BuildContext context, List<EventColor> palette) => Wrap(
-        spacing: AppSpacing.xs,
-        runSpacing: AppSpacing.xs,
-        children: palette
-            .map(
-              (EventColor color) => InkWell(
-                onTap: () => onSelected(color),
+    spacing: AppSpacing.xs,
+    runSpacing: AppSpacing.xs,
+    children: palette
+        .map(
+          (EventColor color) => InkWell(
+            onTap: () => onSelected(color),
+            borderRadius: BorderRadius.circular(AppRadius.xs),
+            child: Container(
+              width: 24,
+              height: 24,
+              decoration: BoxDecoration(
+                color: color.isTransparent ? null : color.toColor(),
                 borderRadius: BorderRadius.circular(AppRadius.xs),
-                child: Container(
-                  width: 24,
-                  height: 24,
-                  decoration: BoxDecoration(
-                    color: color.isTransparent ? null : color.toColor(),
-                    borderRadius: BorderRadius.circular(AppRadius.xs),
-                    border: Border.all(
-                      color: color == selected
-                          ? context.appColors.brand
-                          : context.appColors.border,
-                      width: color == selected ? 2 : 1,
-                    ),
-                  ),
-                  child: color.isTransparent
-                      ? const Icon(LucideIcons.ban, size: 14)
-                      : null,
+                border: Border.all(
+                  color: color == selected
+                      ? context.appColors.brand
+                      : context.appColors.border,
+                  width: color == selected ? 2 : 1,
                 ),
               ),
-            )
-            .toList(),
-      );
+              child: color.isTransparent
+                  ? const Icon(LucideIcons.ban, size: 14)
+                  : null,
+            ),
+          ),
+        )
+        .toList(),
+  );
 }
 
 /// 通用弹窗骨架。

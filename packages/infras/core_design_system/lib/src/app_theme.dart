@@ -4,7 +4,7 @@
 /// 无阴影、灰底输入框、细描边。
 library;
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import 'semantic_colors.dart';
 import 'typography.dart';
@@ -35,9 +35,10 @@ abstract final class AppTheme {
   /// 子窗口）统一挂上这个 builder 才能让字体真正生效。
   static Widget withAppFont(BuildContext context, Widget? child) =>
       DefaultTextStyle(
-        style: (Theme.of(context).textTheme.bodyMedium ??
-                const TextStyle(fontSize: AppTypography.body))
-            .copyWith(fontFamily: AppTypography.fontFamily),
+        style:
+            (Theme.of(context).textTheme.bodyMedium ??
+                    const TextStyle(fontSize: AppTypography.body))
+                .copyWith(fontFamily: AppTypography.fontFamily),
         child: child ?? const SizedBox.shrink(),
       );
 
@@ -126,7 +127,9 @@ abstract final class AppTheme {
           foregroundColor: colors.onBrand,
           disabledBackgroundColor: colors.brandDisabled,
           disabledForegroundColor: colors.textDisabled,
-          minimumSize: const Size.fromHeight(44),
+          // 不能用 Size.fromHeight：其 infinity 宽在 Row 的无限宽约束下会被
+          // ConstrainedBox.enforce 成紧约束无限宽，布局抛异常后子树永久冻结。
+          minimumSize: const Size(0, 44),
           // 主按钮是药丸（AppRadius.xl = 20）。
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppRadius.xl),
@@ -141,7 +144,7 @@ abstract final class AppTheme {
         style: OutlinedButton.styleFrom(
           foregroundColor: colors.brand,
           disabledForegroundColor: colors.textDisabled,
-          minimumSize: const Size.fromHeight(44),
+          minimumSize: const Size(0, 44),
           side: BorderSide(color: colors.border),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppRadius.sm),

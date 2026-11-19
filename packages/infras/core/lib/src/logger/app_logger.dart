@@ -25,18 +25,11 @@ final class AppLogger {
   /// [level] 必须显式给出（通常是
   /// `AppLogger.defaultLevelFor(isReleaseMode: kReleaseMode)`），避免 release
   /// 包默认落到 debug 级别。
-  AppLogger({
-    required List<LogSink> sinks,
-    required this.level,
-    this.tag,
-  }) : _sinks = List<LogSink>.unmodifiable(sinks);
+  AppLogger({required List<LogSink> sinks, required this.level, this.tag})
+    : _sinks = List<LogSink>.unmodifiable(sinks);
 
   /// 内部复制构造，用于 [child]。
-  AppLogger._({
-    required List<LogSink> sinks,
-    required this.level,
-    required this.tag,
-  }) : _sinks = sinks;
+  AppLogger._({required this._sinks, required this.level, required this.tag});
 
   final List<LogSink> _sinks;
 
@@ -94,16 +87,22 @@ final class AppLogger {
   }
 
   /// 追踪。
-  void trace(String message, {Map<String, Object?> fields = const <String, Object?>{}}) =>
-      log(LogLevel.trace, message, fields: fields);
+  void trace(
+    String message, {
+    Map<String, Object?> fields = const <String, Object?>{},
+  }) => log(LogLevel.trace, message, fields: fields);
 
   /// 调试。
-  void debug(String message, {Map<String, Object?> fields = const <String, Object?>{}}) =>
-      log(LogLevel.debug, message, fields: fields);
+  void debug(
+    String message, {
+    Map<String, Object?> fields = const <String, Object?>{},
+  }) => log(LogLevel.debug, message, fields: fields);
 
   /// 信息。
-  void info(String message, {Map<String, Object?> fields = const <String, Object?>{}}) =>
-      log(LogLevel.info, message, fields: fields);
+  void info(
+    String message, {
+    Map<String, Object?> fields = const <String, Object?>{},
+  }) => log(LogLevel.info, message, fields: fields);
 
   /// 警告。
   void warn(
@@ -111,14 +110,13 @@ final class AppLogger {
     Object? error,
     StackTrace? stackTrace,
     Map<String, Object?> fields = const <String, Object?>{},
-  }) =>
-      log(
-        LogLevel.warn,
-        message,
-        error: error,
-        stackTrace: stackTrace,
-        fields: fields,
-      );
+  }) => log(
+    LogLevel.warn,
+    message,
+    error: error,
+    stackTrace: stackTrace,
+    fields: fields,
+  );
 
   /// 错误。
   void error(
@@ -126,12 +124,11 @@ final class AppLogger {
     Object? error,
     StackTrace? stackTrace,
     Map<String, Object?> fields = const <String, Object?>{},
-  }) =>
-      log(
-        LogLevel.error,
-        message,
-        error: error,
-        stackTrace: stackTrace,
-        fields: fields,
-      );
+  }) => log(
+    LogLevel.error,
+    message,
+    error: error,
+    stackTrace: stackTrace,
+    fields: fields,
+  );
 }

@@ -9,7 +9,7 @@ import '../../../bootstrap/core_providers.dart';
 import '../../../core/app_events.dart';
 import '../../../core/ports.dart';
 import '../../../core/value_objects.dart';
-import '../../calendar/application/calendar_controllers.dart';
+import '../../calendar/application/calendar_controller.dart';
 import '../../calendar/domain/calendar_event.dart';
 import '../../calendar/domain/recurrence_policy.dart';
 import '../../settings/application/settings_controller.dart';
@@ -27,11 +27,7 @@ final class ReminderAlert {
 }
 
 final class ReminderState {
-  const ReminderState({
-    this.alert,
-    this.scheduled = 0,
-    this.message,
-  });
+  const ReminderState({this.alert, this.scheduled = 0, this.message});
 
   final ReminderAlert? alert;
   final int scheduled;
@@ -43,18 +39,15 @@ final class ReminderState {
     String? message,
     bool clearAlert = false,
     bool clearMessage = false,
-  }) =>
-      ReminderState(
-        alert: clearAlert ? null : (alert ?? this.alert),
-        scheduled: scheduled ?? this.scheduled,
-        message: clearMessage ? null : (message ?? this.message),
-      );
+  }) => ReminderState(
+    alert: clearAlert ? null : (alert ?? this.alert),
+    scheduled: scheduled ?? this.scheduled,
+    message: clearMessage ? null : (message ?? this.message),
+  );
 }
 
 final reminderControllerProvider =
-    NotifierProvider<ReminderController, ReminderState>(
-  ReminderController.new,
-);
+    NotifierProvider<ReminderController, ReminderState>(ReminderController.new);
 
 final class ReminderController extends Notifier<ReminderState> {
   @override
@@ -135,15 +128,16 @@ final class ReminderController extends Notifier<ReminderState> {
   }
 
   int _notificationId(String eventId, DateTime fireAt) {
-    final hash = '$eventId${fireAt.millisecondsSinceEpoch}'
-        .codeUnits
-        .fold<int>(0, (int acc, int c) => (acc * 31 + c) & 0x3FFFFFFF);
+    final hash = '$eventId${fireAt.millisecondsSinceEpoch}'.codeUnits.fold<int>(
+      0,
+      (int acc, int c) => (acc * 31 + c) & 0x3FFFFFFF,
+    );
     return 100000 + hash % 900000;
   }
 
   void dismiss() => state = state.copyWith(clearAlert: true);
 
   void showTestAlert() => _onActivation(
-        'preview|${DateKey.today(ref.read(clockProvider).now()).key}',
-      );
+    'preview|${DateKey.today(ref.read(clockProvider).now()).key}',
+  );
 }

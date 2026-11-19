@@ -4,7 +4,9 @@
 #include <windows.h>
 
 #include "flutter/generated_plugin_registrant.h"
+#include "audioplayers_windows/audioplayers_windows_plugin.h"
 #include "desktop_multi_window/desktop_multi_window_plugin.h"
+#include "flutter_secure_storage_windows/flutter_secure_storage_windows_plugin.h"
 #include "desktop_wallpaper_plugin.h"
 #include "data_hub_plugin.h"
 
@@ -45,7 +47,17 @@ bool FlutterWindow::OnCreate() {
       return;
     }
     auto *registry = flutter_view_controller->engine();
-    RegisterPlugins(registry);
+    // 子 engine 只注册多 engine 安全的插件子集，不能走整份 RegisterPlugins：
+    // auto_updater 的 AutoUpdater 是进程级单例，第二次构造直接 throw
+    // std::invalid_argument，未捕获会 abort() 冻死主平台线程（ADR-0010）。
+    // 其余插件与主 engine 保持一致；跨 engine 不发声由 Dart 层保证（ADR-0005），
+    // 但 audioplayers 通道必须注册——子 engine 启动期也会构造 AudioPlayer。
+    AudioplayersWindowsPluginRegisterWithRegistrar(
+        registry->GetRegistrarForPlugin("AudioplayersWindowsPlugin"));
+    DesktopMultiWindowPluginRegisterWithRegistrar(
+        registry->GetRegistrarForPlugin("DesktopMultiWindowPlugin"));
+    FlutterSecureStorageWindowsPluginRegisterWithRegistrar(
+        registry->GetRegistrarForPlugin("FlutterSecureStorageWindowsPlugin"));
     RegisterDataHubPlugin(registry->messenger());
     HWND root = nullptr;
     if (flutter_view_controller->view() != nullptr) {

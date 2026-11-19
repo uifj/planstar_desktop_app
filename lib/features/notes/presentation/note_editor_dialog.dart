@@ -3,7 +3,7 @@ library;
 
 import 'package:core_design_system/core_design_system.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../bootstrap/core_providers.dart';
@@ -51,10 +51,7 @@ final class _NoteEditorDialogState extends ConsumerState<NoteEditorDialog> {
       if (item.id == widget.noteId) note = item;
     }
     if (note == null) {
-      return const AppDialogFrame(
-        title: '便签',
-        child: Text('便签不存在或已被删除'),
-      );
+      return const AppDialogFrame(title: '便签', child: Text('便签不存在或已被删除'));
     }
     if (_titleController.text != note.title) {
       _titleController.text = note.title;
@@ -94,10 +91,9 @@ final class _NoteEditorDialogState extends ConsumerState<NoteEditorDialog> {
             selected: note.backgroundColor,
             onSelected: (EventColor color) => controller.setBackground(
               note!.id,
-              EventColor.palette.indexOf(color).clamp(
-                    0,
-                    EventColor.palette.length - 1,
-                  ),
+              EventColor.palette
+                  .indexOf(color)
+                  .clamp(0, EventColor.palette.length - 1),
             ),
           ),
           const SizedBox(height: AppSpacing.md),
@@ -129,9 +125,8 @@ final class _NoteEditorDialogState extends ConsumerState<NoteEditorDialog> {
                       note!.id,
                       note.lines
                           .map(
-                            (RichLine l) => l.id == line.id
-                                ? l.copyWith(text: value)
-                                : l,
+                            (RichLine l) =>
+                                l.id == line.id ? l.copyWith(text: value) : l,
                           )
                           .toList(),
                     ),
@@ -149,9 +144,8 @@ final class _NoteEditorDialogState extends ConsumerState<NoteEditorDialog> {
                       note!.id,
                       note.lines
                           .map(
-                            (RichLine l) => l.id == line.id
-                                ? l.copyWith(color: color)
-                                : l,
+                            (RichLine l) =>
+                                l.id == line.id ? l.copyWith(color: color) : l,
                           )
                           .toList(),
                     );
@@ -161,9 +155,7 @@ final class _NoteEditorDialogState extends ConsumerState<NoteEditorDialog> {
                   icon: const Icon(LucideIcons.x, size: 16),
                   onPressed: () => controller.saveLines(
                     note!.id,
-                    note.lines
-                        .where((RichLine l) => l.id != line.id)
-                        .toList(),
+                    note.lines.where((RichLine l) => l.id != line.id).toList(),
                   ),
                 ),
               ],
@@ -173,16 +165,10 @@ final class _NoteEditorDialogState extends ConsumerState<NoteEditorDialog> {
             spacing: AppSpacing.xs,
             children: <Widget>[
               OutlinedButton.icon(
-                onPressed: () => controller.saveLines(
-                  note!.id,
-                  <RichLine>[
-                    ...note.lines,
-                    RichLine(
-                      id: ref.read(idGeneratorProvider).next(),
-                      text: '',
-                    ),
-                  ],
-                ),
+                onPressed: () => controller.saveLines(note!.id, <RichLine>[
+                  ...note.lines,
+                  RichLine(id: ref.read(idGeneratorProvider).next(), text: ''),
+                ]),
                 icon: const Icon(LucideIcons.plus, size: 16),
                 label: const Text('添加一行'),
               ),

@@ -6,7 +6,7 @@
 /// 字体族由根工程 `assets/fonts` 提供，通过 [AppTheme] 注入 ThemeData。
 library;
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 /// 字号与字重。
 abstract final class AppTypography {
