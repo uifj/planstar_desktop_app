@@ -59,6 +59,7 @@ final class DesktopController extends Notifier<DesktopState> {
   bool _wallpaperRestored = false;
   String _appliedSignature = '';
   StreamSubscription<TrayAction>? _traySubscription;
+  StreamSubscription<HotkeyAction>? _hotkeySubscription;
   StreamSubscription<MultiWindowCommand>? _windowCommands;
   void Function()? _cancelSettingsChanged;
 
@@ -70,6 +71,7 @@ final class DesktopController extends Notifier<DesktopState> {
     // 必须回写 visible，否则托盘 toggle 的第一次点击方向是反的。
     ref.read(windowGatewayProvider).onCloseIntercepted = markHidden;
     _traySubscription = ref.read(trayActionsProvider).listen(_onTrayAction);
+    _hotkeySubscription = ref.read(hotkeyActionsProvider).listen(_onHotkeyAction);
     _cancelSettingsChanged =
         ref.read(domainEventBusProvider).on<SettingsChanged>(_onSettingsChanged);
     ref.listen<AppSettings>(
@@ -94,6 +96,7 @@ final class DesktopController extends Notifier<DesktopState> {
       _wallpaperTimer?.cancel();
       _refreshDebounce?.cancel();
       _traySubscription?.cancel();
+      _hotkeySubscription?.cancel();
       _windowCommands?.cancel();
       _cancelSettingsChanged?.call();
       ref.read(windowGatewayProvider).onCloseIntercepted = null;
@@ -249,6 +252,15 @@ final class DesktopController extends Notifier<DesktopState> {
   Future<void> toggleDesktopWidget() async {
     final current = ref.read(settingsControllerProvider).desktopWidgetEnabled;
     await setDesktopWidgetEnabled(!current);
+  }
+
+  void _onHotkeyAction(HotkeyAction action) {
+    switch (action) {
+      case HotkeyAction.toggleMainWindow:
+        state.visible ? hide() : show();
+      case HotkeyAction.toggleDesktopWidget:
+        toggleDesktopWidget();
+    }
   }
 
   void _onTrayAction(TrayAction action) {

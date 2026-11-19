@@ -92,6 +92,15 @@ final trayActionsProvider = Provider<Stream<TrayAction>>(
   (Ref ref) => const Stream<TrayAction>.empty(),
 );
 
+final hotkeyGatewayProvider = Provider<HotkeyGateway>(
+  (Ref ref) => throw UnimplementedError('hotkeyGatewayProvider 未注入'),
+);
+
+/// 全局热键触发事件（组合根把原生回调桥接成流，供 DesktopController 消费）。
+final hotkeyActionsProvider = Provider<Stream<HotkeyAction>>(
+  (Ref ref) => const Stream<HotkeyAction>.empty(),
+);
+
 final multiWindowGatewayProvider = Provider<MultiWindowGateway>(
   (Ref ref) => throw UnimplementedError('multiWindowGatewayProvider 未注入'),
 );
@@ -113,6 +122,11 @@ final desktopWallpaperGatewayProvider = Provider<DesktopWallpaperGateway>(
   (Ref ref) => throw UnimplementedError(
     'desktopWallpaperGatewayProvider 未注入',
   ),
+);
+
+/// 屏幕 / 显示器信息（screen_retriever）。
+final screenGatewayProvider = Provider<ScreenGateway>(
+  (Ref ref) => throw UnimplementedError('screenGatewayProvider 未注入'),
 );
 
 /// 壁纸 PNG 的落盘 / 底图读取。

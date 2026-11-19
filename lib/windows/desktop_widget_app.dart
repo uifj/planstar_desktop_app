@@ -78,9 +78,9 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
   double _cardHeight = _defaultCardHeight;
 
   // 虚拟屏逻辑尺寸由多个来源取最大值：子窗口 engine 的 MediaQuery / view
-  // 尺寸可能随启动时序偏小，原生 GetSystemMetrics 才是权威虚拟屏范围。
+  // 尺寸可能随启动时序偏小，screen_retriever 的虚拟屏并集才是权威范围。
   Size _screen = const Size(1920, 1080);
-  DesktopMetrics _nativeMetrics = DesktopMetrics.fallback;
+  Size _virtualScreen = Size.zero;
 
   static const double _headerHeight = 48;
   static const double _weekdayHeight = 28;
@@ -128,6 +128,15 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
   late final KeyValueStore _store;
   // 读取完成前不允许写盘，避免启动期的生命周期回调覆盖已保存的位置/尺寸。
   bool _positionLoaded = false;
+  // 拖拽 / 缩放只移动卡片外框，不重建 42 个格子与整棵 MaterialApp。
+  // 位置/尺寸仍是普通字段，只通过这个 tick 驱动 Positioned 重新布局。
+  final ValueNotifier<int> _geometryTick = ValueNotifier<int>(0);
+  // 行内文字输入去抖：每次按键都 saveCellLines 会触发「读全表 → 写全表 →
+  // 全量 load → 广播」的连锁反应，桌面输入会明显卡顿。
+  Timer? _lineEditTimer;
+  DateKey? _pendingLineDate;
+  String? _pendingLineId;
+  String? _pendingLineText;
   final TextEditingController _input = TextEditingController();
   final TextEditingController _cellInput = TextEditingController();
   final FocusNode _cellFocus = FocusNode();
@@ -147,13 +156,17 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
       await ref
           .read(desktopWallpaperGatewayProvider)
           .configureOverlay(enable: true);
-      await _loadNativeMetrics();
+      await _loadScreenMetrics();
       _pushRegion();
     });
   }
 
   @override
   void dispose() {
+    // 退出前先提交尚未落盘的行内文字，再写最终位置/尺寸。
+    unawaited(_flushLineText());
+    _lineEditTimer?.cancel();
+    _geometryTick.dispose();
     // 进程可能随时被结束，退出前把最终位置/尺寸写盘。
     unawaited(_persistPosition());
     WidgetsBinding.instance.removeObserver(this);
@@ -196,19 +209,18 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
     _pushRegion();
   }
 
-  Future<void> _loadNativeMetrics() async {
+  Future<void> _loadScreenMetrics() async {
     try {
-      final metrics =
-          await ref.read(desktopWallpaperGatewayProvider).desktopMetrics();
-      if (!mounted) return;
+      final virtual = await ref.read(screenGatewayProvider).virtualBounds();
+      if (virtual == null || !mounted) return;
       setState(() {
-        _nativeMetrics = metrics;
+        _virtualScreen = Size(virtual.width, virtual.height);
         _clampToScreen();
       });
       _regionSignature = '';
       _pushRegion();
     } on Object {
-      // 原生通道不可用时保留默认 / MediaQuery 值。
+      // screen_retriever 不可用时回退 MediaQuery / view 尺寸。
     }
   }
 
@@ -242,17 +254,9 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
       if (vw > width) width = vw;
       if (vh > height) height = vh;
     }
-    // 原生 GetSystemMetrics 返回物理像素，按 overlay 所属 view 的 dpr 换算。
-    // 用当前 engine 的 view dpr（与 setRegion 同一坐标系），避免混合 DPI 下
-    // 逐个 view 换算把逻辑尺寸错误放大。
-    final effectiveDpr =
-        views.isNotEmpty && views.first.devicePixelRatio > 0
-            ? views.first.devicePixelRatio
-            : 1.0;
-    final nativeWidth = _nativeMetrics.width / effectiveDpr;
-    final nativeHeight = _nativeMetrics.height / effectiveDpr;
-    if (nativeWidth > width) width = nativeWidth;
-    if (nativeHeight > height) height = nativeHeight;
+    // screen_retriever 的虚拟屏并集（逻辑像素），无需再做 dpr 换算。
+    if (_virtualScreen.width > width) width = _virtualScreen.width;
+    if (_virtualScreen.height > height) height = _virtualScreen.height;
     return Size(width, height);
   }
 
@@ -321,10 +325,11 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
 
   void _updateDrag(Offset globalPosition) {
     if (!_dragging) return;
-    setState(() {
-      _x = _dragStartX + globalPosition.dx - _dragOrigin.dx;
-      _y = _dragStartY + globalPosition.dy - _dragOrigin.dy;
-    });
+    // 只移动 Positioned 外框：不 setState，避免整棵 MaterialApp 与 42 个
+    // 日期格子逐帧重建（原实现拖动时会持续重建 / 重排整个月历）。
+    _x = _dragStartX + globalPosition.dx - _dragOrigin.dx;
+    _y = _dragStartY + globalPosition.dy - _dragOrigin.dy;
+    _geometryTick.value++;
   }
 
   void _endDrag() {
@@ -334,7 +339,7 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
     // 8px 网格吸附（对齐 Vectra 的 snap 思路）。
     _x = (_x / 8).round() * 8.0;
     _y = (_y / 8).round() * 8.0;
-    setState(() {});
+    _geometryTick.value++;
     _regionSignature = '';
     _pushRegion();
     unawaited(_persistPosition());
@@ -453,12 +458,11 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
     w = w.clamp(_minCardWidth, maxW).toDouble();
     h = h.clamp(_minCardHeight, maxH).toDouble();
 
-    setState(() {
-      _x = x;
-      _y = y;
-      _cardWidth = w;
-      _cardHeight = h;
-    });
+    _x = x;
+    _y = y;
+    _cardWidth = w;
+    _cardHeight = h;
+    _geometryTick.value++;
   }
 
   void _endResize() {
@@ -480,7 +484,7 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
     _cardWidth = (_cardWidth / 8).round() * 8.0;
     _cardHeight = (_cardHeight / 8).round() * 8.0;
     _clampToScreen();
-    setState(() {});
+    _geometryTick.value++;
     _regionSignature = '';
     _pushRegion();
     unawaited(_persistPosition());
@@ -586,6 +590,8 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
 
   void _closePopup({bool pushRegion = true}) {
     if (_popupDate == null) return;
+    // 关闭浮层时立即提交未落盘的文字，避免丢失最后一次输入。
+    unawaited(_flushLineText());
     setState(() {
       _popupDate = null;
       _popupRect = null;
@@ -665,13 +671,40 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
     _focusNewLine();
   }
 
-  Future<void> _updateLineText(DateKey date, String id, String value) async {
+  /// 行内输入去抖：停止输入 400ms 再落盘。
+  ///
+  /// 原实现每次按键都会 saveCellLines：读全表 → 改一行 → 写全表 → 全量
+  /// load → 跨 engine 广播，桌面输入明显掉帧。这里只保留最后一次文本。
+  void _scheduleLineText(DateKey date, String id, String value) {
+    if (_pendingLineId != null &&
+        (_pendingLineId != id || _pendingLineDate != date)) {
+      unawaited(_flushLineText());
+    }
+    _pendingLineDate = date;
+    _pendingLineId = id;
+    _pendingLineText = value;
+    _lineEditTimer?.cancel();
+    _lineEditTimer = Timer(const Duration(milliseconds: 400), () {
+      unawaited(_flushLineText());
+    });
+  }
+
+  Future<void> _flushLineText() async {
+    _lineEditTimer?.cancel();
+    _lineEditTimer = null;
+    final date = _pendingLineDate;
+    final id = _pendingLineId;
+    final text = _pendingLineText;
+    _pendingLineDate = null;
+    _pendingLineId = null;
+    _pendingLineText = null;
+    if (!mounted || date == null || id == null || text == null) return;
     await ref.read(calendarControllerProvider.notifier).saveCellLines(
           date,
           _linesOf(date)
               .map(
                 (RichLine line) =>
-                    line.id == id ? line.copyWith(text: value) : line,
+                    line.id == id ? line.copyWith(text: text) : line,
               )
               .toList(),
         );
@@ -717,6 +750,8 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
       setState(() => _confirmClear = true);
       return;
     }
+    // 必须先提交/清空待写文本，否则去抖回调会把刚清空的内容又写回去。
+    await _flushLineText();
     await ref
         .read(calendarControllerProvider.notifier)
         .saveCellLines(_targetDate, const <RichLine>[]);
@@ -823,12 +858,19 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
           child: Stack(
             fit: StackFit.expand,
             children: <Widget>[
-              Positioned(
-                left: _x,
-                top: _y,
-                width: _cardWidth,
-                height: _cardHeight,
+              ValueListenableBuilder<int>(
+                valueListenable: _geometryTick,
+                // 卡片只构建一次：拖拽/缩放时 Positioned 仅改 left/top/size，
+                // child 实例不变，Flutter 会跳过整棵月历子树的重建。
                 child: _card(context, month, settings),
+                builder: (BuildContext context, int tick, Widget? child) =>
+                    Positioned(
+                  left: _x,
+                  top: _y,
+                  width: _cardWidth,
+                  height: _cardHeight,
+                  child: child!,
+                ),
               ),
               // 放在最外层 Stack 而非 _card 的 ClipRRect 内，
               // 否则最底行格子的弹窗会被卡片圆角裁掉。
@@ -1516,7 +1558,7 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
                     contentPadding: EdgeInsets.zero,
                   ),
                   onChanged: (String value) =>
-                      _updateLineText(date, line.id, value),
+                      _scheduleLineText(date, line.id, value),
                 ),
               ),
             ),

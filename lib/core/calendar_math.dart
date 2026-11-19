@@ -107,8 +107,21 @@ abstract final class CalendarMath {
     return result;
   }
 
+  /// 农历 / 节气 / 忌宜解析结果按「日期 + 偏移」缓存。
+  ///
+  /// 月历一次重建要算 42 天，而 `lunar` 包的农历/黄历解析是纯 CPU 开销；
+  /// 同一日期在任意 settings / 数据变更后都会重复计算。农历元数据只跟
+  /// 公历日期有关，缓存是安全的。2048 条足以覆盖数年浏览范围。
+  static const int _metaCacheLimit = 2048;
+  static final Map<String, CalendarDayMeta> _metaCache =
+      <String, CalendarDayMeta>{};
+
   /// 用 `lunar` 包解析农历 / 节气 / 节日 / 忌宜 / 法定假日。
   static CalendarDayMeta metaOf(DateKey date, {int firstWeekOffset = 0}) {
+    final String cacheKey = '${date.key}|$firstWeekOffset';
+    final CalendarDayMeta? cached = _metaCache[cacheKey];
+    if (cached != null) return cached;
+
     final solar = Solar.fromDate(date.date);
     final lunar = solar.getLunar();
     final jieQi = lunar.getJieQi();
@@ -126,7 +139,7 @@ abstract final class CalendarMath {
     final yi = lunar.getDayYi();
     final ji = lunar.getDayJi();
 
-    return CalendarDayMeta(
+    final CalendarDayMeta meta = CalendarDayMeta(
       date: date,
       lunarLabel: lunarLabel,
       solarTerm: jieQi,
@@ -137,6 +150,11 @@ abstract final class CalendarMath {
       ji: ji.isEmpty ? '' : ji.take(3).join('·'),
       weekNumber: weekNumberOf(date.date, firstWeekOffset),
     );
+    if (_metaCache.length >= _metaCacheLimit) {
+      _metaCache.remove(_metaCache.keys.first);
+    }
+    _metaCache[cacheKey] = meta;
+    return meta;
   }
 
   /// 中文星期表头。

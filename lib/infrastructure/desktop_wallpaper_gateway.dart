@@ -1,41 +1,42 @@
-/// [DesktopWallpaperGateway] 的 Windows 原生实现。
+/// [DesktopWallpaperGateway] 的 Windows 原生实现（Pigeon）。
 ///
 /// 通道由 `windows/runner/desktop_wallpaper_plugin.cpp` **按 engine** 注册：
 /// 主窗口与每个 `desktop_multi_window` 子窗口各有自己的一份，因此桌面小组件
-/// 可以直接配置自己那个原生窗口。用 `OptionalMethodChannel` 保证非 Windows
-/// 平台和单元测试安静降级。
+/// 可以直接配置自己那个原生窗口。契约见 `pigeons/planstar_api.dart`。
+///
+/// 与旧的手写 `OptionalMethodChannel` 相比：参数/返回值在编译期完成类型校验，
+/// 不再有字符串方法名、`Map<String, Object?>` 强转与手工默认值兜底。
+/// 非 Windows / 单元测试下原生未注册，Pigeon 抛 `PlatformException`，
+/// 这里统一降级为安全默认值，保持与旧实现一致的「安静失败」语义。
 library;
 
 import 'package:core/logger.dart';
 import 'package:flutter/services.dart';
 
 import '../core/ports.dart';
+import 'pigeon/planstar_api.g.dart';
 
-final class MethodChannelDesktopWallpaperGateway
-    implements DesktopWallpaperGateway {
-  MethodChannelDesktopWallpaperGateway({required this.logger})
-      : _channel = const OptionalMethodChannel('planstar/desktop_wallpaper');
+final class PigeonDesktopWallpaperGateway implements DesktopWallpaperGateway {
+  PigeonDesktopWallpaperGateway({required this.logger})
+      : _api = DesktopWallpaperHostApi();
 
   final AppLogger logger;
-  final OptionalMethodChannel _channel;
+  final DesktopWallpaperHostApi _api;
 
-  Future<T?> _invoke<T>(String method, [Map<String, Object?>? arguments]) async {
+  Future<T?> _invoke<T>(String label, Future<T> Function() action) async {
     try {
-      return await _channel.invokeMethod<T>(method, arguments);
+      return await action();
     } on MissingPluginException {
       return null;
     } on PlatformException catch (error) {
-      logger.warn('桌面壁纸能力调用失败：$method', error: error);
+      logger.warn('桌面壁纸能力调用失败：$label', error: error);
       return null;
     }
   }
 
   @override
   Future<bool> configureOverlay({required bool enable}) async =>
-      await _invoke<bool>(
-        'configureOverlay',
-        <String, Object?>{'enable': enable},
-      ) ??
+      await _invoke('configureOverlay', () => _api.configureOverlay(enable)) ??
       false;
 
   @override
@@ -43,56 +44,68 @@ final class MethodChannelDesktopWallpaperGateway
     required List<DesktopCardRect> rects,
     bool dragging = false,
   }) async =>
-      await _invoke<bool>(
+      await _invoke(
         'setRegion',
-        <String, Object?>{
-          'dragging': dragging,
-          'rects': rects
-              .map((DesktopCardRect rect) => rect.toJson())
+        () => _api.setRegion(
+          rects
+              .map((DesktopCardRect rect) => CardRectDto(
+                    x: rect.x.roundToDouble(),
+                    y: rect.y.roundToDouble(),
+                    width: rect.width.roundToDouble(),
+                    height: rect.height.roundToDouble(),
+                    radius: rect.radius.roundToDouble(),
+                  ))
               .toList(growable: false),
-        },
+          dragging,
+        ),
       ) ??
       false;
 
   @override
   Future<bool> isOverlay() async =>
-      await _invoke<bool>('isOverlay') ?? false;
+      await _invoke('isOverlay', _api.isOverlay) ?? false;
 
   @override
-  Future<bool> attachToDesktop({WindowRect? rect}) async =>
-      await _invoke<bool>('attach', rect?.toJson()) ?? false;
-
-  @override
-  Future<bool> detachFromDesktop() async =>
-      await _invoke<bool>('detach') ?? false;
-
-  @override
-  Future<bool> isAttached() async =>
-      await _invoke<bool>('isAttached') ?? false;
-
-  @override
-  Future<bool> setWallpaper(String path) async =>
-      await _invoke<bool>('setWallpaper', <String, Object?>{'path': path}) ??
+  Future<bool> attachToDesktop({WindowRect? rect}) async => await _invoke(
+        'attach',
+        () => _api.attach(
+          rect == null
+              ? null
+              : WindowRectDto(
+                  x: rect.x,
+                  y: rect.y,
+                  width: rect.width,
+                  height: rect.height,
+                ),
+        ),
+      ) ??
       false;
 
   @override
+  Future<bool> detachFromDesktop() async =>
+      await _invoke('detach', _api.detach) ?? false;
+
+  @override
+  Future<bool> isAttached() async =>
+      await _invoke('isAttached', _api.isAttached) ?? false;
+
+  @override
+  Future<bool> setWallpaper(String path) async =>
+      await _invoke('setWallpaper', () => _api.setWallpaper(path)) ?? false;
+
+  @override
   Future<String> currentWallpaper() async =>
-      await _invoke<String>('getWallpaper') ?? '';
+      await _invoke('currentWallpaper', _api.currentWallpaper) ?? '';
 
   @override
   Future<DesktopMetrics> desktopMetrics() async {
-    final raw = await _invoke<dynamic>('desktopMetrics');
-    if (raw is! Map) return DesktopMetrics.fallback;
-    int read(String key, int fallback) {
-      final value = raw[key];
-      return value is num ? value.toInt() : fallback;
-    }
-
+    final metrics = await _invoke('desktopMetrics', _api.desktopMetrics);
+    if (metrics == null) return DesktopMetrics.fallback;
     return DesktopMetrics(
-      x: read('x', 0),
-      y: read('y', 0),
-      width: read('width', DesktopMetrics.fallback.width),
-      height: read('height', DesktopMetrics.fallback.height),
+      x: metrics.x,
+      y: metrics.y,
+      width: metrics.width,
+      height: metrics.height,
     );
   }
 }

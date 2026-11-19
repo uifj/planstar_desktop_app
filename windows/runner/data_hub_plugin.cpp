@@ -3,6 +3,7 @@
 #include <windows.h>
 
 #include <algorithm>
+#include <any>
 #include <cstdint>
 #include <cstdio>
 #include <fstream>
@@ -16,28 +17,16 @@
 
 #include <flutter/binary_messenger.h>
 #include <flutter/encodable_value.h>
-#include <flutter/event_channel.h>
-#include <flutter/event_sink.h>
-#include <flutter/event_stream_handler.h>
-#include <flutter/method_channel.h>
-#include <flutter/method_result.h>
-#include <flutter/standard_method_codec.h>
+
+#include "pigeon/planstar_api.g.h"
 
 namespace {
 
-using flutter::EncodableMap;
-using flutter::EncodableValue;
-using flutter::EventChannel;
-using flutter::EventSink;
-using flutter::MethodCall;
-using flutter::MethodChannel;
-using flutter::MethodResult;
-using flutter::StandardMethodCodec;
-using flutter::StreamHandler;
-using flutter::StreamHandlerError;
+namespace pp = planstar::pigeon;
 
-constexpr char kMethodChannelName[] = "planstar/data_hub";
-constexpr char kEventChannelName[] = "planstar/data_hub_events";
+using flutter::CustomEncodableValue;
+using flutter::EncodableList;
+using flutter::EncodableValue;
 
 std::wstring Utf8ToWide(const std::string& utf8) {
   if (utf8.empty()) return std::wstring();
@@ -86,13 +75,43 @@ std::string JsonQuote(const std::string& value) {
   return out;
 }
 
-std::string StringAt(const EncodableMap& map, const char* key) {
-  const auto it = map.find(EncodableValue(key));
-  if (it == map.end()) return std::string();
-  if (const auto* value = std::get_if<std::string>(&it->second)) {
-    return *value;
+// Pigeon encodes custom classes as CustomEncodableValue(std::any).
+const pp::DataHubEntryDto* AsEntry(const EncodableValue& value) {
+  if (const auto* custom = std::get_if<CustomEncodableValue>(&value)) {
+    const std::any& payload = *custom;
+    return std::any_cast<pp::DataHubEntryDto>(&payload);
   }
-  return std::string();
+  return nullptr;
+}
+
+struct MutationResult {
+  bool ok = true;
+  int64_t revision = 0;
+  std::string error;
+};
+
+// Restores the persisted monotonic revision so a restart continues from the
+// on-disk value instead of resetting to 0 (same invariant the Dart fallback
+// backend keeps, see test/audit_fixes_test.dart).
+int64_t ReadRevisionFromFile(const std::string& path) {
+  std::ifstream file(Utf8ToWide(path), std::ios::binary);
+  if (!file) return 0;
+  std::string head(4096, '\0');
+  file.read(&head[0], static_cast<std::streamsize>(head.size()));
+  head.resize(static_cast<size_t>(file.gcount()));
+  const std::string marker = "\"revision\":";
+  std::string::size_type pos = head.find(marker);
+  if (pos == std::string::npos) return 0;
+  pos += marker.size();
+  while (pos < head.size() && head[pos] == ' ') ++pos;
+  int64_t value = 0;
+  bool has_digits = false;
+  while (pos < head.size() && head[pos] >= '0' && head[pos] <= '9') {
+    value = value * 10 + (head[pos] - '0');
+    has_digits = true;
+    ++pos;
+  }
+  return has_digits ? value : 0;
 }
 
 // Single source of truth for the whole Win32 process. All windows/engines
@@ -108,17 +127,15 @@ class DataHub {
   DataHub(const DataHub&) = delete;
   DataHub& operator=(const DataHub&) = delete;
 
-  EncodableMap Configure(const std::string& file_path,
-                         const EncodableMap& initial) {
+  pp::DataHubSnapshotDto Configure(const std::string& file_path,
+                                   const EncodableList& initial) {
     std::lock_guard<std::mutex> lock(mutex_);
     if (!configured_) {
       file_path_ = file_path;
+      revision_ = std::max(revision_, ReadRevisionFromFile(file_path_));
       for (const auto& item : initial) {
-        if (const auto* key = std::get_if<std::string>(&item.first)) {
-          if (const auto* value = std::get_if<std::string>(&item.second)) {
-            entries_[*key] = *value;
-          }
-        }
+        const pp::DataHubEntryDto* entry = AsEntry(item);
+        if (entry != nullptr) entries_[entry->key()] = entry->value();
       }
       if (!PersistLocked()) {
         // Keep configured_=false so a later configure can retry initial persist.
@@ -129,14 +146,14 @@ class DataHub {
     return SnapshotLocked();
   }
 
-  EncodableMap Snapshot() {
+  pp::DataHubSnapshotDto Snapshot() {
     std::lock_guard<std::mutex> lock(mutex_);
     return SnapshotLocked();
   }
 
-  EncodableMap Write(const std::string& key, const std::string& value,
-                     const std::string& origin) {
-    std::vector<std::shared_ptr<EventSink<EncodableValue>>> targets;
+  MutationResult Write(const std::string& key, const std::string& value,
+                       const std::string& origin) {
+    std::vector<std::shared_ptr<pp::DataHubEventsFlutterApi>> targets;
     int64_t revision = 0;
     {
       std::lock_guard<std::mutex> lock(mutex_);
@@ -153,38 +170,41 @@ class DataHub {
         } else {
           entries_.erase(key);
         }
-        return ErrorResult("persist failed; write was rolled back");
+        return MutationResult{false, 0, "persist failed; write was rolled back"};
       }
       revision_ = revision;
-      targets = sinks_;
+      targets = listeners_;
     }
     Broadcast(targets, key, &value, false, revision, origin);
-    return OkResult(revision);
+    return MutationResult{true, revision, std::string()};
   }
 
-  EncodableMap Delete(const std::string& key, const std::string& origin) {
-    std::vector<std::shared_ptr<EventSink<EncodableValue>>> targets;
+  MutationResult Delete(const std::string& key, const std::string& origin) {
+    std::vector<std::shared_ptr<pp::DataHubEventsFlutterApi>> targets;
     int64_t revision = 0;
     {
       std::lock_guard<std::mutex> lock(mutex_);
       const auto previous = entries_.find(key);
-      if (previous == entries_.end()) return OkResult(revision_);
+      if (previous == entries_.end()) {
+        return MutationResult{true, revision_, std::string()};
+      }
       const std::string old_value = previous->second;
       entries_.erase(previous);
       revision = revision_ + 1;
       if (!PersistLocked()) {
         entries_[key] = old_value;
-        return ErrorResult("persist failed; delete was rolled back");
+        return MutationResult{false, 0,
+                              "persist failed; delete was rolled back"};
       }
       revision_ = revision;
-      targets = sinks_;
+      targets = listeners_;
     }
     Broadcast(targets, key, nullptr, true, revision, origin);
-    return OkResult(revision);
+    return MutationResult{true, revision, std::string()};
   }
 
-  EncodableMap Clear() {
-    std::vector<std::shared_ptr<EventSink<EncodableValue>>> targets;
+  MutationResult Clear() {
+    std::vector<std::shared_ptr<pp::DataHubEventsFlutterApi>> targets;
     int64_t revision = 0;
     {
       std::lock_guard<std::mutex> lock(mutex_);
@@ -193,51 +213,31 @@ class DataHub {
       revision = revision_ + 1;
       if (!PersistLocked()) {
         entries_ = previous;
-        return ErrorResult("persist failed; clear was rolled back");
+        return MutationResult{false, 0, "persist failed; clear was rolled back"};
       }
       revision_ = revision;
-      targets = sinks_;
+      targets = listeners_;
     }
     Broadcast(targets, std::string(), nullptr, true, revision, std::string());
-    return OkResult(revision);
+    return MutationResult{true, revision, std::string()};
   }
 
-  static EncodableMap OkResult(int64_t revision) {
-    EncodableMap result;
-    result[EncodableValue("ok")] = EncodableValue(true);
-    result[EncodableValue("revision")] = EncodableValue(revision);
-    return result;
-  }
-
-  static EncodableMap ErrorResult(const char* message) {
-    EncodableMap result;
-    result[EncodableValue("ok")] = EncodableValue(false);
-    result[EncodableValue("error")] = EncodableValue(message);
-    return result;
-  }
-
-  void AddSink(std::shared_ptr<EventSink<EncodableValue>> sink) {
+  void AddListener(std::shared_ptr<pp::DataHubEventsFlutterApi> listener) {
     std::lock_guard<std::mutex> lock(mutex_);
-    sinks_.push_back(std::move(sink));
-  }
-
-  void RemoveSink(const std::shared_ptr<EventSink<EncodableValue>>& sink) {
-    std::lock_guard<std::mutex> lock(mutex_);
-    sinks_.erase(std::remove(sinks_.begin(), sinks_.end(), sink), sinks_.end());
+    listeners_.push_back(std::move(listener));
   }
 
  private:
   DataHub() = default;
 
-  EncodableMap SnapshotLocked() {
-    EncodableMap entries;
+  pp::DataHubSnapshotDto SnapshotLocked() {
+    EncodableList entries;
+    entries.reserve(entries_.size());
     for (const auto& item : entries_) {
-      entries[EncodableValue(item.first)] = EncodableValue(item.second);
+      entries.push_back(CustomEncodableValue(
+          pp::DataHubEntryDto(item.first, item.second)));
     }
-    EncodableMap snapshot;
-    snapshot[EncodableValue("revision")] = EncodableValue(revision_);
-    snapshot[EncodableValue("entries")] = EncodableValue(entries);
-    return snapshot;
+    return pp::DataHubSnapshotDto(revision_, entries);
   }
 
   // Atomic replace: write a temp file, then MoveFileEx(REPLACE_EXISTING).
@@ -266,8 +266,10 @@ class DataHub {
       file.flush();
       if (!file.good()) return false;
     }
-    if (!::MoveFileExW(tmp.c_str(), target.c_str(),
-                       MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH)) {
+    // Atomic replace without MOVEFILE_WRITE_THROUGH: the rename is atomic, so
+    // readers never see partial JSON, while we avoid an fsync per write (the
+    // pre-Pigeon implementation also did not force a disk flush).
+    if (!::MoveFileExW(tmp.c_str(), target.c_str(), MOVEFILE_REPLACE_EXISTING)) {
       ::DeleteFileW(tmp.c_str());
       return false;
     }
@@ -275,115 +277,91 @@ class DataHub {
   }
 
   void Broadcast(
-      const std::vector<std::shared_ptr<EventSink<EncodableValue>>>& targets,
+      const std::vector<std::shared_ptr<pp::DataHubEventsFlutterApi>>& targets,
       const std::string& key, const std::string* value, bool deleted,
       int64_t revision, const std::string& origin) {
-    EncodableMap event;
-    event[EncodableValue("key")] = EncodableValue(key);
-    event[EncodableValue("revision")] = EncodableValue(revision);
-    event[EncodableValue("origin")] = EncodableValue(origin);
-    event[EncodableValue("deleted")] = EncodableValue(deleted);
-    if (deleted || value == nullptr) {
-      event[EncodableValue("value")] = EncodableValue();
-    } else {
-      event[EncodableValue("value")] = EncodableValue(*value);
-    }
-    const EncodableValue payload(std::move(event));
-    for (const auto& sink : targets) {
-      if (sink) sink->Success(payload);
+    if (targets.empty()) return;
+    const pp::DataChangeDto change(key, revision, origin, deleted, value);
+    for (const auto& listener : targets) {
+      if (listener == nullptr) continue;
+      listener->OnDataChanged(change, []() {},
+                              [](const pp::FlutterError&) {});
     }
   }
 
   std::mutex mutex_;
   std::map<std::string, std::string> entries_;
-  std::vector<std::shared_ptr<EventSink<EncodableValue>>> sinks_;
+  std::vector<std::shared_ptr<pp::DataHubEventsFlutterApi>> listeners_;
   std::string file_path_;
   int64_t revision_ = 0;
   bool configured_ = false;
 };
 
-class DataHubStreamHandler : public StreamHandler<EncodableValue> {
- protected:
-  std::unique_ptr<StreamHandlerError<EncodableValue>> OnListenInternal(
-      const EncodableValue* arguments,
-      std::unique_ptr<EventSink<EncodableValue>>&& events) override {
-    sink_ = std::shared_ptr<EventSink<EncodableValue>>(std::move(events));
-    DataHub::Instance().AddSink(sink_);
-    return nullptr;
+// HostApi implementation: one per engine, all backed by the singleton above.
+class DataHubHostApiImpl : public pp::DataHubHostApi {
+ public:
+  pp::ErrorOr<pp::DataHubSnapshotDto> Configure(
+      const std::string& file_path,
+      const EncodableList& entries) override {
+    return DataHub::Instance().Configure(file_path, entries);
   }
 
-  std::unique_ptr<StreamHandlerError<EncodableValue>> OnCancelInternal(
-      const EncodableValue* arguments) override {
-    if (sink_) {
-      DataHub::Instance().RemoveSink(sink_);
-      sink_.reset();
+  pp::ErrorOr<pp::DataHubSnapshotDto> Snapshot() override {
+    return DataHub::Instance().Snapshot();
+  }
+
+  pp::ErrorOr<int64_t> Write(const std::string& key, const std::string& value,
+                             const std::string& origin) override {
+    const MutationResult result = DataHub::Instance().Write(key, value, origin);
+    if (!result.ok) {
+      return pp::FlutterError("persist_failed", result.error);
     }
-    return nullptr;
+    return result.revision;
   }
 
- private:
-  std::shared_ptr<EventSink<EncodableValue>> sink_;
+  pp::ErrorOr<int64_t> Delete(const std::string& key,
+                              const std::string& origin) override {
+    const MutationResult result = DataHub::Instance().Delete(key, origin);
+    if (!result.ok) {
+      return pp::FlutterError("persist_failed", result.error);
+    }
+    return result.revision;
+  }
+
+  pp::ErrorOr<pp::DataHubSnapshotDto> Clear() override {
+    const MutationResult result = DataHub::Instance().Clear();
+    if (!result.ok) {
+      return pp::FlutterError("persist_failed", result.error);
+    }
+    return DataHub::Instance().Snapshot();
+  }
 };
 
-void HandleCall(const MethodCall<EncodableValue>& call,
-                std::unique_ptr<MethodResult<EncodableValue>> result) {
-  const EncodableMap empty;
-  const EncodableMap* args =
-      call.arguments() ? std::get_if<EncodableMap>(call.arguments()) : nullptr;
-  const EncodableMap& map = args != nullptr ? *args : empty;
-  const std::string& method = call.method_name();
-  DataHub& hub = DataHub::Instance();
-
-  if (method == "configure") {
-    EncodableMap initial;
-    const auto it = map.find(EncodableValue("entries"));
-    if (it != map.end()) {
-      if (const auto* entries = std::get_if<EncodableMap>(&it->second)) {
-        initial = *entries;
-      }
-    }
-    result->Success(EncodableValue(
-        hub.Configure(StringAt(map, "filePath"), initial)));
-  } else if (method == "snapshot") {
-    result->Success(EncodableValue(hub.Snapshot()));
-  } else if (method == "write") {
-    result->Success(EncodableValue(hub.Write(
-        StringAt(map, "key"), StringAt(map, "value"),
-        StringAt(map, "origin"))));
-  } else if (method == "delete") {
-    result->Success(
-        EncodableValue(hub.Delete(StringAt(map, "key"),
-                                  StringAt(map, "origin"))));
-  } else if (method == "clear") {
-    result->Success(EncodableValue(hub.Clear()));
-  } else {
-    result->NotImplemented();
-  }
-}
-
-// One channel pair per engine; process-wide vectors keep them alive after
+// One registration per engine; process-wide vectors keep them alive after
 // RegisterDataHubPlugin returns (BinaryMessenger is engine-private).
-std::vector<std::unique_ptr<MethodChannel<EncodableValue>>> g_method_channels;
-std::vector<std::unique_ptr<EventChannel<EncodableValue>>> g_event_channels;
+struct EngineRegistration {
+  std::unique_ptr<DataHubHostApiImpl> api;
+  std::shared_ptr<pp::DataHubEventsFlutterApi> events;
+};
+
+std::vector<EngineRegistration> g_registrations;
 std::mutex g_registry_mutex;
 
 }  // namespace
 
 void RegisterDataHubPlugin(flutter::BinaryMessenger* messenger) {
   if (messenger == nullptr) return;
-  auto method = std::make_unique<MethodChannel<EncodableValue>>(
-      messenger, kMethodChannelName, &StandardMethodCodec::GetInstance());
-  method->SetMethodCallHandler(
-      [](const MethodCall<EncodableValue>& call,
-         std::unique_ptr<MethodResult<EncodableValue>> result) {
-        HandleCall(call, std::move(result));
-      });
 
-  auto events = std::make_unique<EventChannel<EncodableValue>>(
-      messenger, kEventChannelName, &StandardMethodCodec::GetInstance());
-  events->SetStreamHandler(std::make_unique<DataHubStreamHandler>());
+  EngineRegistration registration;
+  registration.api = std::make_unique<DataHubHostApiImpl>();
+  pp::DataHubHostApi::SetUp(messenger, registration.api.get());
+
+  // Native -> Dart change feed. Replaces the hand-written EventChannel with a
+  // typed FlutterApi call that has no dynamic Map decoding at either end.
+  registration.events =
+      std::make_shared<pp::DataHubEventsFlutterApi>(messenger);
+  DataHub::Instance().AddListener(registration.events);
 
   std::lock_guard<std::mutex> lock(g_registry_mutex);
-  g_method_channels.push_back(std::move(method));
-  g_event_channels.push_back(std::move(events));
+  g_registrations.push_back(std::move(registration));
 }

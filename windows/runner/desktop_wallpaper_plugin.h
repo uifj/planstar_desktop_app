@@ -5,12 +5,12 @@
 
 #include <flutter/binary_messenger.h>
 
-// Registers the "planstar/desktop_wallpaper" method channel for one engine.
+// Registers the Pigeon-generated DesktopWallpaperHostApi for one engine.
 // `window` must be that engine's top-level HWND. One instance per engine is
 // kept alive (desktop_multi_window creates an engine per widget window).
 //
-// Methods: configureOverlay, setRegion, isOverlay, attach, detach,
-// isAttached, setWallpaper, getWallpaper, desktopMetrics.
+// The contract lives in `pigeons/planstar_api.dart`; regenerate with
+// `dart run pigeon --input pigeons/planstar_api.dart`.
 void RegisterDesktopWallpaperPlugin(flutter::BinaryMessenger* messenger,
                                     HWND window);
 

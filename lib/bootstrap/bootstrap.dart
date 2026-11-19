@@ -47,22 +47,25 @@ final class AppBootstrap {
     final forceDesktopEmbedding =
         args.contains('--planstar-embed-desktop');
 
-    // 单一真相源：所有 engine 通过原生 DataHub 串行读写，EventChannel 广播。
+    // 单一真相源：所有 engine 通过原生 DataHub 串行读写，类型化回调广播。
     // 不再使用 SharedPreferences —— 它的 Windows 实现每个 isolate 各缓存一份，
     // 且 legacy reload() 并不会重读磁盘。
-    final dataHub = await DataHubStore.create();
-    final secureStore = FlutterSecureStorageAdapter(
-      const FlutterSecureStorage(),
-    );
-
+    //
+    // DataHub 建库与配置读取互不依赖，并行启动可减少首帧前的串行等待。
+    final dataHubFuture = DataHubStore.create();
     final configLoader = ConfigLoader(
       JsonConfigSource(
         () => rootBundle.loadString('assets/config/default_config.json'),
         label: 'assets/config/default_config.json',
       ),
     );
-    await configLoader.load();
+    final configFuture = configLoader.load();
+    final dataHub = await dataHubFuture;
+    await configFuture;
     final config = configLoader.cached ?? AppConfig.empty;
+    final secureStore = FlutterSecureStorageAdapter(
+      const FlutterSecureStorage(),
+    );
 
     final dio = buildDio(
       baseUrl: config.getString('apiBaseUrl') ??
@@ -85,7 +88,10 @@ final class AppBootstrap {
       locationName: config.section('calendar').getString('timezone') ??
           'Asia/Shanghai',
     );
-    await notificationGateway.initialize();
+    // 仅主窗口需要通知。子窗口（便签 / 倒数日 / 桌面小组件）跳过插件初始化，
+    // 省掉每个 engine 重复注册通知回调的启动开销；与窗口、托盘初始化并行。
+    final notificationReady =
+        isSubWindow ? Future<void>.value() : notificationGateway.initialize();
 
     final windowGateway = WindowManagerGateway(logger: logger.child('window'));
     final trayGateway = TrayManagerGateway(logger: logger.child('tray'));
@@ -95,11 +101,14 @@ final class AppBootstrap {
     final soundGateway =
         AudioPlayersSoundGateway(logger: logger.child('sound'));
     final fileGateway = DesktopFileGateway();
-    final desktopWallpaperGateway = MethodChannelDesktopWallpaperGateway(
+    final desktopWallpaperGateway = PigeonDesktopWallpaperGateway(
       logger: logger.child('wallpaper'),
     );
     final wallpaperImageGateway = LocalWallpaperImageGateway();
+    final screenGateway = ScreenRetrieverGateway(logger: logger.child('screen'));
+    final hotkeyGateway = HotkeyManagerGateway(logger: logger.child('hotkey'));
     final trayActions = StreamController<TrayAction>.broadcast();
+    final hotkeyActions = StreamController<HotkeyAction>.broadcast();
 
     Map<String, Object?> subWindowArguments = const <String, Object?>{};
     if (isDesktop) {
@@ -128,9 +137,11 @@ final class AppBootstrap {
       } else {
         await windowGateway.initializeMainWindow();
         await trayGateway.initialize(trayActions.add);
+        await hotkeyGateway.initialize(hotkeyActions.add);
       }
       await multiWindowGateway.bindCurrentWindow();
     }
+    await notificationReady;
 
     final overrides = [
       clockProvider.overrideWithValue(clock),
@@ -152,6 +163,7 @@ final class AppBootstrap {
       desktopWallpaperGatewayProvider.overrideWithValue(
         desktopWallpaperGateway,
       ),
+      screenGatewayProvider.overrideWithValue(screenGateway),
       wallpaperImageGatewayProvider.overrideWithValue(
         wallpaperImageGateway,
       ),
@@ -159,6 +171,8 @@ final class AppBootstrap {
         forceDesktopEmbedding,
       ),
       trayActionsProvider.overrideWithValue(trayActions.stream),
+      hotkeyGatewayProvider.overrideWithValue(hotkeyGateway),
+      hotkeyActionsProvider.overrideWithValue(hotkeyActions.stream),
     ];
 
     runApp(

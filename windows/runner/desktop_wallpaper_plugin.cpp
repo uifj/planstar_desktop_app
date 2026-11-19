@@ -3,27 +3,24 @@
 #include <dwmapi.h>
 
 #include <flutter/encodable_value.h>
-#include <flutter/method_channel.h>
-#include <flutter/method_result.h>
-#include <flutter/standard_method_codec.h>
 
+#include <algorithm>
+#include <any>
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
+#include "pigeon/planstar_api.g.h"
+
 namespace {
 
-using flutter::EncodableList;
-using flutter::EncodableMap;
-using flutter::EncodableValue;
-using flutter::MethodCall;
-using flutter::MethodChannel;
-using flutter::MethodResult;
-using flutter::StandardMethodCodec;
+namespace pp = planstar::pigeon;
 
-constexpr char kChannelName[] = "planstar/desktop_wallpaper";
+using flutter::CustomEncodableValue;
+using flutter::EncodableList;
 
 std::wstring Utf8ToWide(const std::string& input) {
   if (input.empty()) return std::wstring();
@@ -49,39 +46,13 @@ std::string WideToUtf8(const std::wstring& input) {
   return output;
 }
 
-const EncodableValue* ValueAt(const EncodableMap& map, const char* key) {
-  const auto it = map.find(EncodableValue(key));
-  return it == map.end() ? nullptr : &it->second;
-}
-
-int IntAt(const EncodableMap& map, const char* key, int fallback) {
-  const EncodableValue* value = ValueAt(map, key);
-  if (value == nullptr) return fallback;
-  if (const auto* number = std::get_if<int>(value)) return *number;
-  if (const auto* number = std::get_if<int64_t>(value)) {
-    return static_cast<int>(*number);
+// Pigeon encodes custom classes as CustomEncodableValue(std::any).
+const pp::CardRectDto* AsRect(const flutter::EncodableValue& value) {
+  if (const auto* custom = std::get_if<CustomEncodableValue>(&value)) {
+    const std::any& payload = *custom;
+    return std::any_cast<pp::CardRectDto>(&payload);
   }
-  if (const auto* number = std::get_if<double>(value)) {
-    return static_cast<int>(*number);
-  }
-  return fallback;
-}
-
-bool BoolAt(const EncodableMap& map, const char* key, bool fallback) {
-  const EncodableValue* value = ValueAt(map, key);
-  if (value != nullptr) {
-    if (const auto* flag = std::get_if<bool>(value)) return *flag;
-  }
-  return fallback;
-}
-
-std::wstring StringAt(const EncodableMap& map, const char* key) {
-  const EncodableValue* value = ValueAt(map, key);
-  if (value == nullptr) return std::wstring();
-  if (const auto* text = std::get_if<std::string>(value)) {
-    return Utf8ToWide(*text);
-  }
-  return std::wstring();
+  return nullptr;
 }
 
 // ---------------------------------------------------------------------------
@@ -155,101 +126,95 @@ HWND FindDesktopHost() {
   return host != nullptr ? host : progman;
 }
 
-class DesktopWallpaperPlugin {
+// One generated-HostApi instance per Flutter engine. desktop_multi_window
+// creates a separate engine for every widget window, so a single global would
+// be overwritten by whichever engine registered last.
+class DesktopWallpaperPlugin : public pp::DesktopWallpaperHostApi {
  public:
   DesktopWallpaperPlugin(flutter::BinaryMessenger* messenger, HWND window)
       : window_(window) {
-    channel_ = std::make_unique<MethodChannel<EncodableValue>>(
-        messenger, kChannelName, &StandardMethodCodec::GetInstance());
-    channel_->SetMethodCallHandler(
-        [this](const MethodCall<EncodableValue>& call,
-               std::unique_ptr<MethodResult<EncodableValue>> result) {
-          HandleCall(call, std::move(result));
-        });
+    pp::DesktopWallpaperHostApi::SetUp(messenger, this);
   }
 
-  ~DesktopWallpaperPlugin() {
-    if (overlay_) ConfigureOverlay(false);
+  ~DesktopWallpaperPlugin() override {
+    if (overlay_) ConfigureOverlayInternal(false);
     if (attached_) Detach();
   }
 
- private:
-  void HandleCall(const MethodCall<EncodableValue>& call,
-                  std::unique_ptr<MethodResult<EncodableValue>> result) {
-    const EncodableMap empty;
-    const EncodableMap* args =
-        call.arguments() ? std::get_if<EncodableMap>(call.arguments()) : &empty;
-    const EncodableMap& map = args != nullptr ? *args : empty;
-    const std::string& method = call.method_name();
-
-    if (method == "configureOverlay") {
-      result->Success(
-          EncodableValue(ConfigureOverlay(BoolAt(map, "enable", false))));
-    } else if (method == "setRegion") {
-      result->Success(EncodableValue(SetRegion(map)));
-    } else if (method == "isOverlay") {
-      result->Success(EncodableValue(overlay_));
-    } else if (method == "attach") {
-      result->Success(EncodableValue(Attach(map)));
-    } else if (method == "detach") {
-      result->Success(EncodableValue(Detach()));
-    } else if (method == "isAttached") {
-      result->Success(EncodableValue(attached_));
-    } else if (method == "setWallpaper") {
-      result->Success(EncodableValue(SetWallpaper(StringAt(map, "path"))));
-    } else if (method == "getWallpaper") {
-      result->Success(EncodableValue(GetWallpaper()));
-    } else if (method == "desktopMetrics") {
-      EncodableMap metrics;
-      metrics[EncodableValue("x")] =
-          EncodableValue(::GetSystemMetrics(SM_XVIRTUALSCREEN));
-      metrics[EncodableValue("y")] =
-          EncodableValue(::GetSystemMetrics(SM_YVIRTUALSCREEN));
-      metrics[EncodableValue("width")] =
-          EncodableValue(::GetSystemMetrics(SM_CXVIRTUALSCREEN));
-      metrics[EncodableValue("height")] =
-          EncodableValue(::GetSystemMetrics(SM_CYVIRTUALSCREEN));
-      result->Success(EncodableValue(metrics));
-    } else {
-      result->NotImplemented();
-    }
+  pp::ErrorOr<bool> ConfigureOverlay(bool enable) override {
+    return ConfigureOverlayInternal(enable);
   }
 
+  pp::ErrorOr<bool> SetRegion(const EncodableList& rects,
+                              bool dragging) override {
+    return SetRegionInternal(rects, dragging);
+  }
+
+  pp::ErrorOr<bool> IsOverlay() override { return overlay_; }
+
+  pp::ErrorOr<bool> Attach(const pp::WindowRectDto* rect) override {
+    return AttachInternal(rect);
+  }
+
+  pp::ErrorOr<bool> Detach() override { return DetachInternal(); }
+
+  pp::ErrorOr<bool> IsAttached() override { return attached_; }
+
+  pp::ErrorOr<bool> SetWallpaper(const std::string& path) override {
+    if (path.empty()) return false;
+    std::wstring mutable_path = Utf8ToWide(path);
+    return ::SystemParametersInfoW(
+               SPI_SETDESKWALLPAPER, 0, mutable_path.data(),
+               SPIF_UPDATEINIFILE | SPIF_SENDWININICHANGE) != FALSE;
+  }
+
+  pp::ErrorOr<std::string> CurrentWallpaper() override {
+    wchar_t buffer[MAX_PATH] = {0};
+    if (!::SystemParametersInfoW(SPI_GETDESKWALLPAPER, MAX_PATH, buffer, 0)) {
+      return std::string();
+    }
+    return WideToUtf8(std::wstring(buffer));
+  }
+
+  pp::ErrorOr<pp::DesktopMetricsDto> DesktopMetrics() override {
+    return pp::DesktopMetricsDto(
+        ::GetSystemMetrics(SM_XVIRTUALSCREEN),
+        ::GetSystemMetrics(SM_YVIRTUALSCREEN),
+        ::GetSystemMetrics(SM_CXVIRTUALSCREEN),
+        ::GetSystemMetrics(SM_CYVIRTUALSCREEN));
+  }
+
+ private:
   // Clips the window to the union of rounded card rectangles. An empty list
   // or dragging=true removes the region so the whole screen stays hittable
   // while the card is being dragged (avoids per-frame region redraw trails).
-  bool SetRegion(const EncodableMap& args) {
+  bool SetRegionInternal(const EncodableList& rects, bool dragging) {
     if (!::IsWindow(window_)) return false;
-    if (BoolAt(args, "dragging", false)) {
+    if (dragging) {
       ::SetWindowRgn(window_, nullptr, TRUE);
       return true;
     }
     HRGN combined = ::CreateRectRgn(0, 0, 0, 0);
-    const EncodableValue* rects = ValueAt(args, "rects");
-    if (rects != nullptr) {
-      if (const auto* list = std::get_if<EncodableList>(rects)) {
-        for (const EncodableValue& item : *list) {
-          const auto* rect = std::get_if<EncodableMap>(&item);
-          if (rect == nullptr) continue;
-          const int x = IntAt(*rect, "x", 0);
-          const int y = IntAt(*rect, "y", 0);
-          const int w = IntAt(*rect, "width", 0);
-          const int h = IntAt(*rect, "height", 0);
-          const int radius = IntAt(*rect, "radius", 0);
-          if (w <= 0 || h <= 0) continue;
-          const int diameter = radius * 2;
-          HRGN one = ::CreateRoundRectRgn(x, y, x + w + 1, y + h + 1,
-                                          diameter, diameter);
-          ::CombineRgn(combined, combined, one, RGN_OR);
-          ::DeleteObject(one);
-        }
-      }
+    for (const auto& item : rects) {
+      const pp::CardRectDto* rect = AsRect(item);
+      if (rect == nullptr) continue;
+      const int x = static_cast<int>(rect->x());
+      const int y = static_cast<int>(rect->y());
+      const int w = static_cast<int>(rect->width());
+      const int h = static_cast<int>(rect->height());
+      const int radius = static_cast<int>(rect->radius());
+      if (w <= 0 || h <= 0) continue;
+      const int diameter = radius * 2;
+      HRGN one = ::CreateRoundRectRgn(x, y, x + w + 1, y + h + 1, diameter,
+                                      diameter);
+      ::CombineRgn(combined, combined, one, RGN_OR);
+      ::DeleteObject(one);
     }
     // SetWindowRgn takes ownership of `combined` on success.
     return ::SetWindowRgn(window_, combined, TRUE) != 0;
   }
 
-  bool ConfigureOverlay(bool enable) {
+  bool ConfigureOverlayInternal(bool enable) {
     if (!::IsWindow(window_)) return false;
     if (enable == overlay_) return true;
 
@@ -283,8 +248,7 @@ class DesktopWallpaperPlugin {
             window_, GWLP_WNDPROC,
             reinterpret_cast<LONG_PTR>(BottomMostWndProc));
         if (previous != 0) {
-          g_original_procs[window_] =
-              reinterpret_cast<WNDPROC>(previous);
+          g_original_procs[window_] = reinterpret_cast<WNDPROC>(previous);
         }
       }
       g_overlay_windows.insert(window_);
@@ -322,7 +286,7 @@ class DesktopWallpaperPlugin {
   }
 
   // Legacy optional mode: parent the window into the desktop icon layer.
-  bool Attach(const EncodableMap& args) {
+  bool AttachInternal(const pp::WindowRectDto* rect) {
     if (attached_) return true;
     HWND host = FindDesktopHost();
     if (host == nullptr || !::IsWindow(window_)) return false;
@@ -330,12 +294,18 @@ class DesktopWallpaperPlugin {
     original_parent_ = ::GetParent(window_);
     original_style_ = ::GetWindowLongPtrW(window_, GWL_STYLE);
     original_ex_style_ = ::GetWindowLongPtrW(window_, GWL_EXSTYLE);
-    const int x = IntAt(args, "x", ::GetSystemMetrics(SM_XVIRTUALSCREEN));
-    const int y = IntAt(args, "y", ::GetSystemMetrics(SM_YVIRTUALSCREEN));
-    const int width =
-        IntAt(args, "width", ::GetSystemMetrics(SM_CXVIRTUALSCREEN));
-    const int height =
-        IntAt(args, "height", ::GetSystemMetrics(SM_CYVIRTUALSCREEN));
+    const int x = rect != nullptr
+                      ? static_cast<int>(rect->x())
+                      : ::GetSystemMetrics(SM_XVIRTUALSCREEN);
+    const int y = rect != nullptr
+                      ? static_cast<int>(rect->y())
+                      : ::GetSystemMetrics(SM_YVIRTUALSCREEN);
+    const int width = rect != nullptr
+                          ? static_cast<int>(rect->width())
+                          : ::GetSystemMetrics(SM_CXVIRTUALSCREEN);
+    const int height = rect != nullptr
+                           ? static_cast<int>(rect->height())
+                           : ::GetSystemMetrics(SM_CYVIRTUALSCREEN);
     LONG_PTR style = original_style_;
     style &= ~(WS_POPUP | WS_CAPTION | WS_THICKFRAME | WS_MINIMIZEBOX |
                WS_MAXIMIZEBOX | WS_SYSMENU);
@@ -355,7 +325,7 @@ class DesktopWallpaperPlugin {
     return true;
   }
 
-  bool Detach() {
+  bool DetachInternal() {
     if (!attached_) return true;
     ::SetParent(window_, original_parent_);
     ::SetWindowLongPtrW(window_, GWL_STYLE, original_style_);
@@ -368,22 +338,6 @@ class DesktopWallpaperPlugin {
     return true;
   }
 
-  bool SetWallpaper(const std::wstring& path) {
-    if (path.empty()) return false;
-    std::wstring mutable_path = path;
-    return ::SystemParametersInfoW(
-               SPI_SETDESKWALLPAPER, 0, mutable_path.data(),
-               SPIF_UPDATEINIFILE | SPIF_SENDWININICHANGE) != FALSE;
-  }
-
-  std::string GetWallpaper() {
-    wchar_t buffer[MAX_PATH] = {0};
-    if (!::SystemParametersInfoW(SPI_GETDESKWALLPAPER, MAX_PATH, buffer, 0)) {
-      return std::string();
-    }
-    return WideToUtf8(std::wstring(buffer));
-  }
-
   HWND window_ = nullptr;
   HWND original_parent_ = nullptr;
   LONG_PTR original_style_ = 0;
@@ -394,12 +348,8 @@ class DesktopWallpaperPlugin {
   LONG_PTR overlay_original_ex_style_ = 0;
   bool attached_ = false;
   bool overlay_ = false;
-  std::unique_ptr<MethodChannel<EncodableValue>> channel_;
 };
 
-// One channel instance per Flutter engine. desktop_multi_window creates a
-// separate engine for every widget window, so a single global would be
-// overwritten by whichever engine registered last.
 std::vector<std::unique_ptr<DesktopWallpaperPlugin>> g_plugins;
 
 }  // namespace

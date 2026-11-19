@@ -5,13 +5,15 @@ library;
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io' show Platform;
-import 'dart:ui' show Rect, Size;
 
 import 'package:audioplayers/audioplayers.dart';
 import 'package:core/logger.dart';
 import 'package:desktop_multi_window/desktop_multi_window.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
+import 'package:hotkey_manager/hotkey_manager.dart';
 import 'package:launch_at_startup/launch_at_startup.dart';
+import 'package:screen_retriever/screen_retriever.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
 
@@ -419,15 +421,134 @@ final class AudioPlayersSoundGateway implements SoundGateway {
   AudioPlayersSoundGateway({required this.logger});
 
   final AppLogger logger;
-  final AudioPlayer _player = AudioPlayer();
+  // 懒创建：启动阶段没有任何提示音，提前构造会白白初始化一次音频插件。
+  AudioPlayer? _player;
 
   @override
   Future<void> play(SoundTone tone) async {
     if (kIsWeb || tone.asset == null) return;
     try {
-      await _player.play(AssetSource(tone.asset!));
+      final player = _player ??= AudioPlayer();
+      await player.play(AssetSource(tone.asset!));
     } catch (error) {
       logger.warn('提示音播放失败：${tone.name}', error: error);
+    }
+  }
+}
+
+/// [ScreenGateway] 的 screen_retriever 实现。
+///
+/// `getAllDisplays` 返回的是**逻辑像素**（插件已在原生层按每显示器 DPI
+/// 折算），桌面小组件直接用即可，无需像 `DesktopMetrics` 那样再除 dpr。
+final class ScreenRetrieverGateway implements ScreenGateway {
+  ScreenRetrieverGateway({this.logger});
+
+  final AppLogger? logger;
+
+  Future<List<ScreenDisplay>> _displays() async {
+    final displays = await screenRetriever.getAllDisplays();
+    return displays.map((Display d) {
+      final size = d.visibleSize ?? d.size;
+      final position = d.visiblePosition;
+      return ScreenDisplay(
+        id: d.id,
+        x: position?.dx ?? 0,
+        y: position?.dy ?? 0,
+        width: size.width,
+        height: size.height,
+      );
+    }).toList(growable: false);
+  }
+
+  @override
+  Future<ScreenDisplay?> virtualBounds() async {
+    try {
+      final displays = await _displays();
+      if (displays.isEmpty) return null;
+      var minX = double.infinity;
+      var minY = double.infinity;
+      var maxX = double.negativeInfinity;
+      var maxY = double.negativeInfinity;
+      for (final d in displays) {
+        if (d.x < minX) minX = d.x;
+        if (d.y < minY) minY = d.y;
+        if (d.x + d.width > maxX) maxX = d.x + d.width;
+        if (d.y + d.height > maxY) maxY = d.y + d.height;
+      }
+      return ScreenDisplay(
+        id: 'virtual',
+        x: minX,
+        y: minY,
+        width: maxX - minX,
+        height: maxY - minY,
+      );
+    } catch (error) {
+      logger?.warn('枚举显示器失败', error: error);
+      return null;
+    }
+  }
+}
+
+/// [HotkeyGateway] 的 hotkey_manager 实现。
+///
+/// 全部注册为 `HotKeyScope.system`（系统级）：即使主窗口未聚焦 / 在托盘里，
+/// 也能用 `Ctrl+Alt+H` 显示主窗口、`Ctrl+Alt+D` 切换桌面小组件。
+final class HotkeyManagerGateway implements HotkeyGateway {
+  HotkeyManagerGateway({this.logger});
+
+  final AppLogger? logger;
+
+  @override
+  Future<void> initialize(void Function(HotkeyAction action) onAction) async {
+    if (kIsWeb) return;
+    if (!(Platform.isWindows || Platform.isLinux || Platform.isMacOS)) return;
+    try {
+      await hotKeyManager.unregisterAll();
+    } catch (_) {
+      // 首次启动没有已注册热键，忽略。
+    }
+    await _register(
+      onAction,
+      action: HotkeyAction.toggleMainWindow,
+      key: PhysicalKeyboardKey.keyH,
+    );
+    await _register(
+      onAction,
+      action: HotkeyAction.toggleDesktopWidget,
+      key: PhysicalKeyboardKey.keyD,
+    );
+  }
+
+  Future<void> _register(
+    void Function(HotkeyAction action) onAction, {
+    required HotkeyAction action,
+    required PhysicalKeyboardKey key,
+  }) async {
+    final hotKey = HotKey(
+      key: key,
+      modifiers: const <HotKeyModifier>[
+        HotKeyModifier.control,
+        HotKeyModifier.alt,
+      ],
+      scope: HotKeyScope.system,
+    );
+    try {
+      await hotKeyManager.register(
+        hotKey,
+        keyDownHandler: (_) => onAction(action),
+      );
+    } catch (error) {
+      logger?.warn('注册全局热键失败：${hotKey.debugName}', error: error);
+    }
+  }
+
+  @override
+  Future<void> dispose() async {
+    if (kIsWeb) return;
+    try {
+      await hotKeyManager.unregisterAll();
+    } catch (_) {
+      // ignore
     }
   }
 }

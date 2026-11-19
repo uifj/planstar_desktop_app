@@ -85,8 +85,11 @@ final class CalendarController extends Notifier<CalendarState> {
   DateTime get _now => ref.read(clockProvider).now();
 
   Future<void> load() async {
-    final events = await _repository.allEvents();
-    final cells = await _repository.allCells();
+    // 两个读操作互不依赖：同时发起，把两次 JSON 解析的等待时间重叠起来。
+    final eventsFuture = _repository.allEvents();
+    final cellsFuture = _repository.allCells();
+    final events = await eventsFuture;
+    final cells = await cellsFuture;
     if (events case Fail<List<CalendarEvent>>(:final Failure failure)) {
       state = state.copyWith(loading: false, error: failure.message);
       return;
@@ -419,11 +422,17 @@ final monthDataProvider = Provider<MonthData>((Ref ref) {
     today: today.date,
   );
 
+  // 展开一次网格日期：后续 event / lesson / countdown 索引都复用它，
+  // 避免对 42 个格子逐个做全量扫描（O(cells × N)）。
+  final List<DateKey> allDays = grids.isEmpty || grids.first.isEmpty
+      ? const <DateKey>[]
+      : grids.expand((List<DateKey> c) => c).toList(growable: false);
+
   final eventMap = <DateKey, List<EventOccurrence>>{};
-  if (grids.isNotEmpty && grids.first.isNotEmpty) {
-    final allDays = grids.expand((List<DateKey> c) => c).toList()
+  if (allDays.isNotEmpty) {
+    final sortedDays = List<DateKey>.of(allDays)
       ..sort((DateKey a, DateKey b) => a.key.compareTo(b.key));
-    final range = DateRange(allDays.first, allDays.last);
+    final range = DateRange(sortedDays.first, sortedDays.last);
     for (final event in calendar.events) {
       for (final date in RecurrencePolicy.occurrences(event, range)) {
         (eventMap.putIfAbsent(date, () => <EventOccurrence>[]))
@@ -445,9 +454,22 @@ final monthDataProvider = Provider<MonthData>((Ref ref) {
     for (final cell in calendar.cells) cell.date: cell,
   };
 
-  List<Lesson> lessonsOn(DateKey date) => timetables
-      .expand((Timetable t) => t.lessonsOn(date))
-      .toList(growable: false);
+  // 课程表与倒数日只按「可见日期」预计算一次：
+  // 原实现每个格子都要重新解析课表 / 重新算 nextOccurrence（42 × N）。
+  final uniqueDays = allDays.toSet();
+  final lessonMap = <DateKey, List<Lesson>>{};
+  for (final DateKey date in uniqueDays) {
+    for (final Timetable timetable in timetables) {
+      final List<Lesson> lessons = timetable.lessonsOn(date);
+      if (lessons.isNotEmpty) {
+        (lessonMap[date] ??= <Lesson>[]).addAll(lessons);
+      }
+    }
+  }
+  final countdownMap = <DateKey, List<CountdownItem>>{};
+  for (final CountdownItem item in countdowns) {
+    (countdownMap[item.nextOccurrence(today)] ??= <CountdownItem>[]).add(item);
+  }
 
   final columns = grids.map((List<DateKey> days) {
     final month = days[days.length ~/ 2];
@@ -462,10 +484,8 @@ final monthDataProvider = Provider<MonthData>((Ref ref) {
         events: eventMap[date] ?? const <EventOccurrence>[],
         subscriptionEvents:
             subscriptionMap[date] ?? const <SubscriptionEvent>[],
-        lessons: lessonsOn(date),
-        countdowns: countdowns
-            .where((CountdownItem c) => c.nextOccurrence(today) == date)
-            .toList(),
+        lessons: lessonMap[date] ?? const <Lesson>[],
+        countdowns: countdownMap[date] ?? const <CountdownItem>[],
         isToday: date == today,
         isCurrentMonth: date.month == month.month && date.year == month.year,
       );

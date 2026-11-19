@@ -5,10 +5,10 @@
 /// 平台实现丢弃缓存——因此「写盘 + 标记文件 + reload」这条旧链路在 Windows
 /// 上从来不会把另一个 engine 的数据读进来。
 ///
-/// 现在所有写操作经 MethodChannel 汇聚到同进程的原生 [DataHub] 串行执行，
-/// 成功后由 EventChannel 广播带单调 revision 的增量。本类同时实现
-/// `KeyValueStore` / `StorageReloader` / `CrossEngineSync` 三个端口，
-/// 领域层与各 controller 无需改动。
+/// 现在所有写操作经 Pigeon（`pigeons/planstar_api.dart`）汇聚到同进程的原生
+/// [DataHub] 串行执行，成功后由类型安全的 FlutterApi 回调广播带单调 revision
+/// 的增量。本类同时实现 `KeyValueStore` / `StorageReloader` / `CrossEngineSync`
+/// 三个端口，领域层与各 controller 无需改动。
 ///
 /// 非 Windows 或原生插件缺失时自动降级为 [_LocalBackend]（原子写 + 轮询），
 /// 保证 Linux / macOS / Web / 单元测试可运行。
@@ -25,9 +25,8 @@ import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../core/ports.dart';
+import 'pigeon/planstar_api.g.dart';
 
-const String dataHubMethodChannel = 'planstar/data_hub';
-const String dataHubEventChannel = 'planstar/data_hub_events';
 const String dataHubFileName = 'planstar_data_hub.json';
 const String legacyPrefsFileName = 'shared_preferences.json';
 
@@ -109,13 +108,12 @@ final class DataHubStore
   void dispose() => _backend.dispose();
 }
 
-/// Windows：原生进程级 DataHub。
-final class _NativeBackend implements _Backend {
+/// Windows：原生进程级 DataHub（Pigeon HostApi + FlutterApi）。
+final class _NativeBackend implements _Backend, DataHubEventsFlutterApi {
   _NativeBackend({this.supportDirectory});
 
   final String? supportDirectory;
-  final MethodChannel _method = const MethodChannel(dataHubMethodChannel);
-  final EventChannel _events = const EventChannel(dataHubEventChannel);
+  final DataHubHostApi _api = DataHubHostApi();
   final StreamController<DataChange> _changes =
       StreamController<DataChange>.broadcast();
   final Map<String, String> _entries = <String, String>{};
@@ -123,9 +121,8 @@ final class _NativeBackend implements _Backend {
   late final String _origin;
   int _lastRevision = 0;
   // 本 engine 自己提交的 revision。广播先于 method result 到达时用于
-  // 补偿去重；但主过滤靠 origin，不依赖两条 channel 的到达顺序。
+  // 补偿去重；但主过滤靠 origin，不依赖两条通道的到达顺序。
   final Set<int> _ownRevisions = <int>{};
-  StreamSubscription<dynamic>? _subscription;
 
   @override
   Stream<DataChange> get changes => _changes.stream;
@@ -137,61 +134,65 @@ final class _NativeBackend implements _Backend {
     final root = supportDirectory ??
         (await getApplicationSupportDirectory()).path;
     final entries = await _loadInitialEntries(root);
-    final configured = await _method.invokeMapMethod<String, Object?>(
-      'configure',
-      <String, Object?>{
-        'filePath': '$root/$dataHubFileName',
-        'entries': entries,
-      },
+    // 先挂上原生 → Dart 的回调，避免 configure 期间的广播丢失。
+    DataHubEventsFlutterApi.setUp(this);
+    try {
+      final configured = await _api.configure(
+        '$root/$dataHubFileName',
+        entries.entries
+            .map((MapEntry<String, String> e) =>
+                DataHubEntryDto(key: e.key, value: e.value))
+            .toList(growable: false),
+      );
+      _adoptSnapshot(configured);
+    } on PlatformException catch (error) {
+      DataHubEventsFlutterApi.setUp(null);
+      throw StateError('DataHub 初始化失败：${error.message ?? error.code}');
+    }
+  }
+
+  /// Pigeon 生成的类型化回调（原 EventChannel 的动态 Map 解码已移除）。
+  @override
+  void onDataChanged(DataChangeDto change) {
+    _onChange(
+      key: change.key,
+      revision: change.revision,
+      origin: change.origin,
+      deleted: change.deleted,
+      value: change.value,
     );
-    if (configured == null) {
-      throw StateError('DataHub.configure 未返回结果');
-    }
-    _adoptSnapshot(configured);
-    _subscription = _events.receiveBroadcastStream().listen(
-          _onEvent,
-          onError: (Object _) {
-            // 事件流异常时退化为「仅本 engine 可见」，不阻断业务流程。
-          },
-        );
   }
 
-  void _adoptSnapshot(Map<String, Object?> snapshot) {
-    final revision = (snapshot['revision'] as num?)?.toInt() ?? 0;
-    final raw = snapshot['entries'];
-    if (raw is Map) {
-      _entries
-        ..clear()
-        ..addEntries(
-          raw.entries.map(
-            (MapEntry<dynamic, dynamic> e) =>
-                MapEntry<String, String>('${e.key}', '${e.value}'),
-          ),
-        );
+  void _adoptSnapshot(DataHubSnapshotDto snapshot) {
+    _entries
+      ..clear()
+      ..addEntries(
+        snapshot.entries.map(
+          (DataHubEntryDto e) => MapEntry<String, String>(e.key, e.value),
+        ),
+      );
+    if (snapshot.revision > _lastRevision) {
+      _lastRevision = snapshot.revision;
     }
-    if (revision > _lastRevision) _lastRevision = revision;
   }
 
-  void _onEvent(dynamic event) {
-    if (event is! Map) return;
-    final raw = Map<Object?, Object?>.from(event);
-    final revision = (raw['revision'] as num?)?.toInt() ?? 0;
+  void _onChange({
+    required String key,
+    required int revision,
+    required String origin,
+    required bool deleted,
+    required String? value,
+  }) {
     // 单调推进：只丢弃重复的旧广播，不因 method result 跳过任何一次变更。
     if (revision <= _lastRevision) return;
     _lastRevision = revision;
     _ownRevisions.removeWhere((int r) => r < revision);
-    final key = '${raw['key'] ?? ''}';
-    final origin = '${raw['origin'] ?? ''}';
-    // 原生层在 method result 之前广播，_ownRevisions 可能尚未登记；
-    // 但 origin 是发起方 engine 标识，能确定性地跳过自反馈。
-    // 必须放在应用 value 之前：自己的写入已由 _applyResult 乐观更新。
+    // 必须放在应用 value 之前：自己的写入已由 _applyOk 乐观更新。
     if (origin.isNotEmpty && origin == _origin) return;
-    final deleted = raw['deleted'] == true;
-    final value = raw['value'];
     if (deleted) {
       _entries.remove(key);
     } else if (value != null) {
-      _entries[key] = '$value';
+      _entries[key] = value;
     }
     // 自己提交的写入：本地已乐观更新且副作用由领域事件处理，跳过广播，
     // 避免重复 load / 重复 dirty 计数。
@@ -211,50 +212,47 @@ final class _NativeBackend implements _Backend {
 
   @override
   Future<void> write(String key, String value) async {
-    final result = await _method.invokeMapMethod<String, Object?>(
-      'write',
-      <String, Object?>{
-        'key': key,
-        'value': value,
-        'origin': _origin,
-      },
+    final int revision = await _guard(
+      () => _api.write(key, value, _origin),
+      'write($key)',
     );
-    _applyResult(key, value, false, result);
+    _applyOk(key, value, false, revision);
   }
 
   @override
   Future<void> delete(String key) async {
-    final result = await _method.invokeMapMethod<String, Object?>(
-      'delete',
-      <String, Object?>{'key': key, 'origin': _origin},
+    final int revision = await _guard(
+      () => _api.delete(key, _origin),
+      'delete($key)',
     );
-    _applyResult(key, null, true, result);
+    _applyOk(key, null, true, revision);
   }
 
   @override
   Future<void> clear() async {
-    final snapshot = await _method.invokeMapMethod<String, Object?>('clear');
+    final snapshot = await _guard(_api.clear, 'clear');
     _entries.clear();
-    if (snapshot != null) _adoptSnapshot(snapshot);
+    _adoptSnapshot(snapshot);
   }
 
-  void _applyResult(
-    String key,
-    String? value,
-    bool deleted,
-    Map<String, Object?>? result,
-  ) {
-    if (result == null || result['ok'] != true) {
+  /// 原生写入失败会抛 `PlatformException`，这里统一转换为领域层使用的
+  /// `StateError`，语义与改造前的动态 Map 结果完全一致。
+  Future<T> _guard<T>(Future<T> Function() action, String label) async {
+    try {
+      return await action();
+    } on PlatformException catch (error) {
       throw StateError(
-        'DataHub 写入失败：$key${result == null ? '' : '（${result['error'] ?? '未知错误'}）'}',
+        'DataHub $label 失败：${error.message ?? error.code}',
       );
     }
+  }
+
+  void _applyOk(String key, String? value, bool deleted, int revision) {
     if (deleted) {
       _entries.remove(key);
     } else if (value != null) {
       _entries[key] = value;
     }
-    final revision = (result['revision'] as num?)?.toInt() ?? 0;
     _ownRevisions.add(revision);
   }
 
@@ -263,15 +261,13 @@ final class _NativeBackend implements _Backend {
 
   @override
   Future<void> reload() async {
-    final snapshot =
-        await _method.invokeMapMethod<String, Object?>('snapshot');
-    if (snapshot != null) _adoptSnapshot(snapshot);
+    final snapshot = await _api.snapshot();
+    _adoptSnapshot(snapshot);
   }
 
   @override
   void dispose() {
-    _subscription?.cancel();
-    _subscription = null;
+    DataHubEventsFlutterApi.setUp(null);
     _changes.close();
   }
 }

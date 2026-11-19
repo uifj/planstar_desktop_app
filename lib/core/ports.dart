@@ -259,6 +259,24 @@ abstract interface class MultiWindowGateway {
   Stream<MultiWindowCommand> get incoming;
 }
 
+/// 全局热键动作（系统级注册，应用未聚焦时也生效）。
+enum HotkeyAction {
+  /// 显示 / 隐藏主窗口。
+  toggleMainWindow,
+
+  /// 显示 / 隐藏桌面可编辑月历小组件。
+  toggleDesktopWidget,
+}
+
+/// 系统级 / 应用级全局热键。
+abstract interface class HotkeyGateway {
+  /// 注册全局热键并把触发回调成 [HotkeyAction]。主窗口启动时调用一次。
+  Future<void> initialize(void Function(HotkeyAction action) onAction);
+
+  /// 注销全部热键（进程退出前调用）。
+  Future<void> dispose();
+}
+
 abstract interface class AutoStartGateway {
   Future<void> setEnabled(bool enabled);
 
@@ -377,4 +395,29 @@ abstract interface class FileGateway {
   Future<String> readText(String path);
 
   Future<String> defaultExportDirectory();
+}
+
+/// 一个显示器（逻辑像素坐标），来自 `screen_retriever`。
+final class ScreenDisplay {
+  const ScreenDisplay({
+    required this.id,
+    required this.x,
+    required this.y,
+    required this.width,
+    required this.height,
+  });
+
+  final String id;
+  final double x;
+  final double y;
+  final double width;
+  final double height;
+}
+
+/// 屏幕 / 显示器信息端口。桌面小组件用它确定卡片在虚拟屏内的可拖拽范围。
+abstract interface class ScreenGateway {
+  /// 覆盖所有显示器可视区域的虚拟屏幕包围盒（逻辑像素）。
+  ///
+  /// 返回 `null` 表示底层插件不可用（非桌面平台 / 单元测试），调用方自行回退。
+  Future<ScreenDisplay?> virtualBounds();
 }
