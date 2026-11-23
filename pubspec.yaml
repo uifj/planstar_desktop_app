@@ -62,6 +62,8 @@ dependencies:
   # ── 领域工具 ────────────────────────────────────────────────────────────
   intl: ^0.20.3
   lunar: ^1.7.9
+  auto_updater: ^1.0.0
+  flutter_app_packager: ^0.3.1
 
 dev_dependencies:
   flutter_test:

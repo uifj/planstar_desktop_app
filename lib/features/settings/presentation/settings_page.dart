@@ -705,6 +705,16 @@ final class SettingsPage extends ConsumerWidget {
                               child: const Text('立即同步'),
                             ),
                           ),
+                          ListTile(
+                            leading: const Icon(LucideIcons.refreshCw),
+                            title: const Text('检查更新'),
+                            trailing: OutlinedButton(
+                              onPressed: () => ref
+                                  .read(appUpdaterGatewayProvider)
+                                  .checkForUpdates(),
+                              child: const Text('立即检查'),
+                            ),
+                          ),
                           const SizedBox(height: AppSpacing.sm),
                           OutlinedButton(
                             onPressed: () => ref

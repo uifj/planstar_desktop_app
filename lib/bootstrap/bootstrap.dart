@@ -17,6 +17,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../app/planstar_app.dart';
 import '../core/ports.dart';
 import '../features/reminder/infrastructure/local_notification_gateway.dart';
+import '../infrastructure/app_updater_gateway.dart';
 import '../infrastructure/data_hub.dart';
 import '../infrastructure/desktop_adapters.dart';
 import '../infrastructure/desktop_wallpaper_gateway.dart';
@@ -98,6 +99,7 @@ final class AppBootstrap {
     final multiWindowGateway =
         DesktopMultiWindowGateway(logger: logger.child('multiwindow'));
     final autoStartGateway = LaunchAtStartupGateway();
+    final appUpdaterGateway = AutoUpdaterGateway();
     final soundGateway =
         AudioPlayersSoundGateway(logger: logger.child('sound'));
     final fileGateway = DesktopFileGateway();
@@ -143,6 +145,14 @@ final class AppBootstrap {
     }
     await notificationReady;
 
+    // 仅主窗口配置自更新（子窗口是便签/倒数日/小组件 overlay，无需更新检查）。
+    if (!isSubWindow) {
+      await appUpdaterGateway.configure(
+        '${config.getString('apiBaseUrl') ?? 'https://api.planstar.local/v1/'}'
+        'update/appcast.xml?platform=windows&channel=stable',
+      );
+    }
+
     final overrides = [
       clockProvider.overrideWithValue(clock),
       keyValueStoreProvider.overrideWithValue(dataHub),
@@ -158,6 +168,7 @@ final class AppBootstrap {
       trayGatewayProvider.overrideWithValue(trayGateway),
       multiWindowGatewayProvider.overrideWithValue(multiWindowGateway),
       autoStartGatewayProvider.overrideWithValue(autoStartGateway),
+      appUpdaterGatewayProvider.overrideWithValue(appUpdaterGateway),
       soundGatewayProvider.overrideWithValue(soundGateway),
       fileGatewayProvider.overrideWithValue(fileGateway),
       desktopWallpaperGatewayProvider.overrideWithValue(
@@ -183,5 +194,7 @@ final class AppBootstrap {
             : const PlanstarApp(),
       ),
     );
+    // 启动后非阻塞后台检查一次（有更新时原生更新器才弹窗）。
+    unawaited(appUpdaterGateway.checkForUpdates(inBackground: true));
   }
 }

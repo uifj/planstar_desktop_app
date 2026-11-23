@@ -114,6 +114,9 @@ final class DesktopController extends Notifier<DesktopState> {
     await ref
         .read(autoStartGatewayProvider)
         .setEnabled(settings.startWithWindow);
+    await ref
+        .read(appUpdaterGatewayProvider)
+        .setAutoCheckEnabled(settings.autoCheckUpdate);
 
     await _syncDesktopWidget(settings.desktopWidgetEnabled);
 

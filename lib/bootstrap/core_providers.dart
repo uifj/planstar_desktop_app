@@ -109,6 +109,10 @@ final autoStartGatewayProvider = Provider<AutoStartGateway>(
   (Ref ref) => throw UnimplementedError('autoStartGatewayProvider 未注入'),
 );
 
+final appUpdaterGatewayProvider = Provider<AppUpdaterGateway>(
+  (Ref ref) => throw UnimplementedError('appUpdaterGatewayProvider 未注入'),
+);
+
 final soundGatewayProvider = Provider<SoundGateway>(
   (Ref ref) => throw UnimplementedError('soundGatewayProvider 未注入'),
 );

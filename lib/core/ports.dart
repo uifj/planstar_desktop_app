@@ -283,6 +283,20 @@ abstract interface class AutoStartGateway {
   Future<bool> isEnabled();
 }
 
+/// 应用自更新端口（Windows/macOS 走 auto_updater → WinSparkle/Sparkle，
+/// 消费服务端 appcast XML；Android APK 的 JSON 检查不走本端口）。
+abstract interface class AppUpdaterGateway {
+  /// 设置 appcast 订阅地址并初始化更新器。
+  Future<void> configure(String feedUrl);
+
+  /// 开启 / 关闭「自动检查更新」（周期 24h，关闭即禁用周期检查）。
+  Future<void> setAutoCheckEnabled(bool enabled);
+
+  /// 立即检查一次更新。[inBackground] 为 true 时静默检查（启动期用），
+  /// 原生更新器仅在「有更新」时弹窗。
+  Future<void> checkForUpdates({bool inBackground = false});
+}
+
 /// 桌面（虚拟屏幕）像素尺寸，用于把月历渲染成与壁纸同尺寸的图片。
 final class DesktopMetrics {
   const DesktopMetrics({

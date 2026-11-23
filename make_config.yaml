@@ -1,0 +1,14 @@
+# make_config.yaml
+app:
+  name: "planstar-desktop" # 显示给用户的应用名
+  id: "com.planstar.desktop" # 唯一的应用ID
+  version: "1.0.0"
+  publisher: "PlanStar Team"
+
+# 定义要生成的安装包格式
+targets:
+  - platform: windows
+    target: exe # 生成 .exe 安装程序
+    # 以下为 Inno Setup 的定制配置
+    install_dir_name: "{app}" # 安装目录
+    # ... 更多高级选项，如快捷方式、注册表等
