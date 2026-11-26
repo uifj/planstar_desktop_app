@@ -1,13 +1,8 @@
-/// [DesktopWallpaperGateway] 的桌面原生实现（Pigeon）。
+/// Pigeon 桌面覆盖层网关。
 ///
-/// 通道由 Windows / macOS 原生层**按 engine** 注册：
-/// 主窗口与每个 `desktop_multi_window` 子窗口各有自己的一份，因此桌面小组件
-/// 可以直接配置自己那个原生窗口。契约见 `pigeons/planstar_api.dart`。
-///
-/// 与旧的手写 `OptionalMethodChannel` 相比：参数/返回值在编译期完成类型校验，
-/// 不再有字符串方法名、`Map<String, Object?>` 强转与手工默认值兜底。
-/// 非 Windows / macOS / 单元测试下原生未注册，Pigeon 抛 `PlatformException`，
-/// 这里统一降级为安全默认值，保持与旧实现一致的「安静失败」语义。
+/// 通道由 Windows / macOS 原生层按 engine 注册：主窗口与每个
+/// `desktop_multi_window` 子窗口只配置自己的原生窗口。
+/// 非桌面平台或单元测试未注册原生能力时，将缺失与平台错误降级为安全默认值。
 library;
 
 import 'package:core/logger.dart';

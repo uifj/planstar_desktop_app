@@ -1,5 +1,6 @@
-/// 桌面端能力适配器：window_manager / desktop_multi_window /
-/// tray_manager / launch_at_startup / audioplayers。
+/// 桌面端能力适配器：窗口、托盘、多窗口、自启、音频、屏幕与全局热键。
+///
+/// macOS 自启使用 Pigeon，Windows / Linux 使用 launch_at_startup。
 library;
 
 import 'dart:async';
@@ -11,6 +12,7 @@ import 'package:core/logger.dart';
 import 'package:desktop_multi_window/desktop_multi_window.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
 import 'package:launch_at_startup/launch_at_startup.dart';
 import 'package:screen_retriever/screen_retriever.dart';
@@ -18,14 +20,25 @@ import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
 
 import '../core/ports.dart';
+import '../l10n/l10n.dart';
 import 'desktop_platform_config.dart';
 import 'pigeon/planstar_api.g.dart';
 
-/// [WindowGateway] 的 window_manager 实现。
 final class WindowManagerGateway with WindowListener implements WindowGateway {
-  WindowManagerGateway({required this.logger});
+  WindowManagerGateway({
+    required this.logger,
+    AppLocalizationScope? localizationScope,
+    String Function(AppLocalizations)? subWindowTitleBuilder,
+  }) : _localizationScope = localizationScope,
+       _subWindowTitleBuilder = subWindowTitleBuilder;
 
   final AppLogger logger;
+  final AppLocalizationScope? _localizationScope;
+  String Function(AppLocalizations)? _subWindowTitleBuilder;
+  bool _titleListenerRegistered = false;
+  AppLocalizations get _l10n =>
+      _localizationScope?.localizations ??
+      lookupAppLocalizations(const Locale('zh'));
 
   @override
   void Function()? onCloseIntercepted;
@@ -47,11 +60,12 @@ final class WindowManagerGateway with WindowListener implements WindowGateway {
     // 托盘菜单里的「退出」会调用 destroy() 绕过拦截。
     await windowManager.setPreventClose(true);
     windowManager.addListener(this);
-    const options = WindowOptions(
+    _registerTitleListener();
+    final options = WindowOptions(
       size: Size(1320, 860),
       minimumSize: Size(1024, 680),
       center: true,
-      title: '企划星 · 桌面日历清单',
+      title: _l10n.appTitle,
       titleBarStyle: TitleBarStyle.hidden,
       skipTaskbar: false,
     );
@@ -65,9 +79,15 @@ final class WindowManagerGateway with WindowListener implements WindowGateway {
   }
 
   @override
-  Future<void> initializeSubWindow(String title, WindowRect rect) async {
+  Future<void> initializeSubWindow(
+    String title,
+    WindowRect rect, {
+    String Function(AppLocalizations)? titleBuilder,
+  }) async {
+    _subWindowTitleBuilder = titleBuilder;
     await ensureInitialized();
     if (!_ready) return;
+    _registerTitleListener();
     unawaited(
       windowManager.waitUntilReadyToShow(
         WindowOptions(
@@ -86,6 +106,18 @@ final class WindowManagerGateway with WindowListener implements WindowGateway {
         },
       ),
     );
+  }
+
+  void _registerTitleListener() {
+    if (_titleListenerRegistered) return;
+    _localizationScope?.addListener(_updateWindowTitle);
+    _titleListenerRegistered = true;
+  }
+
+  Future<void> _updateWindowTitle() async {
+    if (!_ready) return;
+    final title = _subWindowTitleBuilder?.call(_l10n) ?? _l10n.appTitle;
+    await windowManager.setTitle(title);
   }
 
   @override
@@ -153,7 +185,6 @@ final class WindowManagerGateway with WindowListener implements WindowGateway {
     if (_ready) await windowManager.destroy();
   }
 
-  /// window_manager 的关闭拦截回调：只隐藏，托盘「退出」才真正结束进程。
   @override
   void onWindowClose() {
     onCloseIntercepted?.call();
@@ -178,18 +209,25 @@ final class _TrayEventSink with TrayListener {
   }
 }
 
-/// [TrayGateway] 的 tray_manager 实现。
 final class TrayManagerGateway implements TrayGateway {
-  TrayManagerGateway({this.logger});
+  TrayManagerGateway({this.logger, AppLocalizationScope? localizationScope})
+    : _localizationScope = localizationScope;
 
   final AppLogger? logger;
+  final AppLocalizationScope? _localizationScope;
   TrayListener? _listener;
+  void Function(TrayAction action)? _onAction;
+  AppLocalizations get _l10n =>
+      _localizationScope?.localizations ??
+      lookupAppLocalizations(const Locale('zh'));
 
   @override
   Future<void> initialize(void Function(TrayAction action) onAction) async {
     if (kIsWeb) return;
     if (!(Platform.isWindows || Platform.isLinux || Platform.isMacOS)) return;
 
+    _onAction = onAction;
+    _localizationScope?.addListener(_refreshMenu);
     final listener = _TrayEventSink();
     _listener = listener;
     trayManager.addListener(listener);
@@ -202,48 +240,63 @@ final class TrayManagerGateway implements TrayGateway {
       logger?.warn('设置托盘图标失败', error: error);
     }
     try {
-      await trayManager.setToolTip('企划星 · 桌面日历清单');
+      await trayManager.setToolTip(_l10n.appTitle);
     } catch (error) {
       logger?.warn('设置托盘提示失败', error: error);
     }
 
+    try {
+      await _setMenu();
+    } catch (error) {
+      logger?.warn('设置托盘菜单失败', error: error);
+    }
+  }
+
+  Future<void> _setMenu() {
+    final l10n = _l10n;
     MenuItem item(TrayAction action, String label) => MenuItem(
       key: action.name,
       label: label,
-      onClick: (MenuItem _) => onAction(action),
+      onClick: (MenuItem _) => _onAction?.call(action),
     );
-    // 菜单注册独立于图标：即使图标能力降级，右键菜单仍应可用。
+    return trayManager.setContextMenu(
+      Menu(
+        items: <MenuItem>[
+          item(TrayAction.show, l10n.trayShow),
+          item(TrayAction.hide, l10n.trayHide),
+          MenuItem.separator(),
+          item(TrayAction.showDesktopWidget, l10n.trayShowWidget),
+          item(TrayAction.hideDesktopWidget, l10n.trayHideWidget),
+          MenuItem.separator(),
+          item(TrayAction.sync, l10n.traySync),
+          item(TrayAction.settings, l10n.traySettings),
+          // 课程表 / 订阅暂时隐藏：TrayAction 与模块代码保留，仅不放入菜单。
+          item(TrayAction.notes, l10n.trayNotes),
+          item(TrayAction.refreshWallpaper, l10n.trayRefreshWallpaper),
+          MenuItem.separator(),
+          item(TrayAction.about, l10n.trayAbout),
+          // 唯一能真正结束进程的入口。
+          item(TrayAction.exit, l10n.trayExit),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _refreshMenu() async {
+    if (_onAction == null) return;
     try {
-      await trayManager.setContextMenu(
-        Menu(
-          items: <MenuItem>[
-            item(TrayAction.show, '显示主窗口'),
-            item(TrayAction.hide, '隐藏主窗口'),
-            MenuItem.separator(),
-            // 桌面日历窗口的两个独立一键项，右键即可明确显示或隐藏。
-            item(TrayAction.showDesktopWidget, '显示桌面日历窗口'),
-            item(TrayAction.hideDesktopWidget, '隐藏桌面日历窗口'),
-            MenuItem.separator(),
-            item(TrayAction.sync, '手动同步'),
-            item(TrayAction.settings, '日历设置'),
-            // 课程表 / 订阅暂时隐藏：TrayAction 与模块代码保留，仅不放入菜单。
-            item(TrayAction.notes, '便签'),
-            item(TrayAction.refreshWallpaper, '生成静态壁纸快照（可选）'),
-            MenuItem.separator(),
-            item(TrayAction.about, '关于'),
-            // 唯一能真正结束进程的入口。
-            item(TrayAction.exit, '退出企划星'),
-          ],
-        ),
-      );
-    } catch (error) {
-      logger?.warn('设置托盘菜单失败', error: error);
+      await trayManager.setToolTip(_l10n.appTitle);
+      await _setMenu();
+    } catch (_) {
+      // 托盘已销毁时无需恢复菜单。
     }
   }
 
   @override
   Future<void> dispose() async {
     if (kIsWeb) return;
+    _localizationScope?.removeListener(_refreshMenu);
+    _onAction = null;
     final listener = _listener;
     if (listener != null) {
       trayManager.removeListener(listener);
@@ -252,13 +305,11 @@ final class TrayManagerGateway implements TrayGateway {
     try {
       await trayManager.destroy();
     } catch (_) {
-      // ignore
+      // 托盘可能已随窗口销毁，清理失败不影响退出。
     }
   }
 }
 
-/// [MultiWindowGateway] 的 desktop_multi_window 实现。
-///
 /// 0.3.x 的子窗口复用同一个 `main` 入口，原生层会传入
 /// `['multi_window', windowId, arguments]`，因此不需要额外 `@pragma` 入口。
 final class DesktopMultiWindowGateway implements MultiWindowGateway {
@@ -374,26 +425,82 @@ final class DesktopMultiWindowGateway implements MultiWindowGateway {
   }
 }
 
-/// [AutoStartGateway] 的桌面端实现。
-///
 /// macOS 使用 Pigeon 类型化桥；Windows/Linux 继续使用 launch_at_startup 包。
 final class LaunchAtStartupGateway implements AutoStartGateway {
   LaunchAtStartupGateway({BinaryMessenger? binaryMessenger})
     : _hostApi = LaunchAtStartupHostApi(binaryMessenger: binaryMessenger);
 
   final LaunchAtStartupHostApi _hostApi;
-  bool _packageSetup = false;
+
+  // launch_at_startup stores one mutable backend in a process-global singleton.
+  // Serialize every gateway instance and restore the stable backend after use.
+  static Future<void> _pending = Future<void>.value();
+
+  static const _legacyPackageAppName = '企划星桌面日历清单';
+  static const _packageAppName = 'Planstar';
 
   bool get _supported =>
       !kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS);
 
-  void _ensurePackageSetup() {
-    if (_packageSetup || !_supported || Platform.isMacOS) return;
-    launchAtStartup.setup(
-      appName: '企划星桌面日历清单',
-      appPath: Platform.resolvedExecutable,
+  static Future<T> _serialized<T>(Future<T> Function() action) {
+    final result = _pending.then((_) => action());
+    _pending = result.then<void>(
+      (_) {},
+      onError: (Object error, StackTrace stackTrace) {},
     );
-    _packageSetup = true;
+    return result;
+  }
+
+  void _configure(String appName) => launchAtStartup.setup(
+    appName: appName,
+    appPath: Platform.resolvedExecutable,
+  );
+
+  Future<bool> _stableIsEnabled() async {
+    _configure(_packageAppName);
+    try {
+      return await launchAtStartup.isEnabled();
+    } finally {
+      _configure(_packageAppName);
+    }
+  }
+
+  Future<bool> _legacyIsEnabled() async {
+    _configure(_legacyPackageAppName);
+    try {
+      return await launchAtStartup.isEnabled();
+    } finally {
+      _configure(_packageAppName);
+    }
+  }
+
+  Future<void> _removeLegacyRegistration() async {
+    try {
+      _configure(_legacyPackageAppName);
+      try {
+        await launchAtStartup.disable();
+      } finally {
+        _configure(_packageAppName);
+      }
+    } catch (_) {
+      // Cleanup is best-effort and must not block future stable-state changes.
+    }
+  }
+
+  Future<void> _setStableEnabled(bool enabled) async {
+    _configure(_packageAppName);
+    try {
+      final applied = enabled
+          ? await launchAtStartup.enable()
+          : await launchAtStartup.disable();
+      if (!applied) throw StateError('Startup registration was not applied');
+      if (enabled && !await launchAtStartup.isEnabled()) {
+        throw StateError('Startup registration could not be verified');
+      }
+    } finally {
+      _configure(_packageAppName);
+    }
+    await _removeLegacyRegistration();
   }
 
   @override
@@ -401,8 +508,10 @@ final class LaunchAtStartupGateway implements AutoStartGateway {
     if (!_supported) return false;
     try {
       if (Platform.isMacOS) return await _hostApi.isEnabled();
-      _ensurePackageSetup();
-      return await launchAtStartup.isEnabled();
+      return _serialized(() async {
+        if (await _stableIsEnabled()) return true;
+        return _legacyIsEnabled();
+      });
     } catch (_) {
       return false;
     }
@@ -415,12 +524,7 @@ final class LaunchAtStartupGateway implements AutoStartGateway {
       if (Platform.isMacOS) {
         await _hostApi.setEnabled(enabled);
       } else {
-        _ensurePackageSetup();
-        if (enabled) {
-          await launchAtStartup.enable();
-        } else {
-          await launchAtStartup.disable();
-        }
+        await _serialized(() => _setStableEnabled(enabled));
       }
     } catch (_) {
       // 系统安全策略拦截时保持本地设置，不中断用户操作。
@@ -428,7 +532,7 @@ final class LaunchAtStartupGateway implements AutoStartGateway {
   }
 }
 
-/// [SoundGateway] 的 audioplayers 实现，音效复用归档里的 4 个 mp3。
+/// 提示音统一从 `assets/audio` 加载。
 final class AudioPlayersSoundGateway implements SoundGateway {
   AudioPlayersSoundGateway({required this.logger});
 
@@ -448,8 +552,6 @@ final class AudioPlayersSoundGateway implements SoundGateway {
   }
 }
 
-/// [ScreenGateway] 的 screen_retriever 实现。
-///
 /// `getAllDisplays` 返回的是**逻辑像素**（插件已在原生层按每显示器 DPI
 /// 折算），桌面小组件直接用即可，无需像 `DesktopMetrics` 那样再除 dpr。
 final class ScreenRetrieverGateway implements ScreenGateway {
@@ -503,8 +605,6 @@ final class ScreenRetrieverGateway implements ScreenGateway {
   }
 }
 
-/// [HotkeyGateway] 的 hotkey_manager 实现。
-///
 /// 全部注册为 `HotKeyScope.system`（系统级）：即使主窗口未聚焦 / 在托盘里，
 /// 也能用 `Ctrl+Alt+H` 显示主窗口、`Ctrl+Alt+D` 切换桌面小组件。
 final class HotkeyManagerGateway implements HotkeyGateway {
@@ -562,7 +662,7 @@ final class HotkeyManagerGateway implements HotkeyGateway {
     try {
       await hotKeyManager.unregisterAll();
     } catch (_) {
-      // ignore
+      // 没有已注册热键时无需处理。
     }
   }
 }

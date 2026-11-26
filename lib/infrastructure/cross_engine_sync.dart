@@ -1,9 +1,6 @@
-/// [CrossEngineSync] 的文件标记实现。
+/// [CrossEngineSync] 的旧文件标记实现，当前未接入。
 ///
-/// `desktop_multi_window` 的每个窗口是独立 engine，`shared_preferences` 各自
-/// 缓存一份数据。任何一次写入都会更新一个共享的 revision 文件；其它 engine
-/// 轮询到变化后调用 `SharedPreferences.reload()` 并从磁盘重读聚合。
-/// 该文件只存微秒时间戳，不承载业务数据，因此不会与插件的 JSON 文件冲突。
+/// Windows / macOS 已由 DataHubStore 提供跨 engine 同步；本类仅保留为旧降级方案参考。
 library;
 
 import 'dart:async';
@@ -31,10 +28,7 @@ final class FileCrossEngineSync implements CrossEngineSync {
     } on Object {
       _lastValue = '';
     }
-    _timer = Timer.periodic(
-      const Duration(milliseconds: 700),
-      (_) => _poll(),
-    );
+    _timer = Timer.periodic(const Duration(milliseconds: 700), (_) => _poll());
   }
 
   @override
@@ -64,11 +58,7 @@ final class FileCrossEngineSync implements CrossEngineSync {
       if (value != _lastValue) {
         _lastValue = value;
         _changes.add(
-          DataChange(
-            key: '',
-            revision: int.tryParse(value) ?? 0,
-            origin: '',
-          ),
+          DataChange(key: '', revision: int.tryParse(value) ?? 0, origin: ''),
         );
       }
     } on Object {

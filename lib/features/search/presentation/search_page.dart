@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../bootstrap/core_providers.dart';
 import '../../../core/value_objects.dart';
+import '../../../l10n/l10n.dart';
 import '../../../shared/widgets/common.dart';
 import '../application/search_controller.dart';
 
@@ -16,6 +17,7 @@ final class SearchPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
     final state = ref.watch(searchControllerProvider);
     final controller = ref.read(searchControllerProvider.notifier);
     final queryController = TextEditingController(text: state.keyword);
@@ -28,11 +30,12 @@ final class SearchPage extends ConsumerWidget {
             controller: queryController,
             autofocus: true,
             decoration: InputDecoration(
-              labelText: '搜日历清单',
-              hintText: '内容、任务、便签、倒数日、订阅、课程',
+              labelText: l10n.searchFieldLabel,
+              hintText: l10n.searchFieldHint,
               border: const OutlineInputBorder(),
               prefixIcon: const Icon(LucideIcons.search),
               suffixIcon: IconButton(
+                tooltip: l10n.searchClearQueryTooltip,
                 icon: const Icon(LucideIcons.x),
                 onPressed: () {
                   queryController.clear();
@@ -50,15 +53,14 @@ final class SearchPage extends ConsumerWidget {
             children: <Widget>[
               for (final range in SearchRange.values)
                 ChoiceChip(
-                  label: Text(range.label),
+                  label: Text(range.localizedLabel(l10n)),
                   selected: state.range == range,
                   onSelected: (_) => controller.setRange(range),
                 ),
               if (state.range == SearchRange.custom)
                 OutlinedButton(
                   onPressed: () async {
-                    final today =
-                        DateKey.today(ref.read(clockProvider).now());
+                    final today = DateKey.today(ref.read(clockProvider).now());
                     final picked = await showDateRangePicker(
                       context: context,
                       firstDate: DateTime(1900),
@@ -76,8 +78,13 @@ final class SearchPage extends ConsumerWidget {
                   },
                   child: Text(
                     state.customStart == null
-                        ? '选择自定义范围'
-                        : '${state.customStart!.key} ~ ${state.customEnd?.key}',
+                        ? l10n.searchChooseCustomRange
+                        : l10n.searchCustomRangeLabel(
+                            state.customStart!.fullDate(l10n),
+                            (state.customEnd ?? state.customStart!).fullDate(
+                              l10n,
+                            ),
+                          ),
                   ),
                 ),
             ],
@@ -86,7 +93,7 @@ final class SearchPage extends ConsumerWidget {
         Padding(
           padding: const EdgeInsets.all(AppSpacing.md),
           child: Text(
-            '共找到 ${state.hits.length} 条结果',
+            l10n.searchResultCount(state.hits.length),
             style: TextStyle(
               fontSize: AppTypography.caption,
               color: context.appColors.textTertiary,
@@ -95,10 +102,10 @@ final class SearchPage extends ConsumerWidget {
         ),
         Expanded(
           child: state.hits.isEmpty
-              ? const EmptyState(
+              ? EmptyState(
                   icon: LucideIcons.searchX,
-                  title: '没有匹配内容',
-                  hint: '输入关键词后即时检索全部模块',
+                  title: l10n.searchEmptyTitle,
+                  hint: l10n.searchEmptyHint,
                 )
               : ListView.separated(
                   padding: const EdgeInsets.symmetric(
@@ -123,7 +130,7 @@ final class SearchPage extends ConsumerWidget {
                       ),
                       trailing: hit.date == null
                           ? null
-                          : Text(hit.date!.cnDate),
+                          : Text(hit.date!.shortDate(l10n)),
                     );
                   },
                 ),

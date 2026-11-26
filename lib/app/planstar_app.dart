@@ -3,8 +3,10 @@ library;
 
 import 'package:core_design_system/core_design_system.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../bootstrap/core_providers.dart';
 import '../features/desktop/application/desktop_controller.dart';
 import '../features/history/application/history_controller.dart';
 import '../features/reminder/application/reminder_controller.dart';
@@ -13,6 +15,7 @@ import '../features/settings/application/settings_controller.dart';
 import '../features/settings/domain/app_settings.dart';
 import '../features/sync/application/cross_engine_sync_controller.dart';
 import '../features/sync/application/sync_controller.dart';
+import '../l10n/l10n.dart';
 import 'router.dart';
 
 final class PlanstarApp extends ConsumerStatefulWidget {
@@ -39,8 +42,18 @@ final class _PlanstarAppState extends ConsumerState<PlanstarApp> {
   @override
   Widget build(BuildContext context) {
     final mode = ref.watch(settingsControllerProvider).themeMode;
+    final locale = ref.watch(appLocalizationScopeProvider);
+    final l10n = ref.read(appLocalizationScopeProvider).localizations;
     return MaterialApp.router(
-      title: '企划星 · 桌面日历清单',
+      onGenerateTitle: (BuildContext context) => l10n.appTitle,
+      locale: locale.value,
+      localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: supportedLocales,
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
@@ -48,19 +61,14 @@ final class _PlanstarAppState extends ConsumerState<PlanstarApp> {
       routerConfig: ref.watch(routerProvider),
       builder: (BuildContext context, Widget? child) => AppTheme.withAppFont(
         context,
-        Stack(
-          children: <Widget>[
-            ?child,
-            const ReminderOverlay(),
-          ],
-        ),
+        Stack(children: <Widget>[?child, const ReminderOverlay()]),
       ),
     );
   }
 
   ThemeMode _toMaterialThemeMode(AppThemeMode mode) => switch (mode) {
-        AppThemeMode.light => ThemeMode.light,
-        AppThemeMode.dark => ThemeMode.dark,
-        AppThemeMode.system => ThemeMode.system,
-      };
+    AppThemeMode.light => ThemeMode.light,
+    AppThemeMode.dark => ThemeMode.dark,
+    AppThemeMode.system => ThemeMode.system,
+  };
 }

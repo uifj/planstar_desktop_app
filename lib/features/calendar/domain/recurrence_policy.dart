@@ -33,9 +33,11 @@ abstract final class RecurrencePolicy {
 
     var cursor = origin;
     var emitted = 0;
-    for (var step = 0;
-        step < maxDays && cursor.differenceInDays(hardEnd) <= 0;
-        step++) {
+    for (
+      var step = 0;
+      step < maxDays && cursor.differenceInDays(hardEnd) <= 0;
+      step++
+    ) {
       if (_matches(cursor, origin, rule)) {
         emitted++;
         if (rule.count != null && emitted > rule.count!) break;
@@ -99,8 +101,8 @@ abstract final class RecurrencePolicy {
             current.getDay() == start.getDay();
       case RecurrenceKind.legalWorkday:
         final meta = CalendarMath.metaOf(date);
-        final isLegalWorkday = !meta.isRestDay &&
-            (date.weekday <= 5 || meta.isMakeupWorkday);
+        final isLegalWorkday =
+            !meta.isRestDay && (date.weekday <= 5 || meta.isMakeupWorkday);
         return isLegalWorkday && days % interval == 0;
       case RecurrenceKind.ebbinghaus:
         return days == 0 || RecurrenceRule.ebbinghausOffsets.contains(days);

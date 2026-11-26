@@ -4,8 +4,11 @@ library;
 import 'package:core_design_system/core_design_system.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 import '../../../../core/value_objects.dart';
+import '../../../../l10n/calendar_terms.dart';
+import '../../../../l10n/l10n.dart';
 import '../../../../shared/widgets/common.dart';
 import '../../../countdown/domain/countdown.dart';
 import '../../../settings/domain/app_settings.dart';
@@ -41,8 +44,8 @@ final class DayCellWidget extends StatelessWidget {
     final dimmed = !day.isCurrentMonth;
     final restColor = Color(settings.holidayTextColor);
     // 周六周日按 weekday 判定（1=周一…7=周日），复用用户已有的休息日设置。
-    final weekend = settings.showRestDays &&
-        settings.restDays.contains(day.date.weekday);
+    final weekend =
+        settings.showRestDays && settings.restDays.contains(day.date.weekday);
     final cellColor = day.cell?.backgroundColor;
     final hasCustom = cellColor != null && !cellColor.isTransparent;
     var background = hasCustom
@@ -70,8 +73,8 @@ final class DayCellWidget extends StatelessWidget {
             color: selected
                 ? colors.brand
                 : weekend && !hasCustom && !dimmed
-                    ? BasePalette.orangeLight3.withValues(alpha: 0.45)
-                    : colors.border,
+                ? BasePalette.orangeLight3.withValues(alpha: 0.45)
+                : colors.border,
             width: selected ? 2 : 0.5,
           ),
           borderRadius: BorderRadius.circular(AppRadius.xs),
@@ -92,19 +95,24 @@ final class DayCellWidget extends StatelessWidget {
                               (RichLine l) =>
                                   settings.showCompleted || !l.completed,
                             )
-                            .map(
-                              (RichLine line) => _line(context, line),
-                            ) ??
+                            .map((RichLine line) => _line(context, line)) ??
                         const <Widget>[],
-                    ...day.events.map(_event),
+                    ...day.events.map(
+                      (EventOccurrence occurrence) =>
+                          _event(context, occurrence),
+                    ),
                     ...day.subscriptionEvents.map(
                       (SubscriptionEvent e) =>
                           _tag(context, e.title, colors.warning),
                     ),
-                    ...day.lessons.take(2).map(
+                    ...day.lessons
+                        .take(2)
+                        .map(
                           (Lesson l) => _tag(context, l.name, colors.success),
                         ),
-                    ...day.countdowns.take(1).map(
+                    ...day.countdowns
+                        .take(1)
+                        .map(
                           (CountdownItem c) =>
                               _tag(context, c.title, colors.brand),
                         ),
@@ -125,7 +133,9 @@ final class DayCellWidget extends StatelessWidget {
     bool dimmed,
     bool weekend,
   ) {
-    final subtitle = day.meta.subtitle(
+    final l10n = context.l10n;
+    final subtitle = day.meta.localizedSubtitle(
+      l10n,
       showLunar: settings.showLunar,
       showSolarTerms: settings.showSolarTerms,
       showFestival: settings.showFestival,
@@ -146,28 +156,33 @@ final class DayCellWidget extends StatelessWidget {
             '${day.date.day}',
             style: TextStyle(
               fontSize: settings.calendarFontSize,
-              fontWeight: day.isToday ? AppTypography.bold : AppTypography.regular,
+              fontWeight: day.isToday
+                  ? AppTypography.bold
+                  : AppTypography.regular,
               color: day.isToday
                   ? colors.onBrand
                   : dimmed
-                      ? colors.textDisabled
-                      : (settings.showRestDays && (day.isRestDay || weekend)
-                          ? restColor
-                          : Color(settings.calendarFontColor)),
+                  ? colors.textDisabled
+                  : (settings.showRestDays && (day.isRestDay || weekend)
+                        ? restColor
+                        : Color(settings.calendarFontColor)),
             ),
           ),
         ),
         if (settings.showHoliday && day.meta.isRestDay)
-          _badge(context, '休', colors.error),
+          _badge(context, l10n.calendarRestDayBadge, colors.error),
         if (settings.showHoliday && day.meta.isMakeupWorkday)
-          _badge(context, '班', colors.warning),
+          _badge(context, l10n.calendarMakeupWorkdayBadge, colors.warning),
         const Spacer(),
         if (settings.showWeekNumber)
-          Text(
-            '${day.meta.weekNumber}',
-            style: TextStyle(
-              fontSize: AppTypography.micro,
-              color: colors.textDisabled,
+          Semantics(
+            label: l10n.calendarWeekNumberAccessibility(day.meta.weekNumber),
+            child: Text(
+              '${day.meta.weekNumber}',
+              style: TextStyle(
+                fontSize: AppTypography.micro,
+                color: colors.textDisabled,
+              ),
             ),
           ),
         if (subtitle.isNotEmpty)
@@ -187,19 +202,26 @@ final class DayCellWidget extends StatelessWidget {
   }
 
   Widget _badge(BuildContext context, String text, Color color) => Container(
-        margin: const EdgeInsets.only(right: 2),
-        padding: const EdgeInsets.symmetric(horizontal: 2),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(AppRadius.xs),
-        ),
-        child: Text(
-          text,
-          style: TextStyle(fontSize: AppTypography.micro, color: color),
-        ),
-      );
+    margin: const EdgeInsets.only(right: 2),
+    padding: const EdgeInsets.symmetric(horizontal: 2),
+    decoration: BoxDecoration(
+      color: color.withValues(alpha: 0.12),
+      borderRadius: BorderRadius.circular(AppRadius.xs),
+    ),
+    child: Text(
+      text,
+      style: TextStyle(fontSize: AppTypography.micro, color: color),
+    ),
+  );
 
-  Widget _line(BuildContext context, RichLine line) => InkWell(
+  Widget _line(BuildContext context, RichLine line) {
+    final l10n = context.l10n;
+    return Semantics(
+      button: true,
+      label: line.completed
+          ? l10n.calendarMarkLineIncomplete
+          : l10n.calendarMarkLineComplete,
+      child: InkWell(
         onTap: () => onToggleLine(line.id),
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 1),
@@ -231,8 +253,7 @@ final class DayCellWidget extends StatelessWidget {
               ),
               if (settings.showReminderDate && line.reminderTime != null)
                 Text(
-                  '${line.reminderTime!.hour}:'
-                  '${line.reminderTime!.minute.toString().padLeft(2, '0')}',
+                  DateFormat.Hm(l10n.localeName).format(line.reminderTime!),
                   style: TextStyle(
                     fontSize: AppTypography.micro,
                     color: context.appColors.textDisabled,
@@ -241,9 +262,18 @@ final class DayCellWidget extends StatelessWidget {
             ],
           ),
         ),
-      );
+      ),
+    );
+  }
 
-  Widget _event(EventOccurrence occurrence) => InkWell(
+  Widget _event(BuildContext context, EventOccurrence occurrence) {
+    final l10n = context.l10n;
+    return Semantics(
+      button: true,
+      label: occurrence.completed
+          ? l10n.calendarMarkEventIncomplete
+          : l10n.calendarMarkEventComplete,
+      child: InkWell(
         onTap: () => onToggleEvent(occurrence),
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 1),
@@ -274,15 +304,17 @@ final class DayCellWidget extends StatelessWidget {
             ],
           ),
         ),
-      );
+      ),
+    );
+  }
 
   Widget _tag(BuildContext context, String text, Color color) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 1),
-        child: Text(
-          '· $text',
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(fontSize: AppTypography.label, color: color),
-        ),
-      );
+    padding: const EdgeInsets.symmetric(vertical: 1),
+    child: Text(
+      '· $text',
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: TextStyle(fontSize: AppTypography.label, color: color),
+    ),
+  );
 }

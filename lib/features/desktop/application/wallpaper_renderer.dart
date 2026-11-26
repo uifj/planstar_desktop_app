@@ -7,8 +7,13 @@ library;
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
+import 'package:flutter/widgets.dart';
+import 'package:intl/intl.dart';
+
 import '../../../core/ports.dart';
 import '../../../core/value_objects.dart';
+import '../../../l10n/calendar_terms.dart';
+import '../../../l10n/l10n.dart';
 import '../../calendar/application/calendar_controllers.dart';
 import '../../settings/domain/app_settings.dart';
 
@@ -20,6 +25,7 @@ final class WallpaperRenderer {
     required MonthData month,
     required AppSettings settings,
     required DateKey today,
+    AppLocalizations? localizations,
     ui.Image? background,
   }) async {
     final int width = _clampInt(metrics.width, 640, 7680);
@@ -45,6 +51,7 @@ final class WallpaperRenderer {
       month: month,
       settings: settings,
       today: today,
+      localizations: localizations,
     );
 
     final picture = recorder.endRecording();
@@ -133,7 +140,9 @@ final class WallpaperRenderer {
     required MonthData month,
     required AppSettings settings,
     required DateKey today,
+    AppLocalizations? localizations,
   }) {
+    final l10n = localizations ?? lookupAppLocalizations(const Locale('zh'));
     const ui.Color primaryText = ui.Color(0xFFF4F6FA);
     const ui.Color secondaryText = ui.Color(0xFFA9B2C4);
 
@@ -152,7 +161,7 @@ final class WallpaperRenderer {
 
     _text(
       canvas,
-      '${month.anchor.year}年${month.anchor.month}月   企划星 · 桌面日历清单',
+      '${DateFormat.yMMMM(l10n.localeName).format(month.anchor)}   ${l10n.appTitle}',
       ui.Offset(innerLeft, cursorY),
       innerWidth,
       size: 24 * scale,
@@ -172,7 +181,7 @@ final class WallpaperRenderer {
 
     for (var column = 0; column < 7; column++) {
       final label = column < month.weekdayHeaders.length
-          ? month.weekdayHeaders[column]
+          ? weekdayShort((settings.startOfWeek - 1 + column) % 7 + 1, l10n)
           : '';
       _text(
         canvas,
@@ -232,7 +241,8 @@ final class WallpaperRenderer {
         color: numberColor,
         weight: ui.FontWeight.w600,
       );
-      final subtitle = day.meta.subtitle(
+      final subtitle = day.meta.localizedSubtitle(
+        l10n,
         showLunar: settings.showLunar,
         showSolarTerms: settings.showSolarTerms,
         showFestival: settings.showFestival,
@@ -270,7 +280,10 @@ final class WallpaperRenderer {
 
     _text(
       canvas,
-      '今天 ${today.cnFull} · 周${today.cnWeekday}    数据来自本地日历清单',
+      l10n.wallpaperFooter(
+        today.fullDate(l10n),
+        DateFormat.EEEE(l10n.localeName).format(today.date),
+      ),
       ui.Offset(innerLeft, bounds.bottom - pad - 18 * scale),
       innerWidth,
       size: 12 * scale,

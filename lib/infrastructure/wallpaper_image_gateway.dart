@@ -80,9 +80,7 @@ final class LocalWallpaperImageGateway implements WallpaperImageGateway {
           .where(
             (FileSystemEntity entity) =>
                 entity is File &&
-                extensions.contains(
-                  _extensionOf(entity.path),
-                ),
+                extensions.contains(_extensionOf(entity.path)),
           )
           .cast<File>()
           .map((File file) => file.path)

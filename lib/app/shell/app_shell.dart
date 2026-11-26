@@ -11,6 +11,7 @@ import 'package:go_router/go_router.dart';
 import '../../features/calendar/application/calendar_controllers.dart';
 import '../../features/desktop/application/desktop_controller.dart';
 import '../../features/sync/application/sync_controller.dart';
+import '../../l10n/l10n.dart';
 import 'window_title_bar.dart';
 
 final class AppShell extends ConsumerWidget {
@@ -19,23 +20,24 @@ final class AppShell extends ConsumerWidget {
   final StatefulNavigationShell navigationShell;
 
   static const List<_Destination> _destinations = <_Destination>[
-    _Destination('/calendar', '日历', LucideIcons.calendarDays, 0),
-    _Destination('/notes', '便签', LucideIcons.stickyNote, 1),
-    _Destination('/countdown', '倒数日', LucideIcons.hourglass, 2),
+    _Destination('/calendar', LucideIcons.calendarDays, 0),
+    _Destination('/notes', LucideIcons.stickyNote, 1),
+    _Destination('/countdown', LucideIcons.hourglass, 2),
     // 课程表 / 订阅暂时隐藏：路由与模块代码保留，仅从导航移除。
     // 用固定 branch 绑定而非列表下标，隐藏中间项后其余入口仍跳对页面。
     // _Destination('/timetable', '课程表', LucideIcons.table2, 3),
     // _Destination('/subscription', '订阅', LucideIcons.rss, 4),
-    _Destination('/search', '搜索', LucideIcons.search, 5),
-    _Destination('/history', '历史', LucideIcons.history, 6),
-    _Destination('/transfer', '导入导出', LucideIcons.arrowRightLeft, 7),
-    _Destination('/account', '账号同步', LucideIcons.cloudSync, 8),
-    _Destination('/settings', '设置', LucideIcons.settings, 9),
+    _Destination('/search', LucideIcons.search, 5),
+    _Destination('/history', LucideIcons.history, 6),
+    _Destination('/transfer', LucideIcons.arrowRightLeft, 7),
+    _Destination('/account', LucideIcons.cloudSync, 8),
+    _Destination('/settings', LucideIcons.settings, 9),
   ];
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = context.appColors;
+    final l10n = context.l10n;
     final desktopMessage = ref.watch(desktopControllerProvider).message;
     return CallbackShortcuts(
       bindings: <ShortcutActivator, VoidCallback>{
@@ -43,8 +45,12 @@ final class AppShell extends ConsumerWidget {
             ref.read(desktopControllerProvider.notifier).hide(),
         const SingleActivator(LogicalKeyboardKey.keyF, control: true): () =>
             navigationShell.goBranch(0),
-        const SingleActivator(LogicalKeyboardKey.keyB,
-            control: true, alt: true): () => navigationShell.goBranch(1),
+        const SingleActivator(
+          LogicalKeyboardKey.keyB,
+          control: true,
+          alt: true,
+        ): () =>
+            navigationShell.goBranch(1),
         const SingleActivator(LogicalKeyboardKey.keyS, control: true): () =>
             ref.read(syncControllerProvider.notifier).syncNow(),
         const SingleActivator(LogicalKeyboardKey.arrowLeft, alt: true): () =>
@@ -65,9 +71,7 @@ final class AppShell extends ConsumerWidget {
                       width: 84,
                       decoration: BoxDecoration(
                         color: colors.bgCard,
-                        border: Border(
-                          right: BorderSide(color: colors.border),
-                        ),
+                        border: Border(right: BorderSide(color: colors.border)),
                       ),
                       child: ListView.builder(
                         padding: const EdgeInsets.symmetric(
@@ -84,19 +88,18 @@ final class AppShell extends ConsumerWidget {
                               horizontal: AppSpacing.xs,
                             ),
                             child: InkWell(
-                              borderRadius:
-                                  BorderRadius.circular(AppRadius.sm),
-                              onTap: () => navigationShell.goBranch(item.branch),
+                              borderRadius: BorderRadius.circular(AppRadius.sm),
+                              onTap: () =>
+                                  navigationShell.goBranch(item.branch),
                               child: Container(
                                 padding: const EdgeInsets.symmetric(
                                   vertical: AppSpacing.sm,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: selected
-                                      ? colors.brandSubtle
-                                      : null,
-                                  borderRadius:
-                                      BorderRadius.circular(AppRadius.sm),
+                                  color: selected ? colors.brandSubtle : null,
+                                  borderRadius: BorderRadius.circular(
+                                    AppRadius.sm,
+                                  ),
                                 ),
                                 child: Column(
                                   children: <Widget>[
@@ -109,7 +112,7 @@ final class AppShell extends ConsumerWidget {
                                     ),
                                     const SizedBox(height: AppSpacing.xxs),
                                     Text(
-                                      item.label,
+                                      _destinationLabel(l10n, item.path),
                                       textAlign: TextAlign.center,
                                       style: TextStyle(
                                         fontSize: AppTypography.label,
@@ -136,8 +139,9 @@ final class AppShell extends ConsumerWidget {
                               bottom: AppSpacing.md,
                               child: Material(
                                 color: colors.bgOverlay,
-                                borderRadius:
-                                    BorderRadius.circular(AppRadius.sm),
+                                borderRadius: BorderRadius.circular(
+                                  AppRadius.sm,
+                                ),
                                 child: Padding(
                                   padding: const EdgeInsets.all(AppSpacing.sm),
                                   child: Text(
@@ -162,13 +166,25 @@ final class AppShell extends ConsumerWidget {
       ),
     );
   }
+
+  String _destinationLabel(AppLocalizations l10n, String path) =>
+      switch (path) {
+        '/calendar' => l10n.navCalendar,
+        '/notes' => l10n.commonNotes,
+        '/countdown' => l10n.commonCountdowns,
+        '/search' => l10n.navSearch,
+        '/history' => l10n.navHistory,
+        '/transfer' => l10n.navTransfer,
+        '/account' => l10n.navAccountSync,
+        '/settings' => l10n.commonSettings,
+        _ => path,
+      };
 }
 
 final class _Destination {
-  const _Destination(this.path, this.label, this.icon, this.branch);
+  const _Destination(this.path, this.icon, this.branch);
 
   final String path;
-  final String label;
   final IconData icon;
 
   /// 对应 `router.dart` 中 StatefulShellRoute.branches 的顺序。

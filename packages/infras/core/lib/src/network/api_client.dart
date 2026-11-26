@@ -12,10 +12,9 @@ import 'response_envelope.dart';
 
 /// 从错误响应体里抽出的统一信息。
 final class _ErrorPayload {
-  const _ErrorPayload({this.code, this.message, this.requestId});
+  const _ErrorPayload({this.code, this.requestId});
 
   final String? code;
-  final String? message;
   final String? requestId;
 }
 
@@ -186,7 +185,7 @@ final class ApiClient {
       return Fail<T>(
         Failure.server(
           code: 'UNEXPECTED',
-          message: '请求未能完成：$error',
+          message: 'UNEXPECTED_ERROR',
           cause: error,
         ),
       );
@@ -208,7 +207,9 @@ final class ApiClient {
         return Fail<T>(
           Failure(
             code: err.code ?? payload.code ?? 'BIZ_ERROR',
-            message: err.message ?? payload.message ?? '业务处理失败',
+            // Presentation belongs to the application. Keep server text in
+            // the envelope error (cause) for diagnostics only.
+            message: 'BUSINESS_ERROR',
             type: FailureType.server,
             statusCode: response.statusCode,
             cause: err,
@@ -226,7 +227,7 @@ final class ApiClient {
       return Fail<T>(
         Failure(
           code: 'PARSE_ERROR',
-          message: '响应解析失败：$error',
+          message: 'PARSE_ERROR',
           type: FailureType.data,
           statusCode: response.statusCode,
           cause: error,
@@ -247,99 +248,75 @@ final class ApiClient {
       case DioExceptionType.receiveTimeout:
       // dio 5.10+ 新增：响应体 transform 阶段的超时。语义上仍是超时。
       case DioExceptionType.transformTimeout:
-        return Failure.timeout(message: '网络超时，请稍后重试', cause: e);
+        return Failure.timeout(message: 'TIMEOUT', cause: e);
       case DioExceptionType.badCertificate:
         // 证书校验失败必须暴露，不能降级重试。
         return Failure(
           code: 'BAD_CERTIFICATE',
-          message: '服务端证书校验失败',
+          message: 'BAD_CERTIFICATE',
           type: FailureType.network,
           cause: e,
         );
       case DioExceptionType.cancel:
         return Failure.network(
           code: 'REQUEST_CANCELLED',
-          message: '请求已取消',
+          message: 'REQUEST_CANCELLED',
           cause: e,
         );
       case DioExceptionType.connectionError:
-        return Failure.network(message: '网络连接失败，请检查网络', cause: e);
+        return Failure.network(message: 'NETWORK_ERROR', cause: e);
       case DioExceptionType.badResponse:
-        return _mapStatusCode(e.response?.statusCode, e.response?.data);
+        return _mapStatusCode(e.response?.statusCode, e.response?.data, e);
       case DioExceptionType.unknown:
         if (e.error is SocketException) {
-          return Failure.network(message: '无网络连接', cause: e);
+          return Failure.network(message: 'NETWORK_ERROR', cause: e);
         }
-        return Failure.server(
-          message: e.message ?? '未知错误',
-          code: 'UNKNOWN',
-          cause: e,
-        );
+        return Failure.server(message: 'UNKNOWN', code: 'UNKNOWN', cause: e);
     }
   }
 
-  Failure _mapStatusCode(int? statusCode, Object? data) {
+  Failure _mapStatusCode(int? statusCode, Object? data, DioException cause) {
     final payload = _errorOf(data);
-    final message = payload.message;
+    Failure failure({
+      required String code,
+      required String message,
+      FailureType type = FailureType.server,
+    }) => Failure(
+      code: payload.code ?? code,
+      message: message,
+      type: type,
+      statusCode: statusCode,
+      cause: cause,
+      requestId: payload.requestId,
+    );
+
     switch (statusCode) {
       case 400:
-        return Failure.server(
-          code: payload.code ?? 'BAD_REQUEST',
-          message: message ?? '请求参数有误',
-          statusCode: 400,
-          requestId: payload.requestId,
-        );
+        return failure(code: 'BAD_REQUEST', message: 'BAD_REQUEST');
       case 401:
-        // 401 仍然交给上层登录失效流程处理；服务端文案优先。
-        return Failure.unauthorized(
-          message: message ?? '登录已失效',
-          code: payload.code ?? 'UNAUTHORIZED',
-          requestId: payload.requestId,
+        // 401 仍然交给上层登录失效流程处理；原始响应只保留在 cause。
+        return failure(
+          code: 'UNAUTHORIZED',
+          message: 'UNAUTHORIZED',
+          type: FailureType.authentication,
         );
       case 403:
-        return Failure(
-          code: payload.code ?? 'FORBIDDEN',
-          message: message ?? '没有访问权限',
+        return failure(
+          code: 'FORBIDDEN',
+          message: 'FORBIDDEN',
           type: FailureType.authentication,
-          statusCode: 403,
-          requestId: payload.requestId,
         );
       case 404:
-        return Failure.server(
-          code: payload.code ?? 'NOT_FOUND',
-          message: message ?? '资源不存在',
-          statusCode: 404,
-          requestId: payload.requestId,
-        );
+        return failure(code: 'NOT_FOUND', message: 'NOT_FOUND');
       case 409:
-        return Failure.server(
-          code: payload.code ?? 'CONFLICT',
-          message: message ?? '状态冲突，请刷新后重试',
-          statusCode: 409,
-          requestId: payload.requestId,
-        );
+        return failure(code: 'CONFLICT', message: 'CONFLICT');
       case 429:
-        return Failure.server(
-          code: payload.code ?? 'TOO_MANY_REQUESTS',
-          message: message ?? '操作过于频繁',
-          statusCode: 429,
-          requestId: payload.requestId,
-        );
+        return failure(code: 'TOO_MANY_REQUESTS', message: 'TOO_MANY_REQUESTS');
       default:
         if (statusCode != null && statusCode >= 500) {
-          return Failure.server(
-            code: payload.code ?? 'SERVER_ERROR',
-            message: message ?? '服务开小差了，请稍后重试',
-            statusCode: statusCode,
-            requestId: payload.requestId,
-          );
+          return failure(code: 'SERVER_ERROR', message: 'SERVER_ERROR');
         }
-        return Failure.server(
-          code: payload.code ?? 'HTTP_ERROR',
-          message: message ?? '请求失败（HTTP $statusCode）',
-          statusCode: statusCode,
-          requestId: payload.requestId,
-        );
+        return failure(code: 'HTTP_ERROR', message: 'HTTP_ERROR');
     }
   }
 
@@ -363,27 +340,19 @@ final class ApiClient {
           // 不是合法 JSON，按纯文本处理。
         }
       }
-      // 源码里旧接口直接弹原文；这里限制长度，避免把网关 HTML 塞给用户。
-      return _ErrorPayload(
-        message: text.length > 120 ? '${text.substring(0, 120)}…' : text,
-      );
+      // 非 JSON 响应不进入 Failure；原始 DioException 保留完整响应正文。
+      return const _ErrorPayload();
     }
     return const _ErrorPayload();
   }
 
   _ErrorPayload _payloadFromMap(Map<Object?, Object?> map) {
-    final rawMessage =
-        map['message'] ?? map['msg'] ?? map['ResultMessage'] ?? map['error'];
     final rawCode = map['code'] ?? map['errorCode'];
     final rawTrace =
         map['traceId'] ?? map['trace_id'] ?? map['requestId'] ?? map['reqId'];
-    final message = rawMessage is String && rawMessage.isNotEmpty
-        ? rawMessage
-        : null;
     final code = rawCode?.toString();
     return _ErrorPayload(
       code: code == null || code.isEmpty ? null : code,
-      message: message,
       requestId: rawTrace?.toString(),
     );
   }

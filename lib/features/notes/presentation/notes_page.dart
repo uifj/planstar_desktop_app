@@ -6,6 +6,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../l10n/l10n.dart';
 import '../../../shared/widgets/common.dart';
 import '../application/notes_controller.dart';
 import '../domain/note.dart';
@@ -16,6 +17,7 @@ final class NotesPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
     final state = ref.watch(notesControllerProvider);
     final controller = ref.read(notesControllerProvider.notifier);
     return Column(
@@ -26,7 +28,7 @@ final class NotesPage extends ConsumerWidget {
           child: Row(
             children: <Widget>[
               Text(
-                '便签（${state.items.length}）',
+                l10n.notesHeading(state.items.length),
                 style: TextStyle(
                   fontSize: AppTypography.title,
                   fontWeight: AppTypography.bold,
@@ -42,7 +44,7 @@ final class NotesPage extends ConsumerWidget {
                   }
                 },
                 icon: const Icon(LucideIcons.plus, size: 16),
-                label: const Text('新建便签'),
+                label: Text(l10n.notesNewNote),
               ),
             ],
           ),
@@ -51,24 +53,23 @@ final class NotesPage extends ConsumerWidget {
           child: state.loading
               ? const Center(child: CircularProgressIndicator())
               : state.items.isEmpty
-                  ? const EmptyState(
-                      icon: LucideIcons.stickyNote,
-                      title: '暂无便签',
-                      hint: '点击右上角新建，便签可以独立窗口置顶显示',
-                    )
-                  : GridView.builder(
-                      padding: const EdgeInsets.all(AppSpacing.md),
-                      gridDelegate:
-                          const SliverGridDelegateWithMaxCrossAxisExtent(
-                        maxCrossAxisExtent: 280,
-                        mainAxisExtent: 190,
-                        crossAxisSpacing: AppSpacing.sm,
-                        mainAxisSpacing: AppSpacing.sm,
-                      ),
-                      itemCount: state.items.length,
-                      itemBuilder: (BuildContext context, int index) =>
-                          _NoteCard(note: state.items[index]),
-                    ),
+              ? EmptyState(
+                  icon: LucideIcons.stickyNote,
+                  title: l10n.notesEmptyTitle,
+                  hint: l10n.notesEmptyHint,
+                )
+              : GridView.builder(
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                    maxCrossAxisExtent: 280,
+                    mainAxisExtent: 190,
+                    crossAxisSpacing: AppSpacing.sm,
+                    mainAxisSpacing: AppSpacing.sm,
+                  ),
+                  itemCount: state.items.length,
+                  itemBuilder: (BuildContext context, int index) =>
+                      _NoteCard(note: state.items[index]),
+                ),
         ),
       ],
     );
@@ -82,6 +83,7 @@ final class _NoteCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
     final colors = context.appColors;
     final controller = ref.read(notesControllerProvider.notifier);
     return InkWell(
@@ -100,7 +102,7 @@ final class _NoteCard extends ConsumerWidget {
               children: <Widget>[
                 Expanded(
                   child: Text(
-                    note.title,
+                    note.localizedTitle(l10n),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
@@ -110,13 +112,13 @@ final class _NoteCard extends ConsumerWidget {
                     ),
                   ),
                 ),
-                if (note.topMost) const AppChip(label: '置顶', dense: true),
+                if (note.topMost) AppChip(label: l10n.notesPinned, dense: true),
               ],
             ),
             const SizedBox(height: AppSpacing.sm),
             Expanded(
               child: Text(
-                note.plainText.isEmpty ? '（空便签）' : note.plainText,
+                note.plainText.isEmpty ? l10n.notesEmpty : note.plainText,
                 maxLines: 5,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
@@ -129,7 +131,7 @@ final class _NoteCard extends ConsumerWidget {
               mainAxisAlignment: MainAxisAlignment.end,
               children: <Widget>[
                 IconButton(
-                  tooltip: note.visible ? '隐藏' : '显示',
+                  tooltip: note.visible ? l10n.notesHide : l10n.notesShow,
                   icon: Icon(
                     note.visible ? LucideIcons.eye : LucideIcons.eyeOff,
                     size: 16,
@@ -137,19 +139,18 @@ final class _NoteCard extends ConsumerWidget {
                   onPressed: () => controller.toggleVisible(note.id),
                 ),
                 IconButton(
-                  tooltip: '窗口置顶',
+                  tooltip: l10n.notesPinWindow,
                   icon: const Icon(LucideIcons.pin, size: 16),
                   onPressed: () => controller.toggleTopMost(note.id),
                 ),
                 IconButton(
-                  tooltip: '打开独立窗口',
+                  tooltip: l10n.notesOpenWindow,
                   icon: const Icon(LucideIcons.externalLink, size: 16),
                   onPressed: () => controller.openDesktopWindow(note.id),
                 ),
                 IconButton(
-                  tooltip: '删除',
-                  icon: Icon(LucideIcons.trash2,
-                      size: 16, color: colors.error),
+                  tooltip: l10n.commonDelete,
+                  icon: Icon(LucideIcons.trash2, size: 16, color: colors.error),
                   onPressed: () => controller.remove(note.id),
                 ),
               ],

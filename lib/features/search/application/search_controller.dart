@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../bootstrap/core_providers.dart';
 import '../../../core/value_objects.dart';
+import '../../../l10n/l10n.dart';
 import '../../calendar/application/calendar_controllers.dart';
 import '../../calendar/domain/recurrence_policy.dart';
 import '../../countdown/application/countdown_controller.dart';
@@ -12,17 +13,7 @@ import '../../notes/application/notes_controller.dart';
 import '../../subscription/application/subscription_controller.dart';
 import '../../timetable/application/timetable_controller.dart';
 
-enum SearchRange {
-  all('全部'),
-  oneMonth('近一月'),
-  threeMonths('近三月'),
-  oneYear('近一年'),
-  custom('自定义');
-
-  const SearchRange(this.label);
-
-  final String label;
-}
+enum SearchRange { all, oneMonth, threeMonths, oneYear, custom }
 
 final class SearchHit {
   const SearchHit({
@@ -61,14 +52,13 @@ final class SearchState {
     DateKey? customStart,
     DateKey? customEnd,
     List<SearchHit>? hits,
-  }) =>
-      SearchState(
-        keyword: keyword ?? this.keyword,
-        range: range ?? this.range,
-        customStart: customStart ?? this.customStart,
-        customEnd: customEnd ?? this.customEnd,
-        hits: hits ?? this.hits,
-      );
+  }) => SearchState(
+    keyword: keyword ?? this.keyword,
+    range: range ?? this.range,
+    customStart: customStart ?? this.customStart,
+    customEnd: customEnd ?? this.customEnd,
+    hits: hits ?? this.hits,
+  );
 }
 
 final searchControllerProvider =
@@ -76,20 +66,31 @@ final searchControllerProvider =
 
 final class SearchController extends Notifier<SearchState> {
   @override
-  SearchState build() => const SearchState();
+  SearchState build() {
+    final localizationScope = ref.read(appLocalizationScopeProvider);
+    void onLocaleChanged() => run(state.keyword);
+    localizationScope.addListener(onLocaleChanged);
+    ref.onDispose(() => localizationScope.removeListener(onLocaleChanged));
+    return const SearchState();
+  }
+
+  AppLocalizations get _l10n =>
+      ref.read(appLocalizationScopeProvider).localizations;
 
   DateRange? _rangeOf(SearchState s) {
     final today = DateKey.today(ref.read(clockProvider).now());
     return switch (s.range) {
       SearchRange.all => null,
       SearchRange.oneMonth => DateRange(today.addDays(-30), today.addDays(365)),
-      SearchRange.threeMonths =>
-        DateRange(today.addDays(-90), today.addDays(365)),
-      SearchRange.oneYear =>
-        DateRange(today.addDays(-365), today.addDays(365)),
-      SearchRange.custom => (s.customStart != null && s.customEnd != null)
-          ? DateRange(s.customStart!, s.customEnd!)
-          : null,
+      SearchRange.threeMonths => DateRange(
+        today.addDays(-90),
+        today.addDays(365),
+      ),
+      SearchRange.oneYear => DateRange(today.addDays(-365), today.addDays(365)),
+      SearchRange.custom =>
+        (s.customStart != null && s.customEnd != null)
+            ? DateRange(s.customStart!, s.customEnd!)
+            : null,
     };
   }
 
@@ -108,6 +109,7 @@ final class SearchController extends Notifier<SearchState> {
   }
 
   List<SearchHit> run(String keyword) {
+    final l10n = _l10n;
     final query = keyword.trim().toLowerCase();
     final hits = <SearchHit>[];
     final range = _rangeOf(state);
@@ -122,9 +124,9 @@ final class SearchController extends Notifier<SearchState> {
           if (!inRange(cell.date)) continue;
           hits.add(
             SearchHit(
-              kind: '单元格',
+              kind: l10n.searchKindCell,
               title: line.text,
-              subtitle: cell.date.cnFull,
+              subtitle: cell.date.fullDate(l10n),
               targetId: cell.date.key,
               date: cell.date,
             ),
@@ -139,9 +141,12 @@ final class SearchController extends Notifier<SearchState> {
         for (final date in dates) {
           hits.add(
             SearchHit(
-              kind: event.type.label,
+              kind: event.type.localizedLabel(l10n),
               title: event.content,
-              subtitle: '${date.cnFull} · ${event.recurrence.kind.label}',
+              subtitle: l10n.searchEventSubtitle(
+                date.fullDate(l10n),
+                event.recurrence.kind.localizedLabel(l10n),
+              ),
               targetId: event.id,
               date: date,
             ),
@@ -152,8 +157,8 @@ final class SearchController extends Notifier<SearchState> {
         if (!note.plainText.toLowerCase().contains(query)) continue;
         hits.add(
           SearchHit(
-            kind: '便签',
-            title: note.title,
+            kind: l10n.searchKindNote,
+            title: note.localizedTitle(l10n),
             subtitle: note.plainText.replaceAll('\n', ' '),
             targetId: note.id,
           ),
@@ -164,9 +169,9 @@ final class SearchController extends Notifier<SearchState> {
         if (!inRange(item.targetDate)) continue;
         hits.add(
           SearchHit(
-            kind: '倒数日',
+            kind: l10n.searchKindCountdown,
             title: item.title,
-            subtitle: item.targetDate.cnFull,
+            subtitle: item.targetDate.fullDate(l10n),
             targetId: item.id,
             date: item.targetDate,
           ),
@@ -178,9 +183,12 @@ final class SearchController extends Notifier<SearchState> {
           if (!inRange(item.date)) continue;
           hits.add(
             SearchHit(
-              kind: '订阅',
+              kind: l10n.searchKindSubscription,
               title: item.title,
-              subtitle: '${sub.name} · ${item.date.cnFull}',
+              subtitle: l10n.searchSubscriptionSubtitle(
+                sub.name,
+                item.date.fullDate(l10n),
+              ),
               targetId: item.id,
               date: item.date,
             ),
@@ -192,9 +200,13 @@ final class SearchController extends Notifier<SearchState> {
           if (!lesson.name.toLowerCase().contains(query)) continue;
           hits.add(
             SearchHit(
-              kind: '课程',
+              kind: l10n.searchKindCourse,
               title: lesson.name,
-              subtitle: '${table.name} · 周${lesson.weekday} 第${lesson.period}节',
+              subtitle: l10n.searchCourseSubtitle(
+                table.localizedName(l10n),
+                weekdayLong(lesson.weekday, l10n),
+                lesson.period,
+              ),
               targetId: lesson.id,
             ),
           );

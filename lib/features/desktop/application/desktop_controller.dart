@@ -12,6 +12,7 @@ import '../../../bootstrap/core_providers.dart';
 import '../../../core/app_events.dart';
 import '../../../core/ports.dart';
 import '../../../core/value_objects.dart';
+import '../../../l10n/l10n.dart';
 import '../../calendar/application/calendar_controllers.dart';
 import '../../settings/application/settings_controller.dart';
 import '../../settings/domain/app_settings.dart';
@@ -38,8 +39,9 @@ final class DesktopState {
     bool? widgetActive,
     bool? wallpaperApplied,
     String? wallpaperPath,
+    bool clearMessage = false,
   }) => DesktopState(
-    message: message ?? this.message,
+    message: clearMessage ? null : (message ?? this.message),
     visible: visible ?? this.visible,
     widgetActive: widgetActive ?? this.widgetActive,
     wallpaperApplied: wallpaperApplied ?? this.wallpaperApplied,
@@ -51,6 +53,8 @@ final desktopControllerProvider =
     NotifierProvider<DesktopController, DesktopState>(DesktopController.new);
 
 final class DesktopController extends Notifier<DesktopState> {
+  AppLocalizations get _l10n =>
+      ref.read(appLocalizationScopeProvider).localizations;
   Timer? _wallpaperTimer;
   Timer? _refreshDebounce;
   final List<String> _widgetWindowIds = <String>[];
@@ -69,6 +73,8 @@ final class DesktopController extends Notifier<DesktopState> {
     // 标题栏 X / Alt+F4 由 window_manager 拦截后直接 hide，
     // 必须回写 visible，否则托盘 toggle 的第一次点击方向是反的。
     ref.read(windowGatewayProvider).onCloseIntercepted = markHidden;
+    final localizationScope = ref.read(appLocalizationScopeProvider);
+    localizationScope.addListener(_onLocaleChanged);
     _traySubscription = ref.read(trayActionsProvider).listen(_onTrayAction);
     _hotkeySubscription = ref
         .read(hotkeyActionsProvider)
@@ -101,10 +107,18 @@ final class DesktopController extends Notifier<DesktopState> {
       _hotkeySubscription?.cancel();
       _windowCommands?.cancel();
       _cancelSettingsChanged?.call();
+      localizationScope.removeListener(_onLocaleChanged);
       ref.read(windowGatewayProvider).onCloseIntercepted = null;
     });
     Future.microtask(applySettings);
     return const DesktopState();
+  }
+
+  void _onLocaleChanged() {
+    if (state.message != null) state = state.copyWith(clearMessage: true);
+    if (ref.read(settingsControllerProvider).wallpaperAutoRender) {
+      _scheduleRefresh();
+    }
   }
 
   Future<void> _onSettingsChanged(SettingsChanged event) => applySettings();
@@ -165,17 +179,26 @@ final class DesktopController extends Notifier<DesktopState> {
             }
           }
           if (shown) {
-            state = state.copyWith(widgetActive: true, message: '桌面可编辑月历已显示');
+            state = state.copyWith(
+              widgetActive: true,
+              message: _l10n.desktopWidgetShown,
+            );
             return;
           }
         }
         final id = await multiWindow.openDesktopWidget();
         _widgetWindowIds.add(id);
-        state = state.copyWith(widgetActive: true, message: '桌面可编辑月历已显示');
-      } catch (error) {
+        state = state.copyWith(
+          widgetActive: true,
+          message: _l10n.desktopWidgetShown,
+        );
+      } catch (error, stackTrace) {
+        ref
+            .read(loggerProvider)
+            .warn('切换桌面小组件失败', error: error, stackTrace: stackTrace);
         state = state.copyWith(
           widgetActive: false,
-          message: '桌面小组件启动失败：$error',
+          message: _l10n.desktopWidgetFailed(caughtErrorLabel(error, _l10n)),
         );
       } finally {
         _openingWidget = false;
@@ -186,7 +209,10 @@ final class DesktopController extends Notifier<DesktopState> {
       await multiWindow.closeWindow(id);
     }
     // 保留 id，下次显示时复用同一个 engine。
-    state = state.copyWith(widgetActive: false, message: '桌面可编辑月历已隐藏');
+    state = state.copyWith(
+      widgetActive: false,
+      message: _l10n.desktopWidgetHidden,
+    );
   }
 
   void _scheduleRefresh() {
@@ -200,6 +226,7 @@ final class DesktopController extends Notifier<DesktopState> {
   Future<void> _refreshWallpaper() async {
     final settings = ref.read(settingsControllerProvider);
     if (!settings.wallpaperAutoRender) return;
+    final locale = ref.read(appLocalizationScopeProvider).value;
     final result = await ref
         .read(wallpaperServiceProvider)
         .refresh(
@@ -208,6 +235,7 @@ final class DesktopController extends Notifier<DesktopState> {
           today: DateKey.today(ref.read(clockProvider).now()),
           now: ref.read(clockProvider).now(),
         );
+    if (locale != ref.read(appLocalizationScopeProvider).value) return;
     state = state.copyWith(
       wallpaperApplied: result.success,
       wallpaperPath: result.path,
@@ -228,7 +256,7 @@ final class DesktopController extends Notifier<DesktopState> {
         .setWallpaper(original);
     state = state.copyWith(
       wallpaperApplied: false,
-      message: ok ? '已恢复系统原壁纸' : null,
+      message: ok ? _l10n.wallpaperRestored : null,
     );
   }
 
@@ -269,11 +297,18 @@ final class DesktopController extends Notifier<DesktopState> {
       case TrayAction.toggle:
         state.visible ? hide() : show();
       case TrayAction.sync:
-        state = state.copyWith(message: '托盘：手动同步');
+        state = state.copyWith(message: _l10n.traySync);
       case TrayAction.settings:
       case TrayAction.timetable:
       case TrayAction.notes:
-        state = state.copyWith(message: '托盘：${action.name}');
+        state = state.copyWith(
+          message: switch (action) {
+            TrayAction.settings => _l10n.traySettings,
+            TrayAction.timetable => _l10n.timetableTitle,
+            TrayAction.notes => _l10n.trayNotes,
+            _ => action.name,
+          },
+        );
       case TrayAction.embedDesktop:
       case TrayAction.toggleDesktopWidget:
         toggleDesktopWidget();
@@ -284,14 +319,14 @@ final class DesktopController extends Notifier<DesktopState> {
       case TrayAction.refreshWallpaper:
         refreshWallpaper();
       case TrayAction.about:
-        state = state.copyWith(message: '企划星 · 桌面日历清单');
+        state = state.copyWith(message: _l10n.appTitle);
       case TrayAction.exit:
         destroy();
     }
   }
 
   void _onWindowCommand(MultiWindowCommand command) {
-    state = state.copyWith(message: '子窗口指令：${command.method}');
+    state = state.copyWith(message: _l10n.subWindowCommand(command.method));
   }
 
   /// 页面统一写入的轻量提示消息。

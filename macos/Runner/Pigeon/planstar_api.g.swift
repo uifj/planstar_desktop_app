@@ -531,7 +531,7 @@ class DataHubHostApiSetup {
     }
   }
 }
-/// Native -> Dart change feed (replaces the old EventChannel).
+/// Native -> Dart change feed emitted after successful mutations.
 ///
 /// The native side calls onDataChanged after a successful write; the Dart
 /// implementation forwards it to the CrossEngineSync stream.
@@ -569,14 +569,14 @@ class DataHubEventsFlutterApi: DataHubEventsFlutterApiProtocol {
     }
   }
 }
-/// Windows desktop-layer capability (Dart -> native).
+/// Desktop overlay capability (Dart -> native).
 ///
 /// Registered per engine: the main window and every desktop_multi_window child
 /// have their own native window, so the widget configures its own window only.
 ///
 /// Generated protocol from Pigeon that represents a handler of messages from Flutter.
 protocol DesktopWallpaperHostApi {
-  /// Turn this window into a transparent, bottom-most overlay covering the
+  /// Turn this window into a transparent desktop-layer overlay covering the
   /// entire virtual screen.
   func configureOverlay(enable: Bool) throws -> Bool
   /// Clip the window to the union of the cards. While `dragging` is true the
@@ -604,7 +604,7 @@ class DesktopWallpaperHostApiSetup {
   /// Sets up an instance of `DesktopWallpaperHostApi` to handle messages through the `binaryMessenger`.
   static func setUp(binaryMessenger: FlutterBinaryMessenger, api: DesktopWallpaperHostApi?, messageChannelSuffix: String = "") {
     let channelSuffix = messageChannelSuffix.count > 0 ? ".\(messageChannelSuffix)" : ""
-    /// Turn this window into a transparent, bottom-most overlay covering the
+    /// Turn this window into a transparent desktop-layer overlay covering the
     /// entire virtual screen.
     let configureOverlayChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.planstar_desktop_app.DesktopWallpaperHostApi.configureOverlay\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
     if let api = api {

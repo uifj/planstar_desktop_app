@@ -8,11 +8,13 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:core/logger.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../bootstrap/core_providers.dart';
 import '../../../core/ports.dart';
 import '../../../core/value_objects.dart';
+import '../../../l10n/l10n.dart';
 import '../../calendar/application/calendar_controllers.dart';
 import '../../settings/domain/app_settings.dart';
 import 'wallpaper_renderer.dart';
@@ -22,6 +24,7 @@ final wallpaperServiceProvider = Provider<WallpaperService>((Ref ref) {
     desktop: ref.watch(desktopWallpaperGatewayProvider),
     images: ref.watch(wallpaperImageGatewayProvider),
     logger: ref.watch(loggerProvider).child('wallpaper'),
+    localizations: ref.watch(appLocalizationScopeProvider).localizations,
   );
 });
 
@@ -43,12 +46,17 @@ final class WallpaperService {
     required this.images,
     required this.logger,
     this.renderer = const WallpaperRenderer(),
+    this.localizations,
   });
 
   final DesktopWallpaperGateway desktop;
   final WallpaperImageGateway images;
   final AppLogger logger;
   final WallpaperRenderer renderer;
+  final AppLocalizations? localizations;
+
+  AppLocalizations get _localizations =>
+      localizations ?? lookupAppLocalizations(const Locale('zh'));
 
   /// 重新生成并应用壁纸。
   Future<WallpaperRefreshResult> refresh({
@@ -67,6 +75,7 @@ final class WallpaperService {
           month: month,
           settings: settings,
           today: today,
+          localizations: _localizations,
           background: background,
         );
         final path = await images.savePng(bytes);
@@ -74,17 +83,19 @@ final class WallpaperService {
         return WallpaperRefreshResult(
           success: applied,
           path: path,
-          message: applied ? '桌面壁纸已更新' : '系统拒绝设置壁纸',
+          message: applied
+              ? _localizations.wallpaperUpdated
+              : _localizations.wallpaperRejected,
         );
       } finally {
         background?.dispose();
       }
     } catch (error) {
       logger.warn('生成桌面壁纸失败', error: error);
-      return const WallpaperRefreshResult(
+      return WallpaperRefreshResult(
         success: false,
         path: '',
-        message: '生成桌面壁纸失败',
+        message: _localizations.wallpaperFailed,
       );
     }
   }
@@ -99,10 +110,7 @@ final class WallpaperService {
     await images.writeOriginalWallpaper(current);
   }
 
-  Future<ui.Image?> _background(
-    AppSettings settings,
-    DateTime now,
-  ) async {
+  Future<ui.Image?> _background(AppSettings settings, DateTime now) async {
     switch (settings.wallpaperMode) {
       case WallpaperMode.solidColor:
         return null;
@@ -118,11 +126,10 @@ final class WallpaperService {
         return _decode(await images.readImage(path));
       case WallpaperMode.rotation:
         if (settings.wallpaperImageDirectory.isEmpty) return null;
-        final files = await images.listImages(
-          settings.wallpaperImageDirectory,
-        );
+        final files = await images.listImages(settings.wallpaperImageDirectory);
         if (files.isEmpty) return null;
-        final slot = now.millisecondsSinceEpoch ~/
+        final slot =
+            now.millisecondsSinceEpoch ~/
             (settings.wallpaperIntervalMinutes.clamp(1, 720) * 60000);
         final path = settings.wallpaperShowAll
             ? files[slot % files.length]

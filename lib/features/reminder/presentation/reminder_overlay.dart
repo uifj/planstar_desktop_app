@@ -6,6 +6,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../l10n/l10n.dart';
 import '../application/reminder_controller.dart';
 
 final class ReminderOverlay extends ConsumerWidget {
@@ -15,6 +16,7 @@ final class ReminderOverlay extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final alert = ref.watch(reminderControllerProvider).alert;
     if (alert == null) return const SizedBox.shrink();
+    final l10n = context.l10n;
     final colors = context.appColors;
     return Positioned(
       right: AppSpacing.xl,
@@ -39,7 +41,7 @@ final class ReminderOverlay extends ConsumerWidget {
                   Icon(LucideIcons.alarmClock, size: 18, color: colors.brand),
                   const SizedBox(width: AppSpacing.xs),
                   Text(
-                    '任务提醒',
+                    l10n.reminderTaskTitle,
                     style: TextStyle(
                       fontSize: AppTypography.subtitle,
                       fontWeight: AppTypography.medium,
@@ -48,16 +50,16 @@ final class ReminderOverlay extends ConsumerWidget {
                   ),
                   const Spacer(),
                   IconButton(
+                    tooltip: l10n.reminderDismissTooltip,
                     icon: const Icon(LucideIcons.x, size: 16),
-                    onPressed: () => ref
-                        .read(reminderControllerProvider.notifier)
-                        .dismiss(),
+                    onPressed: () =>
+                        ref.read(reminderControllerProvider.notifier).dismiss(),
                   ),
                 ],
               ),
               const SizedBox(height: AppSpacing.sm),
               Text(
-                alert.title,
+                alert.title ?? l10n.reminderTaskTitle,
                 style: TextStyle(
                   fontSize: AppTypography.body,
                   color: colors.textPrimary,
@@ -65,28 +67,26 @@ final class ReminderOverlay extends ConsumerWidget {
               ),
               const SizedBox(height: AppSpacing.xs),
               Text(
-                alert.date.cnFull,
+                alert.date.fullDate(l10n),
                 style: TextStyle(
                   fontSize: AppTypography.caption,
                   color: colors.textTertiary,
                 ),
               ),
               const SizedBox(height: AppSpacing.md),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
+              Wrap(
+                alignment: WrapAlignment.end,
+                spacing: AppSpacing.xs,
                 children: <Widget>[
                   TextButton(
-                    onPressed: () => ref
-                        .read(reminderControllerProvider.notifier)
-                        .dismiss(),
-                    child: const Text('不再显示窗口'),
+                    onPressed: () =>
+                        ref.read(reminderControllerProvider.notifier).dismiss(),
+                    child: Text(l10n.reminderDontShowAgain),
                   ),
-                  const SizedBox(width: AppSpacing.xs),
                   FilledButton(
-                    onPressed: () => ref
-                        .read(reminderControllerProvider.notifier)
-                        .dismiss(),
-                    child: const Text('知道了'),
+                    onPressed: () =>
+                        ref.read(reminderControllerProvider.notifier).dismiss(),
+                    child: Text(l10n.reminderAcknowledge),
                   ),
                 ],
               ),

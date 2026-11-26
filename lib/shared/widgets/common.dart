@@ -9,6 +9,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/value_objects.dart';
+import '../../l10n/l10n.dart';
 
 /// 领域颜色值对象 → Flutter Color。
 extension EventColorX on EventColor {
@@ -106,7 +107,10 @@ final class SettingSwitch extends StatelessWidget {
       dense: true,
       title: Text(
         label,
-        style: TextStyle(fontSize: AppTypography.body, color: colors.textPrimary),
+        style: TextStyle(
+          fontSize: AppTypography.body,
+          color: colors.textPrimary,
+        ),
       ),
       subtitle: description == null
           ? null
@@ -312,10 +316,7 @@ final class AppChip extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: TextStyle(
-          fontSize: AppTypography.label,
-          color: effective,
-        ),
+        style: TextStyle(fontSize: AppTypography.label, color: effective),
       ),
     );
   }
@@ -337,12 +338,13 @@ final class ColorSwatchPicker extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.appColors;
+    final l10n = context.l10n;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: <Widget>[
         Text(
-          recent.isEmpty ? '文字颜色 / 单元格颜色' : '最近使用',
+          recent.isEmpty ? l10n.commonColorPickerHint : l10n.commonRecentColors,
           style: TextStyle(
             fontSize: AppTypography.caption,
             color: colors.textTertiary,
@@ -351,50 +353,62 @@ final class ColorSwatchPicker extends StatelessWidget {
         if (recent.isNotEmpty)
           Padding(
             padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
-            child: _swatchRow(context, recent),
+            child: _swatchRow(context, l10n, recent),
           ),
         Text(
-          '全部颜色',
+          l10n.commonAllColors,
           style: TextStyle(
             fontSize: AppTypography.caption,
             color: colors.textTertiary,
           ),
         ),
         const SizedBox(height: AppSpacing.xs),
-        _swatchRow(context, EventColor.palette),
+        _swatchRow(context, l10n, EventColor.palette),
       ],
     );
   }
 
-  Widget _swatchRow(BuildContext context, List<EventColor> palette) => Wrap(
-        spacing: AppSpacing.xs,
-        runSpacing: AppSpacing.xs,
-        children: palette
-            .map(
-              (EventColor color) => InkWell(
-                onTap: () => onSelected(color),
+  Widget _swatchRow(
+    BuildContext context,
+    AppLocalizations l10n,
+    List<EventColor> palette,
+  ) => Wrap(
+    spacing: AppSpacing.xs,
+    runSpacing: AppSpacing.xs,
+    children: palette.map((EventColor color) {
+      final label = color.localizedLabel(l10n);
+      return Semantics(
+        button: true,
+        selected: color == selected,
+        label: label,
+        child: Tooltip(
+          message: label,
+          excludeFromSemantics: true,
+          child: InkWell(
+            onTap: () => onSelected(color),
+            borderRadius: BorderRadius.circular(AppRadius.xs),
+            child: Container(
+              width: 24,
+              height: 24,
+              decoration: BoxDecoration(
+                color: color.isTransparent ? null : color.toColor(),
                 borderRadius: BorderRadius.circular(AppRadius.xs),
-                child: Container(
-                  width: 24,
-                  height: 24,
-                  decoration: BoxDecoration(
-                    color: color.isTransparent ? null : color.toColor(),
-                    borderRadius: BorderRadius.circular(AppRadius.xs),
-                    border: Border.all(
-                      color: color == selected
-                          ? context.appColors.brand
-                          : context.appColors.border,
-                      width: color == selected ? 2 : 1,
-                    ),
-                  ),
-                  child: color.isTransparent
-                      ? const Icon(LucideIcons.ban, size: 14)
-                      : null,
+                border: Border.all(
+                  color: color == selected
+                      ? context.appColors.brand
+                      : context.appColors.border,
+                  width: color == selected ? 2 : 1,
                 ),
               ),
-            )
-            .toList(),
+              child: color.isTransparent
+                  ? const Icon(LucideIcons.ban, size: 14)
+                  : null,
+            ),
+          ),
+        ),
       );
+    }).toList(),
+  );
 }
 
 /// 通用弹窗骨架。

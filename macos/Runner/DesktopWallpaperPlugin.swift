@@ -8,10 +8,12 @@ private final class DesktopOverlayContentView: NSView {
   var hitsWholeWindow = false
 
   override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
+    // 非活动窗口的首次按下默认用于激活；返回 true 才能交给 Flutter。
     true
   }
 
   override func hitTest(_ point: NSPoint) -> NSView? {
+    // 卡片外穿透；拖动期间由 hitsWholeWindow 临时开放整窗。
     let localPoint = convert(point, from: superview)
     if !hitsWholeWindow && !hitPaths.contains(where: { $0.contains(localPoint) }) {
       return nil
@@ -67,6 +69,7 @@ final class MacDesktopWallpaperController {
   private var overlayContentView: DesktopOverlayContentView?
   private var originalContentView: NSView?
   private var originalContentViewController: NSViewController?
+  // 替换 contentView 会清空 contentViewController，必须强引用以保住 engine。
   private var originalFlutterController: FlutterViewController?
   private var originalFlutterBackground: NSColor?
   private var originalFlutterLayerBackground: CGColor?

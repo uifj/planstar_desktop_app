@@ -30,7 +30,7 @@ final class MonthGrid extends StatelessWidget {
   final void Function(CalendarDayModel day, Offset position) onSecondaryTap;
   final void Function(CalendarDayModel day, String lineId) onToggleLine;
   final void Function(CalendarDayModel day, EventOccurrence occurrence)
-      onToggleEvent;
+  onToggleEvent;
 
   @override
   Widget build(BuildContext context) {
@@ -98,31 +98,29 @@ final class MonthGrid extends StatelessWidget {
   }
 
   Widget _weekHeader(BuildContext context, AppColors colors) => Row(
-        children: <Widget>[
-          for (int i = 0; i < data.weekdayHeaders.length; i++)
-            Expanded(
-              child: Center(
-                child: Text(
-                  data.weekdayHeaders[i],
-                  style: TextStyle(
-                    fontSize: AppTypography.label,
-                    color: _isRestDayColumn(i)
-                        ? BasePalette.orangeLight6
-                        : colors.textSecondary,
-                    fontWeight: _isRestDayColumn(i)
-                        ? AppTypography.medium
-                        : AppTypography.regular,
-                  ),
-                ),
+    children: <Widget>[
+      for (int i = 0; i < data.weekdayHeaders.length; i++)
+        Expanded(
+          child: Center(
+            child: Text(
+              data.weekdayHeaders[i],
+              style: TextStyle(
+                fontSize: AppTypography.label,
+                color: _isRestDayColumn(i)
+                    ? BasePalette.orangeLight6
+                    : colors.textSecondary,
+                fontWeight: _isRestDayColumn(i)
+                    ? AppTypography.medium
+                    : AppTypography.regular,
               ),
             ),
-        ],
-      );
+          ),
+        ),
+    ],
+  );
 
   /// 第 [index] 列对应的 weekday，按用户设置的每周起始日旋转后再比对休息日。
   bool _isRestDayColumn(int index) =>
       settings.showRestDays &&
-      settings.restDays.contains(
-        ((settings.startOfWeek - 1 + index) % 7) + 1,
-      );
+      settings.restDays.contains(((settings.startOfWeek - 1 + index) % 7) + 1);
 }

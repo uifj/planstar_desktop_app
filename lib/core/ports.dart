@@ -89,9 +89,9 @@ enum SoundTone {
   final String? asset;
 
   static SoundTone fromName(String? name) => SoundTone.values.firstWhere(
-        (SoundTone t) => t.name == name,
-        orElse: () => SoundTone.none,
-      );
+    (SoundTone t) => t.name == name,
+    orElse: () => SoundTone.none,
+  );
 }
 
 abstract interface class SoundGateway {
@@ -142,18 +142,18 @@ final class WindowRect {
   final double height;
 
   Map<String, Object?> toJson() => <String, Object?>{
-        'x': x,
-        'y': y,
-        'width': width,
-        'height': height,
-      };
+    'x': x,
+    'y': y,
+    'width': width,
+    'height': height,
+  };
 
   factory WindowRect.fromJson(Map<String, Object?> json) => WindowRect(
-        (json['x'] as num?)?.toDouble() ?? 100,
-        (json['y'] as num?)?.toDouble() ?? 100,
-        (json['width'] as num?)?.toDouble() ?? 360,
-        (json['height'] as num?)?.toDouble() ?? 420,
-      );
+    (json['x'] as num?)?.toDouble() ?? 100,
+    (json['y'] as num?)?.toDouble() ?? 100,
+    (json['width'] as num?)?.toDouble() ?? 360,
+    (json['height'] as num?)?.toDouble() ?? 420,
+  );
 
   WindowRect copyWith({double? x, double? y, double? width, double? height}) =>
       WindowRect(
@@ -361,12 +361,12 @@ final class DesktopCardRect {
   final double radius;
 
   Map<String, Object?> toJson() => <String, Object?>{
-        'x': x.round(),
-        'y': y.round(),
-        'width': width.round(),
-        'height': height.round(),
-        'radius': radius.round(),
-      };
+    'x': x.round(),
+    'y': y.round(),
+    'width': width.round(),
+    'height': height.round(),
+    'radius': radius.round(),
+  };
 }
 
 abstract interface class DesktopWallpaperGateway {

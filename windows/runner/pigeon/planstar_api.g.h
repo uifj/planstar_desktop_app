@@ -358,7 +358,7 @@ class DataHubHostApi {
  protected:
   DataHubHostApi() = default;
 };
-// Native -> Dart change feed (replaces the old EventChannel).
+// Native -> Dart change feed emitted after successful mutations.
 //
 // The native side calls onDataChanged after a successful write; the Dart
 // implementation forwards it to the CrossEngineSync stream.
@@ -380,7 +380,7 @@ class DataHubEventsFlutterApi {
   std::string message_channel_suffix_;
 };
 
-// Windows desktop-layer capability (Dart -> native).
+// Desktop overlay capability (Dart -> native).
 //
 // Registered per engine: the main window and every desktop_multi_window child
 // have their own native window, so the widget configures its own window only.
@@ -391,7 +391,7 @@ class DesktopWallpaperHostApi {
   DesktopWallpaperHostApi(const DesktopWallpaperHostApi&) = delete;
   DesktopWallpaperHostApi& operator=(const DesktopWallpaperHostApi&) = delete;
   virtual ~DesktopWallpaperHostApi() {}
-  // Turn this window into a transparent, bottom-most overlay covering the
+  // Turn this window into a transparent desktop-layer overlay covering the
   // entire virtual screen.
   virtual ErrorOr<bool> ConfigureOverlay(bool enable) = 0;
   // Clip the window to the union of the cards. While `dragging` is true the

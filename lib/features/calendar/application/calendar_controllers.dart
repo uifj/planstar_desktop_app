@@ -11,6 +11,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../bootstrap/core_providers.dart';
 import '../../../core/calendar_math.dart';
 import '../../../core/value_objects.dart';
+import '../../../l10n/l10n.dart';
 import '../../countdown/application/countdown_controller.dart';
 import '../../countdown/domain/countdown.dart';
 import '../../settings/application/settings_controller.dart';
@@ -58,29 +59,35 @@ final class CalendarState {
     bool? loading,
     String? error,
     bool clearError = false,
-  }) =>
-      CalendarState(
-        events: events ?? this.events,
-        cells: cells ?? this.cells,
-        loading: loading ?? this.loading,
-        error: clearError ? null : (error ?? this.error),
-      );
+  }) => CalendarState(
+    events: events ?? this.events,
+    cells: cells ?? this.cells,
+    loading: loading ?? this.loading,
+    error: clearError ? null : (error ?? this.error),
+  );
 }
 
 final calendarControllerProvider =
-    NotifierProvider<CalendarController, CalendarState>(
-  CalendarController.new,
-);
+    NotifierProvider<CalendarController, CalendarState>(CalendarController.new);
 
 final class CalendarController extends Notifier<CalendarState> {
+  AppLocalizations get _l10n =>
+      ref.read(appLocalizationScopeProvider).localizations;
+
   @override
   CalendarState build() {
+    final scope = ref.read(appLocalizationScopeProvider);
+    scope.addListener(_onLocaleChanged);
+    ref.onDispose(() => scope.removeListener(_onLocaleChanged));
     Future.microtask(load);
     return const CalendarState();
   }
 
-  CalendarRepository get _repository =>
-      ref.read(calendarRepositoryProvider);
+  void _onLocaleChanged() {
+    if (state.error != null) state = state.copyWith(clearError: true);
+  }
+
+  CalendarRepository get _repository => ref.read(calendarRepositoryProvider);
 
   DateTime get _now => ref.read(clockProvider).now();
 
@@ -91,11 +98,17 @@ final class CalendarController extends Notifier<CalendarState> {
     final events = await eventsFuture;
     final cells = await cellsFuture;
     if (events case Fail<List<CalendarEvent>>(:final Failure failure)) {
-      state = state.copyWith(loading: false, error: failure.message);
+      state = state.copyWith(
+        loading: false,
+        error: failureLabel(failure, _l10n),
+      );
       return;
     }
     if (cells case Fail<List<DayCell>>(:final Failure failure)) {
-      state = state.copyWith(loading: false, error: failure.message);
+      state = state.copyWith(
+        loading: false,
+        error: failureLabel(failure, _l10n),
+      );
       return;
     }
     state = state.copyWith(
@@ -167,10 +180,7 @@ final class CalendarController extends Notifier<CalendarState> {
     await load();
   }
 
-  Future<void> toggleEventCompleted(
-    CalendarEvent event,
-    DateKey date,
-  ) async {
+  Future<void> toggleEventCompleted(CalendarEvent event, DateKey date) async {
     final next = event.markCompleted(date, !event.isCompletedOn(date), _now);
     await _repository.saveEvent(next);
     final settings = ref.read(settingsControllerProvider);
@@ -224,9 +234,7 @@ final class CalendarController extends Notifier<CalendarState> {
   }
 
   Future<void> setCellBackgroundColor(DateKey date, EventColor color) async {
-    await _repository.saveCell(
-      _cellOf(date).withBackgroundColor(color, _now),
-    );
+    await _repository.saveCell(_cellOf(date).withBackgroundColor(color, _now));
     await load();
   }
 
@@ -246,8 +254,7 @@ final class CalendarController extends Notifier<CalendarState> {
     String lineId,
     EventColor color,
   ) async {
-    final lines = _cellOf(date)
-        .lines
+    final lines = _cellOf(date).lines
         .map(
           (RichLine line) =>
               line.id == lineId ? line.copyWith(color: color) : line,
@@ -257,10 +264,9 @@ final class CalendarController extends Notifier<CalendarState> {
   }
 
   Future<void> removeLine(DateKey date, String lineId) async {
-    final lines = _cellOf(date)
-        .lines
-        .where((RichLine line) => line.id != lineId)
-        .toList();
+    final lines = _cellOf(
+      date,
+    ).lines.where((RichLine line) => line.id != lineId).toList();
     await saveCellLines(date, lines);
   }
 
@@ -288,9 +294,8 @@ final class CalendarController extends Notifier<CalendarState> {
     );
     final lines = cell.lines
         .map(
-          (RichLine line) => line.id == lineId
-              ? line.copyWith(eventId: event.id)
-              : line,
+          (RichLine line) =>
+              line.id == lineId ? line.copyWith(eventId: event.id) : line,
         )
         .toList();
     await saveCellLines(date, lines);
@@ -301,10 +306,8 @@ final class CalendarController extends Notifier<CalendarState> {
         .split('\n')
         .where((String line) => line.isNotEmpty)
         .map(
-          (String line) => RichLine(
-            id: ref.read(idGeneratorProvider).next(),
-            text: line,
-          ),
+          (String line) =>
+              RichLine(id: ref.read(idGeneratorProvider).next(), text: line),
         )
         .toList();
     await saveCellLines(date, lines);
@@ -313,8 +316,7 @@ final class CalendarController extends Notifier<CalendarState> {
 
 // ── 选中日 / 编辑面板 ─────────────────────────────────────────────────────
 
-final selectedDateProvider =
-    NotifierProvider<SelectedDateController, DateKey?>(
+final selectedDateProvider = NotifierProvider<SelectedDateController, DateKey?>(
   SelectedDateController.new,
 );
 
@@ -329,8 +331,9 @@ final class SelectedDateController extends Notifier<DateKey?> {
 
 // ── 导航状态 ───────────────────────────────────────────────────────────────
 
-final monthNavigationProvider =
-    NotifierProvider<MonthNavigation, DateTime>(MonthNavigation.new);
+final monthNavigationProvider = NotifierProvider<MonthNavigation, DateTime>(
+  MonthNavigation.new,
+);
 
 final class MonthNavigation extends Notifier<DateTime> {
   @override
@@ -339,8 +342,7 @@ final class MonthNavigation extends Notifier<DateTime> {
     return DateTime(now.year, now.month, 1);
   }
 
-  void previous() => state =
-      DateTime(state.year, state.month - 1, 1);
+  void previous() => state = DateTime(state.year, state.month - 1, 1);
 
   void next() => state = DateTime(state.year, state.month + 1, 1);
 
@@ -411,6 +413,7 @@ final monthDataProvider = Provider<MonthData>((Ref ref) {
   final subscriptions = ref.watch(subscriptionControllerProvider).items;
   final timetables = ref.watch(timetableControllerProvider).items;
   final today = DateKey.today(ref.watch(clockProvider).now());
+  final l10n = ref.read(appLocalizationScopeProvider).localizations;
 
   final grids = CalendarMath.buildGrid(
     anchor: anchor,
@@ -435,8 +438,10 @@ final monthDataProvider = Provider<MonthData>((Ref ref) {
     final range = DateRange(sortedDays.first, sortedDays.last);
     for (final event in calendar.events) {
       for (final date in RecurrencePolicy.occurrences(event, range)) {
-        (eventMap.putIfAbsent(date, () => <EventOccurrence>[]))
-            .add(EventOccurrence(event, date));
+        (eventMap.putIfAbsent(
+          date,
+          () => <EventOccurrence>[],
+        )).add(EventOccurrence(event, date));
       }
     }
   }
@@ -445,8 +450,10 @@ final monthDataProvider = Provider<MonthData>((Ref ref) {
   for (final subscription in subscriptions) {
     if (!subscription.enabled) continue;
     for (final item in subscription.events) {
-      (subscriptionMap.putIfAbsent(item.date, () => <SubscriptionEvent>[]))
-          .add(item);
+      (subscriptionMap.putIfAbsent(
+        item.date,
+        () => <SubscriptionEvent>[],
+      )).add(item);
     }
   }
 
@@ -494,14 +501,17 @@ final monthDataProvider = Provider<MonthData>((Ref ref) {
 
   return MonthData(
     anchor: anchor,
-    weekdayHeaders: CalendarMath.weekdayHeaders(settings.startOfWeek),
+    weekdayHeaders: List<String>.generate(
+      7,
+      (int index) =>
+          weekdayShort((settings.startOfWeek - 1 + index) % 7 + 1, l10n),
+    ),
     columns: columns,
-    countdownBar: countdowns
-        .where((CountdownItem c) => c.showType.onCalendar)
-        .toList()
-      ..sort(
-        (CountdownItem a, CountdownItem b) =>
-            a.daysLeft(today).abs().compareTo(b.daysLeft(today).abs()),
-      ),
+    countdownBar:
+        countdowns.where((CountdownItem c) => c.showType.onCalendar).toList()
+          ..sort(
+            (CountdownItem a, CountdownItem b) =>
+                a.daysLeft(today).abs().compareTo(b.daysLeft(today).abs()),
+          ),
   );
 });

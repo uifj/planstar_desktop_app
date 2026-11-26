@@ -23,27 +23,27 @@ final class HistoryEntry extends AggregateRoot<String> {
   final DateTime occurredAt;
 
   Map<String, Object?> toJson() => <String, Object?>{
-        'id': id,
-        'targetId': targetId,
-        'kind': kind.name,
-        'content': content,
-        'author': author,
-        'occurredAt': occurredAt.toIso8601String(),
-      };
+    'id': id,
+    'targetId': targetId,
+    'kind': kind.name,
+    'content': content,
+    'author': author,
+    'occurredAt': occurredAt.toIso8601String(),
+  };
 
   factory HistoryEntry.fromJson(Map<String, Object?> json) => HistoryEntry(
-        id: json['id'] as String,
-        targetId: json['targetId'] as String? ?? '',
-        kind: HistoryKind.values.firstWhere(
-          (HistoryKind k) => k.name == json['kind'],
-          orElse: () => HistoryKind.cell,
-        ),
-        content: json['content'] as String? ?? '',
-        author: json['author'] as String? ?? '本机',
-        occurredAt:
-            DateTime.tryParse(json['occurredAt'] as String? ?? '') ??
-                DateTime.now(),
-      );
+    id: json['id'] as String,
+    targetId: json['targetId'] as String? ?? '',
+    kind: HistoryKind.values.firstWhere(
+      (HistoryKind k) => k.name == json['kind'],
+      orElse: () => HistoryKind.cell,
+    ),
+    content: json['content'] as String? ?? '',
+    author: json['author'] as String? ?? '',
+    occurredAt:
+        DateTime.tryParse(json['occurredAt'] as String? ?? '') ??
+        DateTime.now(),
+  );
 }
 
 abstract interface class HistoryRepository {

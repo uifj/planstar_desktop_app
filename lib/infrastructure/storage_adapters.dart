@@ -14,12 +14,8 @@ import '../core/ports.dart';
 ///
 /// [onWrite] 是跨 engine 同步的唯一注入点：所有仓储最终都走 `write`，
 /// 在这里发一次信号，其它 engine 就能刷新自己的内存缓存并重新载入。
-final class SharedPreferencesStore
-    implements KeyValueStore, StorageReloader {
-  const SharedPreferencesStore(
-    this._prefs, {
-    this.onWrite,
-  });
+final class SharedPreferencesStore implements KeyValueStore, StorageReloader {
+  const SharedPreferencesStore(this._prefs, {this.onWrite});
 
   final SharedPreferences _prefs;
   final Future<void> Function()? onWrite;

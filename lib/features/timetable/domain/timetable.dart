@@ -16,9 +16,9 @@ enum WeekParity {
   final String label;
 
   static WeekParity fromName(String? name) => WeekParity.values.firstWhere(
-        (WeekParity p) => p.name == name,
-        orElse: () => WeekParity.all,
-      );
+    (WeekParity p) => p.name == name,
+    orElse: () => WeekParity.all,
+  );
 }
 
 final class ClassPeriod extends ValueObject {
@@ -33,16 +33,16 @@ final class ClassPeriod extends ValueObject {
   final String endLabel;
 
   Map<String, Object?> toJson() => <String, Object?>{
-        'index': index,
-        'startLabel': startLabel,
-        'endLabel': endLabel,
-      };
+    'index': index,
+    'startLabel': startLabel,
+    'endLabel': endLabel,
+  };
 
   factory ClassPeriod.fromJson(Map<String, Object?> json) => ClassPeriod(
-        index: (json['index'] as num?)?.toInt() ?? 1,
-        startLabel: json['startLabel'] as String? ?? '08:00',
-        endLabel: json['endLabel'] as String? ?? '08:45',
-      );
+    index: (json['index'] as num?)?.toInt() ?? 1,
+    startLabel: json['startLabel'] as String? ?? '08:00',
+    endLabel: json['endLabel'] as String? ?? '08:45',
+  );
 
   @override
   List<Object?> get props => <Object?>[index, startLabel, endLabel];
@@ -78,38 +78,38 @@ final class Lesson extends ValueObject {
           parity == other.parity);
 
   Map<String, Object?> toJson() => <String, Object?>{
-        'id': id,
-        'name': name,
-        'weekday': weekday,
-        'period': period,
-        'teacher': teacher,
-        'room': room,
-        'parity': parity.name,
-        'color': color.argb,
-      };
+    'id': id,
+    'name': name,
+    'weekday': weekday,
+    'period': period,
+    'teacher': teacher,
+    'room': room,
+    'parity': parity.name,
+    'color': color.argb,
+  };
 
   factory Lesson.fromJson(Map<String, Object?> json) => Lesson(
-        id: json['id'] as String? ?? '',
-        name: json['name'] as String? ?? '',
-        weekday: (json['weekday'] as num?)?.toInt() ?? 1,
-        period: (json['period'] as num?)?.toInt() ?? 1,
-        teacher: json['teacher'] as String? ?? '',
-        room: json['room'] as String? ?? '',
-        parity: WeekParity.fromName(json['parity'] as String?),
-        color: EventColor(json['color'] as int? ?? 0xFF1F2024),
-      );
+    id: json['id'] as String? ?? '',
+    name: json['name'] as String? ?? '',
+    weekday: (json['weekday'] as num?)?.toInt() ?? 1,
+    period: (json['period'] as num?)?.toInt() ?? 1,
+    teacher: json['teacher'] as String? ?? '',
+    room: json['room'] as String? ?? '',
+    parity: WeekParity.fromName(json['parity'] as String?),
+    color: EventColor(json['color'] as int? ?? 0xFF1F2024),
+  );
 
   @override
   List<Object?> get props => <Object?>[
-        id,
-        name,
-        weekday,
-        period,
-        teacher,
-        room,
-        parity,
-        color,
-      ];
+    id,
+    name,
+    weekday,
+    period,
+    teacher,
+    room,
+    parity,
+    color,
+  ];
 }
 
 final class Timetable extends AggregateRoot<String> {
@@ -136,20 +136,17 @@ final class Timetable extends AggregateRoot<String> {
     int breakMinutes = 10,
     bool hideWeekend = false,
   }) {
-    final periods = List<ClassPeriod>.generate(
-      periodsPerDay,
-      (int i) {
-        final start = 8 * 60 + i * (lessonMinutes + breakMinutes);
-        String label(int minutes) =>
-            '${(minutes ~/ 60).toString().padLeft(2, '0')}:'
-            '${(minutes % 60).toString().padLeft(2, '0')}';
-        return ClassPeriod(
-          index: i + 1,
-          startLabel: label(start),
-          endLabel: label(start + lessonMinutes),
-        );
-      },
-    );
+    final periods = List<ClassPeriod>.generate(periodsPerDay, (int i) {
+      final start = 8 * 60 + i * (lessonMinutes + breakMinutes);
+      String label(int minutes) =>
+          '${(minutes ~/ 60).toString().padLeft(2, '0')}:'
+          '${(minutes % 60).toString().padLeft(2, '0')}';
+      return ClassPeriod(
+        index: i + 1,
+        startLabel: label(start),
+        endLabel: label(start + lessonMinutes),
+      );
+    });
     return Timetable._(
       id: id,
       name: name,
@@ -207,56 +204,53 @@ final class Timetable extends AggregateRoot<String> {
     int? periodsPerDay,
     bool? hideWeekend,
     List<Lesson>? lessons,
-  }) =>
-      Timetable._(
-        id: id,
-        name: name ?? this.name,
-        startDate: startDate ?? this.startDate,
-        weeks: weeks ?? this.weeks,
-        periodsPerDay: periodsPerDay ?? this.periodsPerDay,
-        lessonMinutes: lessonMinutes,
-        breakMinutes: breakMinutes,
-        periods: periods,
-        hideWeekend: hideWeekend ?? this.hideWeekend,
-        lessons: lessons ?? this.lessons,
-      );
+  }) => Timetable._(
+    id: id,
+    name: name ?? this.name,
+    startDate: startDate ?? this.startDate,
+    weeks: weeks ?? this.weeks,
+    periodsPerDay: periodsPerDay ?? this.periodsPerDay,
+    lessonMinutes: lessonMinutes,
+    breakMinutes: breakMinutes,
+    periods: periods,
+    hideWeekend: hideWeekend ?? this.hideWeekend,
+    lessons: lessons ?? this.lessons,
+  );
 
   Map<String, Object?> toJson() => <String, Object?>{
-        'id': id,
-        'name': name,
-        'startDate': startDate.key,
-        'weeks': weeks,
-        'periodsPerDay': periodsPerDay,
-        'lessonMinutes': lessonMinutes,
-        'breakMinutes': breakMinutes,
-        'periods': periods.map((ClassPeriod p) => p.toJson()).toList(),
-        'hideWeekend': hideWeekend,
-        'lessons': lessons.map((Lesson l) => l.toJson()).toList(),
-      };
+    'id': id,
+    'name': name,
+    'startDate': startDate.key,
+    'weeks': weeks,
+    'periodsPerDay': periodsPerDay,
+    'lessonMinutes': lessonMinutes,
+    'breakMinutes': breakMinutes,
+    'periods': periods.map((ClassPeriod p) => p.toJson()).toList(),
+    'hideWeekend': hideWeekend,
+    'lessons': lessons.map((Lesson l) => l.toJson()).toList(),
+  };
 
   factory Timetable.fromJson(Map<String, Object?> json) => Timetable._(
-        id: json['id'] as String,
-        name: json['name'] as String? ?? '新建课程表',
-        startDate: DateKey.parse(json['startDate']! as String),
-        weeks: (json['weeks'] as num?)?.toInt() ?? 20,
-        periodsPerDay: (json['periodsPerDay'] as num?)?.toInt() ?? 8,
-        lessonMinutes: (json['lessonMinutes'] as num?)?.toInt() ?? 45,
-        breakMinutes: (json['breakMinutes'] as num?)?.toInt() ?? 10,
-        periods: (json['periods'] as List? ?? const <Object?>[])
-            .map(
-              (Object? p) => ClassPeriod.fromJson(
-                Map<String, Object?>.from(p! as Map),
-              ),
-            )
-            .toList(),
-        hideWeekend: json['hideWeekend'] as bool? ?? false,
-        lessons: (json['lessons'] as List? ?? const <Object?>[])
-            .map(
-              (Object? l) =>
-                  Lesson.fromJson(Map<String, Object?>.from(l! as Map)),
-            )
-            .toList(),
-      );
+    id: json['id'] as String,
+    name: json['name'] as String? ?? '新建课程表',
+    startDate: DateKey.parse(json['startDate']! as String),
+    weeks: (json['weeks'] as num?)?.toInt() ?? 20,
+    periodsPerDay: (json['periodsPerDay'] as num?)?.toInt() ?? 8,
+    lessonMinutes: (json['lessonMinutes'] as num?)?.toInt() ?? 45,
+    breakMinutes: (json['breakMinutes'] as num?)?.toInt() ?? 10,
+    periods: (json['periods'] as List? ?? const <Object?>[])
+        .map(
+          (Object? p) =>
+              ClassPeriod.fromJson(Map<String, Object?>.from(p! as Map)),
+        )
+        .toList(),
+    hideWeekend: json['hideWeekend'] as bool? ?? false,
+    lessons: (json['lessons'] as List? ?? const <Object?>[])
+        .map(
+          (Object? l) => Lesson.fromJson(Map<String, Object?>.from(l! as Map)),
+        )
+        .toList(),
+  );
 }
 
 abstract interface class TimetableRepository {

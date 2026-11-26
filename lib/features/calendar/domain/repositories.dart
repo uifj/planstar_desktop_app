@@ -40,21 +40,21 @@ final class CalendarSnapshot {
   final DateTime exportedAt;
 
   Map<String, Object?> toJson() => <String, Object?>{
-        'schema': 1,
-        'exportedAt': exportedAt.toIso8601String(),
-        'events': events.map((CalendarEvent e) => e.toJson()).toList(),
-        'cells': cells.map((DayCell c) => c.toJson()).toList(),
-      };
+    'schema': 1,
+    'exportedAt': exportedAt.toIso8601String(),
+    'events': events.map((CalendarEvent e) => e.toJson()).toList(),
+    'cells': cells.map((DayCell c) => c.toJson()).toList(),
+  };
 
   factory CalendarSnapshot.fromJson(Map<String, Object?> json) =>
       CalendarSnapshot(
-        exportedAt: DateTime.tryParse(json['exportedAt'] as String? ?? '') ??
+        exportedAt:
+            DateTime.tryParse(json['exportedAt'] as String? ?? '') ??
             DateTime.now(),
         events: (json['events'] as List? ?? const <Object?>[])
             .map(
-              (Object? e) => CalendarEvent.fromJson(
-                Map<String, Object?>.from(e! as Map),
-              ),
+              (Object? e) =>
+                  CalendarEvent.fromJson(Map<String, Object?>.from(e! as Map)),
             )
             .toList(),
         cells: (json['cells'] as List? ?? const <Object?>[])

@@ -21,11 +21,7 @@ final routerProvider = Provider<GoRouter>(
     initialLocation: '/calendar',
     routes: <RouteBase>[
       StatefulShellRoute.indexedStack(
-        builder: (
-          context,
-          state,
-          navigationShell,
-        ) =>
+        builder: (context, state, navigationShell) =>
             AppShell(navigationShell: navigationShell),
         branches: <StatefulShellBranch>[
           StatefulShellBranch(

@@ -8,6 +8,7 @@ import '../../../bootstrap/core_providers.dart';
 import '../../../core/list_state.dart';
 import '../../../core/value_objects.dart';
 import '../../../infrastructure/json_entity_store.dart';
+import '../../../l10n/l10n.dart';
 import '../domain/timetable.dart';
 import '../infrastructure/local_timetable_repository.dart';
 
@@ -27,31 +28,38 @@ final timetableRepositoryProvider = Provider<TimetableRepository>(
 
 final timetableControllerProvider =
     NotifierProvider<TimetableController, AsyncListState<Timetable>>(
-  TimetableController.new,
-);
+      TimetableController.new,
+    );
 
-final class TimetableController
-    extends Notifier<AsyncListState<Timetable>> {
+final class TimetableController extends Notifier<AsyncListState<Timetable>> {
+  AppLocalizations get _l10n =>
+      ref.read(appLocalizationScopeProvider).localizations;
+
   @override
   AsyncListState<Timetable> build() {
+    final scope = ref.read(appLocalizationScopeProvider);
+    scope.addListener(_onLocaleChanged);
+    ref.onDispose(() => scope.removeListener(_onLocaleChanged));
     Future.microtask(load);
     return AsyncListState<Timetable>();
   }
 
-  TimetableRepository get _repository =>
-      ref.read(timetableRepositoryProvider);
+  void _onLocaleChanged() {
+    if (state.error != null) state = state.copyWith(clearError: true);
+  }
+
+  TimetableRepository get _repository => ref.read(timetableRepositoryProvider);
 
   Future<void> load() async {
     final result = await _repository.all();
     switch (result) {
       case Success<List<Timetable>>(:final List<Timetable> data):
-        state = state.copyWith(
-          items: data,
-          loading: false,
-          clearError: true,
-        );
+        state = state.copyWith(items: data, loading: false, clearError: true);
       case Fail<List<Timetable>>(:final failure):
-        state = state.copyWith(loading: false, error: failure.message);
+        state = state.copyWith(
+          loading: false,
+          error: failureLabel(failure, _l10n),
+        );
     }
   }
 
@@ -93,13 +101,11 @@ final class TimetableController
     if (found.isEmpty) return;
     final timetable = found.first;
     if (!allowConflict && timetable.conflictsOf(lesson).isNotEmpty) {
-      state = state.copyWith(error: '新增课程与其他课程有时间冲突');
+      state = state.copyWith(error: _l10n.timetableLessonConflict);
       return;
     }
     await save(
-      timetable.copyWith(
-        lessons: <Lesson>[...timetable.lessons, lesson],
-      ),
+      timetable.copyWith(lessons: <Lesson>[...timetable.lessons, lesson]),
     );
   }
 

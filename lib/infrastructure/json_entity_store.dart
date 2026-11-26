@@ -23,17 +23,17 @@ final class JsonEntityStore<T extends Object> {
     required T Function(JsonMap json) fromJson,
     required JsonMap Function(T value) toJson,
     required String Function(T value) idOf,
-  })  : _bus = bus,
-        _clock = clock,
-        _fromJson = fromJson,
-        _toJson = toJson,
-        _idOf = idOf,
-        _items = JsonListStore<JsonMap>(
-          store: store,
-          key: key,
-          fromJson: (JsonMap json) => json,
-          toJson: (JsonMap value) => value,
-        );
+  }) : _bus = bus,
+       _clock = clock,
+       _fromJson = fromJson,
+       _toJson = toJson,
+       _idOf = idOf,
+       _items = JsonListStore<JsonMap>(
+         store: store,
+         key: key,
+         fromJson: (JsonMap json) => json,
+         toJson: (JsonMap value) => value,
+       );
 
   final DomainEventBus _bus;
   final Clock _clock;
@@ -46,9 +46,7 @@ final class JsonEntityStore<T extends Object> {
 
   Future<Result<List<T>>> all() async {
     final result = await guardAsync<List<JsonMap>>(() => _items.readAll());
-    return result.map(
-      (List<JsonMap> items) => items.map(_fromJson).toList(),
-    );
+    return result.map((List<JsonMap> items) => items.map(_fromJson).toList());
   }
 
   Future<Result<void>> upsert(T item, {List<DomainEvent>? events}) async {

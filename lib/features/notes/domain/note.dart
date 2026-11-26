@@ -25,7 +25,7 @@ final class Note extends AggregateRoot<String> {
   factory Note.create({
     required String id,
     required DateTime occurredAt,
-    String title = '新建便签',
+    required String title,
     List<RichLine> lines = const <RichLine>[],
     int backgroundIndex = 0,
     EventColor fontColor = EventColor.defaultText,
@@ -67,7 +67,10 @@ final class Note extends AggregateRoot<String> {
   final DateTime updatedAt;
 
   EventColor get backgroundColor =>
-      EventColor.palette[backgroundIndex.clamp(0, EventColor.palette.length - 1)];
+      EventColor.palette[backgroundIndex.clamp(
+        0,
+        EventColor.palette.length - 1,
+      )];
 
   String get plainText => lines.map((RichLine l) => l.text).join('\n');
 
@@ -114,42 +117,41 @@ final class Note extends AggregateRoot<String> {
   }
 
   Map<String, Object?> toJson() => <String, Object?>{
-        'id': id,
-        'title': title,
-        'lines': lines.map((RichLine l) => l.toJson()).toList(),
-        'backgroundIndex': backgroundIndex,
-        'fontColor': fontColor.argb,
-        'visible': visible,
-        'topMost': topMost,
-        'rect': rect.toJson(),
-        'createdAt': createdAt.toIso8601String(),
-        'updatedAt': updatedAt.toIso8601String(),
-      };
+    'id': id,
+    'title': title,
+    'lines': lines.map((RichLine l) => l.toJson()).toList(),
+    'backgroundIndex': backgroundIndex,
+    'fontColor': fontColor.argb,
+    'visible': visible,
+    'topMost': topMost,
+    'rect': rect.toJson(),
+    'createdAt': createdAt.toIso8601String(),
+    'updatedAt': updatedAt.toIso8601String(),
+  };
 
   factory Note.fromJson(Map<String, Object?> json) => Note._(
-        id: json['id'] as String,
-        title: json['title'] as String? ?? '新建便签',
-        lines: (json['lines'] as List? ?? const <Object?>[])
-            .map(
-              (Object? l) => RichLine.fromJson(
-                Map<String, Object?>.from(l! as Map),
-              ),
-            )
-            .toList(),
-        backgroundIndex: (json['backgroundIndex'] as num?)?.toInt() ?? 0,
-        fontColor: EventColor(json['fontColor'] as int? ?? 0xFF1F2024),
-        visible: json['visible'] as bool? ?? true,
-        topMost: json['topMost'] as bool? ?? false,
-        rect: WindowRect.fromJson(
-          Map<String, Object?>.from(
-            (json['rect'] as Map?) ?? const <String, Object?>{},
-          ),
-        ),
-        createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ??
-            DateTime.now(),
-        updatedAt: DateTime.tryParse(json['updatedAt'] as String? ?? '') ??
-            DateTime.now(),
-      );
+    id: json['id'] as String,
+    title: json['title'] as String? ?? '',
+    lines: (json['lines'] as List? ?? const <Object?>[])
+        .map(
+          (Object? l) =>
+              RichLine.fromJson(Map<String, Object?>.from(l! as Map)),
+        )
+        .toList(),
+    backgroundIndex: (json['backgroundIndex'] as num?)?.toInt() ?? 0,
+    fontColor: EventColor(json['fontColor'] as int? ?? 0xFF1F2024),
+    visible: json['visible'] as bool? ?? true,
+    topMost: json['topMost'] as bool? ?? false,
+    rect: WindowRect.fromJson(
+      Map<String, Object?>.from(
+        (json['rect'] as Map?) ?? const <String, Object?>{},
+      ),
+    ),
+    createdAt:
+        DateTime.tryParse(json['createdAt'] as String? ?? '') ?? DateTime.now(),
+    updatedAt:
+        DateTime.tryParse(json['updatedAt'] as String? ?? '') ?? DateTime.now(),
+  );
 }
 
 abstract interface class NoteRepository {

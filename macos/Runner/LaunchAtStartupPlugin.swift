@@ -63,6 +63,7 @@ struct SystemLoginItemService: MacLoginItemService {
   private var stateKey: String { "planstar.loginItem.\(bundleIdentifier)" }
 
   var isEnabled: Bool {
+    // macOS 12 只能读取最近一次成功请求；13+ 的待批准状态不算已启用。
     if majorVersion >= 13 {
       return modernStatus() == .enabled
     }

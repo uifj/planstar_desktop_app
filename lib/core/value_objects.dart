@@ -17,11 +17,7 @@ final class DateKey extends ValueObject {
       throw FormatException('非法日期：$raw');
     }
     return DateKey(
-      DateTime(
-        int.parse(parts[0]),
-        int.parse(parts[1]),
-        int.parse(parts[2]),
-      ),
+      DateTime(int.parse(parts[0]), int.parse(parts[1]), int.parse(parts[2])),
     );
   }
 
@@ -60,15 +56,8 @@ final class DateKey extends ValueObject {
   String get cnMonth => '$month月';
   String get cnDate => '$month月$day日';
   String get cnFull => '$year年$month月$day日';
-  String get cnWeekday => const <String>[
-        '一',
-        '二',
-        '三',
-        '四',
-        '五',
-        '六',
-        '日',
-      ][weekday - 1];
+  String get cnWeekday =>
+      const <String>['一', '二', '三', '四', '五', '六', '日'][weekday - 1];
 }
 
 /// 闭区间日期范围（搜索 / 导出 / 重复规则展开时使用）。
@@ -172,44 +161,44 @@ final class RichLine extends ValueObject {
     DateTime? reminderTime,
     bool clearEventId = false,
     bool clearReminderTime = false,
-  }) =>
-      RichLine(
-        id: id,
-        text: text ?? this.text,
-        color: color ?? this.color,
-        completed: completed ?? this.completed,
-        eventId: clearEventId ? null : (eventId ?? this.eventId),
-        reminderTime:
-            clearReminderTime ? null : (reminderTime ?? this.reminderTime),
-      );
+  }) => RichLine(
+    id: id,
+    text: text ?? this.text,
+    color: color ?? this.color,
+    completed: completed ?? this.completed,
+    eventId: clearEventId ? null : (eventId ?? this.eventId),
+    reminderTime: clearReminderTime
+        ? null
+        : (reminderTime ?? this.reminderTime),
+  );
 
   Map<String, Object?> toJson() => <String, Object?>{
-        'id': id,
-        'text': text,
-        'color': color.argb,
-        'completed': completed,
-        'eventId': eventId,
-        'reminderTime': reminderTime?.toIso8601String(),
-      };
+    'id': id,
+    'text': text,
+    'color': color.argb,
+    'completed': completed,
+    'eventId': eventId,
+    'reminderTime': reminderTime?.toIso8601String(),
+  };
 
   factory RichLine.fromJson(Map<String, Object?> json) => RichLine(
-        id: json['id'] as String? ?? '',
-        text: json['text'] as String? ?? '',
-        color: EventColor(json['color'] as int? ?? 0xFF1F2024),
-        completed: json['completed'] as bool? ?? false,
-        eventId: json['eventId'] as String?,
-        reminderTime: json['reminderTime'] == null
-            ? null
-            : DateTime.tryParse(json['reminderTime']! as String),
-      );
+    id: json['id'] as String? ?? '',
+    text: json['text'] as String? ?? '',
+    color: EventColor(json['color'] as int? ?? 0xFF1F2024),
+    completed: json['completed'] as bool? ?? false,
+    eventId: json['eventId'] as String?,
+    reminderTime: json['reminderTime'] == null
+        ? null
+        : DateTime.tryParse(json['reminderTime']! as String),
+  );
 
   @override
   List<Object?> get props => <Object?>[
-        id,
-        text,
-        color,
-        completed,
-        eventId,
-        reminderTime?.toIso8601String(),
-      ];
+    id,
+    text,
+    color,
+    completed,
+    eventId,
+    reminderTime?.toIso8601String(),
+  ];
 }

@@ -9,6 +9,7 @@ import 'dart:async';
 import 'package:core_design_system/core_design_system.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../bootstrap/core_providers.dart';
@@ -18,7 +19,9 @@ import '../features/countdown/application/countdown_controller.dart';
 import '../features/history/application/history_controller.dart';
 import '../features/notes/application/notes_controller.dart';
 import '../features/notes/domain/note.dart';
+import '../features/settings/application/settings_controller.dart';
 import '../features/sync/application/cross_engine_sync_controller.dart';
+import '../l10n/l10n.dart';
 import '../shared/widgets/common.dart';
 import 'desktop_widget_app.dart';
 
@@ -38,13 +41,13 @@ final class _SubWindowAppState extends ConsumerState<SubWindowApp> {
   void initState() {
     super.initState();
     ref.read(crossEngineSyncControllerProvider);
+    ref.read(settingsControllerProvider);
     // 子窗口 engine 也要留痕：便签/倒数日的编辑在此 engine 内分发领域事件，
     // 不初始化 HistoryController 的话这些改动在主窗口历史页会「静默丢失」。
     ref.read(historyControllerProvider);
-    _commands = ref
-        .read(multiWindowGatewayProvider)
-        .incoming
-        .listen((MultiWindowCommand command) {
+    _commands = ref.read(multiWindowGatewayProvider).incoming.listen((
+      MultiWindowCommand command,
+    ) {
       if (command.method != 'refresh') return;
       ref.read(notesControllerProvider.notifier).load();
       ref.read(countdownControllerProvider.notifier).load();
@@ -61,7 +64,19 @@ final class _SubWindowAppState extends ConsumerState<SubWindowApp> {
   Widget build(BuildContext context) {
     final kind = widget.arguments['kind'] as String? ?? 'note';
     if (kind == 'desktop') return const DesktopWidgetApp();
+    final locale = ref.watch(appLocalizationScopeProvider);
+    final l10n = ref.read(appLocalizationScopeProvider).localizations;
     return MaterialApp(
+      onGenerateTitle: (BuildContext context) =>
+          kind == 'note' ? l10n.noteTitle : l10n.countdownWindowTitle,
+      locale: locale.value,
+      localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: supportedLocales,
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
@@ -69,10 +84,16 @@ final class _SubWindowAppState extends ConsumerState<SubWindowApp> {
       home: Scaffold(
         body: Column(
           children: <Widget>[
-            _SubWindowTitleBar(title: kind == 'note' ? '便签' : '倒数日'),
+            _SubWindowTitleBar(
+              title: kind == 'note'
+                  ? l10n.noteTitle
+                  : l10n.countdownWindowTitle,
+            ),
             Expanded(
               child: kind == 'note'
-                  ? _NoteWindow(noteId: widget.arguments['noteId'] as String? ?? '')
+                  ? _NoteWindow(
+                      noteId: widget.arguments['noteId'] as String? ?? '',
+                    )
                   : const _CountdownWindow(),
             ),
           ],
@@ -112,6 +133,7 @@ final class _SubWindowTitleBar extends ConsumerWidget {
             const Spacer(),
             IconButton(
               icon: const Icon(LucideIcons.x, size: 16),
+              tooltip: context.l10n.commonClose,
               onPressed: () => ref.read(windowGatewayProvider).close(),
             ),
           ],
@@ -174,7 +196,7 @@ final class _NoteWindowState extends ConsumerState<_NoteWindow> {
     if (note == null) {
       return Center(
         child: Text(
-          '暂无便签',
+          context.l10n.notesUnavailable,
           style: TextStyle(color: colors.textTertiary),
         ),
       );
@@ -190,7 +212,7 @@ final class _NoteWindowState extends ConsumerState<_NoteWindow> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Text(
-            note.title,
+            note.localizedTitle(context.l10n),
             style: TextStyle(
               fontSize: AppTypography.subtitle,
               fontWeight: AppTypography.medium,
@@ -235,10 +257,14 @@ final class _CountdownWindow extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final items = ref.watch(countdownControllerProvider).items;
+    final l10n = context.l10n;
     final colors = context.appColors;
     if (items.isEmpty) {
       return Center(
-        child: Text('暂无倒数日', style: TextStyle(color: colors.textTertiary)),
+        child: Text(
+          l10n.commonNoCountdowns,
+          style: TextStyle(color: colors.textTertiary),
+        ),
       );
     }
     return ListView.builder(
@@ -266,7 +292,8 @@ final class _CountdownWindow extends ConsumerWidget {
               ),
               const SizedBox(height: AppSpacing.xxs),
               Text(
-                item.displayText(
+                item.localizedDisplayText(
+                  l10n,
                   DateKey.today(ref.read(clockProvider).now()),
                 ),
                 style: TextStyle(

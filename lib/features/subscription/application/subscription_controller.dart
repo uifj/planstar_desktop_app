@@ -8,6 +8,7 @@ import '../../../bootstrap/core_providers.dart';
 import '../../../core/list_state.dart';
 import '../../../core/value_objects.dart';
 import '../../../infrastructure/json_entity_store.dart';
+import '../../../l10n/l10n.dart';
 import '../domain/subscription.dart';
 import '../infrastructure/local_subscription_repository.dart';
 
@@ -24,24 +25,40 @@ final subscriptionRepositoryProvider = Provider<SubscriptionRepository>(
     ),
     api: ref.watch(apiClientProvider),
     logger: ref.watch(loggerProvider),
-    endpoint: ref
-        .watch(appConfigProvider)
-        .section('cloud')
-        .getString('subscriptionEndpoint') ?? 'subscriptions/',
+    fetchFailureMessage: (String name) => ref
+        .read(appLocalizationScopeProvider)
+        .localizations
+        .subscriptionFetchFailed(name),
+    endpoint:
+        ref
+            .watch(appConfigProvider)
+            .section('cloud')
+            .getString('subscriptionEndpoint') ??
+        'subscriptions/',
   ),
 );
 
 final subscriptionControllerProvider =
     NotifierProvider<SubscriptionController, AsyncListState<Subscription>>(
-  SubscriptionController.new,
-);
+      SubscriptionController.new,
+    );
 
 final class SubscriptionController
     extends Notifier<AsyncListState<Subscription>> {
+  AppLocalizations get _l10n =>
+      ref.read(appLocalizationScopeProvider).localizations;
+
   @override
   AsyncListState<Subscription> build() {
+    final scope = ref.read(appLocalizationScopeProvider);
+    scope.addListener(_onLocaleChanged);
+    ref.onDispose(() => scope.removeListener(_onLocaleChanged));
     Future.microtask(load);
     return AsyncListState<Subscription>();
+  }
+
+  void _onLocaleChanged() {
+    if (state.error != null) state = state.copyWith(clearError: true);
   }
 
   SubscriptionRepository get _repository =>
@@ -51,13 +68,12 @@ final class SubscriptionController
     final result = await _repository.all();
     switch (result) {
       case Success<List<Subscription>>(:final List<Subscription> data):
-        state = state.copyWith(
-          items: data,
-          loading: false,
-          clearError: true,
-        );
+        state = state.copyWith(items: data, loading: false, clearError: true);
       case Fail<List<Subscription>>(:final failure):
-        state = state.copyWith(loading: false, error: failure.message);
+        state = state.copyWith(
+          loading: false,
+          error: failureLabel(failure, _l10n),
+        );
     }
   }
 
@@ -83,18 +99,26 @@ final class SubscriptionController
     final targets = state.items
         .where((Subscription s) => all || s.id == id)
         .toList();
+    Failure? refreshFailure;
     for (final subscription in targets) {
       final result = await _repository.fetchRemote(subscription);
       switch (result) {
-        case Success<List<SubscriptionEvent>>(:final List<SubscriptionEvent> data):
+        case Success<List<SubscriptionEvent>>(
+          :final List<SubscriptionEvent> data,
+        ):
           await _repository.save(
             subscription.withEvents(data, ref.read(clockProvider).now()),
           );
         case Fail<List<SubscriptionEvent>>(:final Failure failure):
-          state = state.copyWith(error: failure.message);
+          refreshFailure = failure;
+          state = state.copyWith(error: failureLabel(failure, _l10n));
       }
     }
     await load();
+    // Reloading cached data must not erase a remote refresh failure.
+    if (refreshFailure != null) {
+      state = state.copyWith(error: failureLabel(refreshFailure, _l10n));
+    }
   }
 
   Future<void> toggle(String id) async {

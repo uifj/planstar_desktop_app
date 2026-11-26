@@ -6,6 +6,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../l10n/l10n.dart';
 import '../../../shared/widgets/common.dart';
 import '../application/transfer_controller.dart';
 
@@ -25,12 +26,13 @@ final class _TransferPageState extends ConsumerState<TransferPage> {
   Widget build(BuildContext context) {
     final state = ref.watch(transferControllerProvider);
     final controller = ref.read(transferControllerProvider.notifier);
+    final l10n = context.l10n;
     return ListView(
       padding: const EdgeInsets.all(AppSpacing.md),
       children: <Widget>[
         AppSectionCard(
-          title: '导出日历清单',
-          subtitle: '支持再次导入的数据库文件、可打印文本、Excel 兼容 CSV',
+          title: l10n.transferExportTitle,
+          subtitle: l10n.transferExportSubtitle,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
@@ -40,10 +42,9 @@ final class _TransferPageState extends ConsumerState<TransferPage> {
                 children: <Widget>[
                   for (final format in ExportFormat.values)
                     ChoiceChip(
-                      label: Text(format.label),
+                      label: Text(format.localizedLabel(l10n)),
                       selected: _format == format,
-                      onSelected: (_) =>
-                          setState(() => _format = format),
+                      onSelected: (_) => setState(() => _format = format),
                     ),
                 ],
               ),
@@ -52,19 +53,19 @@ final class _TransferPageState extends ConsumerState<TransferPage> {
                 spacing: AppSpacing.xs,
                 children: <Widget>[
                   ChoiceChip(
-                    label: const Text('所有时间'),
+                    label: Text(l10n.transferRangeAllTime),
                     selected: _range == ExportRange.allTime,
                     onSelected: (_) =>
                         setState(() => _range = ExportRange.allTime),
                   ),
                   ChoiceChip(
-                    label: const Text('近半年'),
+                    label: Text(l10n.transferRangeSixMonths),
                     selected: _range == ExportRange.sixMonths,
                     onSelected: (_) =>
                         setState(() => _range = ExportRange.sixMonths),
                   ),
                   ChoiceChip(
-                    label: const Text('自定义'),
+                    label: Text(l10n.transferRangeCustom),
                     selected: _range == ExportRange.custom,
                     onSelected: (_) =>
                         setState(() => _range = ExportRange.custom),
@@ -77,12 +78,10 @@ final class _TransferPageState extends ConsumerState<TransferPage> {
                 child: FilledButton.icon(
                   onPressed: state.busy
                       ? null
-                      : () => controller.exportTo(
-                            format: _format,
-                            range: _range,
-                          ),
+                      : () =>
+                            controller.exportTo(format: _format, range: _range),
                   icon: const Icon(LucideIcons.download, size: 16),
-                  label: const Text('导出到文件'),
+                  label: Text(l10n.transferExportToFile),
                 ),
               ),
             ],
@@ -90,19 +89,18 @@ final class _TransferPageState extends ConsumerState<TransferPage> {
         ),
         const SizedBox(height: AppSpacing.md),
         AppSectionCard(
-          title: '导入日历清单',
-          subtitle: '从 `*.json` 数据库文件恢复单元格与任务',
+          title: l10n.transferImportTitle,
+          subtitle: l10n.transferImportSubtitle,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
               CheckboxListTile(
                 contentPadding: EdgeInsets.zero,
-                title: const Text('所有冲突都替换为导入内容'),
+                title: Text(l10n.transferReplaceConflicts),
                 value: _replaceConflicts,
-                onChanged: (bool? value) => setState(
-                  () => _replaceConflicts = value ?? true,
-                ),
+                onChanged: (bool? value) =>
+                    setState(() => _replaceConflicts = value ?? true),
               ),
               Align(
                 alignment: Alignment.centerRight,
@@ -110,10 +108,10 @@ final class _TransferPageState extends ConsumerState<TransferPage> {
                   onPressed: state.busy
                       ? null
                       : () => controller.importFrom(
-                            replaceConflicts: _replaceConflicts,
-                          ),
+                          replaceConflicts: _replaceConflicts,
+                        ),
                   icon: const Icon(LucideIcons.upload, size: 16),
-                  label: const Text('选择文件并导入'),
+                  label: Text(l10n.transferChooseAndImport),
                 ),
               ),
             ],

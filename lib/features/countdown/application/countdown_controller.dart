@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../bootstrap/core_providers.dart';
 import '../../../core/list_state.dart';
 import '../../../core/value_objects.dart';
+import '../../../l10n/l10n.dart';
 import '../../../infrastructure/json_entity_store.dart';
 import '../domain/countdown.dart';
 import '../infrastructure/local_countdown_repository.dart';
@@ -27,31 +28,39 @@ final countdownRepositoryProvider = Provider<CountdownRepository>(
 
 final countdownControllerProvider =
     NotifierProvider<CountdownController, AsyncListState<CountdownItem>>(
-  CountdownController.new,
-);
+      CountdownController.new,
+    );
 
 final class CountdownController
     extends Notifier<AsyncListState<CountdownItem>> {
   @override
   AsyncListState<CountdownItem> build() {
+    final scope = ref.read(appLocalizationScopeProvider);
+    scope.addListener(_onLocaleChanged);
+    ref.onDispose(() => scope.removeListener(_onLocaleChanged));
     Future.microtask(load);
     return AsyncListState<CountdownItem>();
   }
 
-  CountdownRepository get _repository =>
-      ref.read(countdownRepositoryProvider);
+  void _onLocaleChanged() {
+    if (state.error != null) state = state.copyWith(clearError: true);
+  }
+
+  CountdownRepository get _repository => ref.read(countdownRepositoryProvider);
+
+  AppLocalizations get _l10n =>
+      ref.read(appLocalizationScopeProvider).localizations;
 
   Future<void> load() async {
     final result = await _repository.all();
     switch (result) {
       case Success<List<CountdownItem>>(:final List<CountdownItem> data):
-        state = state.copyWith(
-          items: data,
-          loading: false,
-          clearError: true,
-        );
+        state = state.copyWith(items: data, loading: false, clearError: true);
       case Fail<List<CountdownItem>>(:final failure):
-        state = state.copyWith(loading: false, error: failure.message);
+        state = state.copyWith(
+          loading: false,
+          error: _l10n.countdownLoadFailed(failureLabel(failure, _l10n)),
+        );
     }
   }
 
@@ -89,13 +98,12 @@ final class CountdownController
     await load();
   }
 
-  List<CountdownItem> visibleOnCalendar(DateKey today) => state.items
-      .where((CountdownItem c) => c.showType.onCalendar)
-      .toList()
-    ..sort(
-      (CountdownItem a, CountdownItem b) =>
-          a.daysLeft(today).abs().compareTo(b.daysLeft(today).abs()),
-    );
+  List<CountdownItem> visibleOnCalendar(DateKey today) =>
+      state.items.where((CountdownItem c) => c.showType.onCalendar).toList()
+        ..sort(
+          (CountdownItem a, CountdownItem b) =>
+              a.daysLeft(today).abs().compareTo(b.daysLeft(today).abs()),
+        );
 
   Future<void> openDesktopCard() => ref
       .read(multiWindowGatewayProvider)

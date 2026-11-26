@@ -60,10 +60,7 @@ void main() {
       addTearDown(second.dispose);
       await second.write('planstar.notes.v1', 'v2');
       final after = jsonDecode(await file.readAsString()) as Map;
-      expect(
-        (after['revision'] as num).toInt(),
-        greaterThan(originalRevision),
-      );
+      expect((after['revision'] as num).toInt(), greaterThan(originalRevision));
     });
   });
 }

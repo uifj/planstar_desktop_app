@@ -16,14 +16,14 @@ final class LocalNoteRepository implements NoteRepository {
     required DomainEventBus bus,
     required Clock clock,
   }) : _store = JsonEntityStore<Note>(
-          store: store,
-          key: 'planstar.notes.v1',
-          bus: bus,
-          clock: clock,
-          fromJson: Note.fromJson,
-          toJson: (Note n) => n.toJson(),
-          idOf: (Note n) => n.id,
-        );
+         store: store,
+         key: 'planstar.notes.v1',
+         bus: bus,
+         clock: clock,
+         fromJson: Note.fromJson,
+         toJson: (Note n) => n.toJson(),
+         idOf: (Note n) => n.id,
+       );
 
   final JsonEntityStore<Note> _store;
 
@@ -42,10 +42,8 @@ final class LocalNoteRepository implements NoteRepository {
   }
 
   @override
-  Future<Result<void>> save(Note note) => _store.upsert(
-        note,
-        events: note.pullDomainEvents().toList(),
-      );
+  Future<Result<void>> save(Note note) =>
+      _store.upsert(note, events: note.pullDomainEvents().toList());
 
   @override
   Future<Result<void>> delete(String id) async {

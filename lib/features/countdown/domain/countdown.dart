@@ -8,15 +8,11 @@ import '../../../core/app_events.dart';
 import '../../../core/value_objects.dart';
 
 enum CountdownType {
-  custom('倒计时'),
-  birthday('生日'),
-  memorial('纪念日'),
-  festival('节日'),
-  exam('考试');
-
-  const CountdownType(this.label);
-
-  final String label;
+  custom,
+  birthday,
+  memorial,
+  festival,
+  exam;
 
   static CountdownType fromName(String? name) =>
       CountdownType.values.firstWhere(
@@ -26,19 +22,13 @@ enum CountdownType {
 }
 
 enum CountdownShowType {
-  desktopCard('卡片方式显示'),
-  calendarBottom('日历底部显示'),
-  both('两者都显示');
+  desktopCard,
+  calendarBottom,
+  both;
 
-  const CountdownShowType(this.label);
+  bool get onDesktop => this == desktopCard || this == both;
 
-  final String label;
-
-  bool get onDesktop =>
-      this == desktopCard || this == both;
-
-  bool get onCalendar =>
-      this == calendarBottom || this == both;
+  bool get onCalendar => this == calendarBottom || this == both;
 
   static CountdownShowType fromName(String? name) =>
       CountdownShowType.values.firstWhere(
@@ -118,21 +108,6 @@ final class CountdownItem extends AggregateRoot<String> {
 
   int daysLeft(DateKey today) => nextOccurrence(today).differenceInDays(today);
 
-  String displayText(DateKey today) {
-    final days = daysLeft(today);
-    if (days == 0) return '今天';
-    if (days > 0) return '还有$days天';
-    if (type == CountdownType.birthday || type == CountdownType.memorial) {
-      return '已过${-days}天';
-    }
-    return '过期${-days}天';
-  }
-
-  String ageText(DateKey today) {
-    if (type != CountdownType.birthday || birthYear == null) return '';
-    return '${nextOccurrence(today).year - birthYear!}岁生日';
-  }
-
   CountdownItem changed({
     required DateTime occurredAt,
     String? title,
@@ -162,33 +137,32 @@ final class CountdownItem extends AggregateRoot<String> {
   }
 
   Map<String, Object?> toJson() => <String, Object?>{
-        'id': id,
-        'title': title,
-        'targetDate': targetDate.key,
-        'type': type.name,
-        'showType': showType.name,
-        'color': color.argb,
-        'lunar': lunar,
-        'birthYear': birthYear,
-        'createdAt': createdAt.toIso8601String(),
-        'updatedAt': updatedAt.toIso8601String(),
-      };
+    'id': id,
+    'title': title,
+    'targetDate': targetDate.key,
+    'type': type.name,
+    'showType': showType.name,
+    'color': color.argb,
+    'lunar': lunar,
+    'birthYear': birthYear,
+    'createdAt': createdAt.toIso8601String(),
+    'updatedAt': updatedAt.toIso8601String(),
+  };
 
-  factory CountdownItem.fromJson(Map<String, Object?> json) =>
-      CountdownItem._(
-        id: json['id'] as String,
-        title: json['title'] as String? ?? '',
-        targetDate: DateKey.parse(json['targetDate']! as String),
-        type: CountdownType.fromName(json['type'] as String?),
-        showType: CountdownShowType.fromName(json['showType'] as String?),
-        color: EventColor(json['color'] as int? ?? 0xFF1F2024),
-        lunar: json['lunar'] as bool? ?? false,
-        birthYear: (json['birthYear'] as num?)?.toInt(),
-        createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ??
-            DateTime.now(),
-        updatedAt: DateTime.tryParse(json['updatedAt'] as String? ?? '') ??
-            DateTime.now(),
-      );
+  factory CountdownItem.fromJson(Map<String, Object?> json) => CountdownItem._(
+    id: json['id'] as String,
+    title: json['title'] as String? ?? '',
+    targetDate: DateKey.parse(json['targetDate']! as String),
+    type: CountdownType.fromName(json['type'] as String?),
+    showType: CountdownShowType.fromName(json['showType'] as String?),
+    color: EventColor(json['color'] as int? ?? 0xFF1F2024),
+    lunar: json['lunar'] as bool? ?? false,
+    birthYear: (json['birthYear'] as num?)?.toInt(),
+    createdAt:
+        DateTime.tryParse(json['createdAt'] as String? ?? '') ?? DateTime.now(),
+    updatedAt:
+        DateTime.tryParse(json['updatedAt'] as String? ?? '') ?? DateTime.now(),
+  );
 }
 
 abstract interface class CountdownRepository {

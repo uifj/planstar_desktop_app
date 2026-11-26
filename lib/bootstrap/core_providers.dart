@@ -13,6 +13,11 @@ import 'package:core/storage.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../core/ports.dart';
+import '../l10n/l10n.dart';
+
+final appLocalizationScopeProvider = Provider<AppLocalizationScope>(
+  (Ref ref) => AppLocalizationScope(),
+);
 
 /// 时钟。
 final clockProvider = Provider<Clock>((Ref ref) => const SystemClock());
@@ -123,9 +128,7 @@ final fileGatewayProvider = Provider<FileGateway>(
 
 /// Windows 桌面层（WorkerW 嵌入 / SPI 壁纸设置）。
 final desktopWallpaperGatewayProvider = Provider<DesktopWallpaperGateway>(
-  (Ref ref) => throw UnimplementedError(
-    'desktopWallpaperGatewayProvider 未注入',
-  ),
+  (Ref ref) => throw UnimplementedError('desktopWallpaperGatewayProvider 未注入'),
 );
 
 /// 屏幕 / 显示器信息（screen_retriever）。
@@ -135,9 +138,7 @@ final screenGatewayProvider = Provider<ScreenGateway>(
 
 /// 壁纸 PNG 的落盘 / 底图读取。
 final wallpaperImageGatewayProvider = Provider<WallpaperImageGateway>(
-  (Ref ref) => throw UnimplementedError(
-    'wallpaperImageGatewayProvider 未注入',
-  ),
+  (Ref ref) => throw UnimplementedError('wallpaperImageGatewayProvider 未注入'),
 );
 
 /// 启动参数 `--planstar-embed-desktop` 的单次覆盖（不写入用户设置）。

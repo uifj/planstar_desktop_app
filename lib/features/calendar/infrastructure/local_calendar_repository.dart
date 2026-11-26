@@ -24,21 +24,21 @@ final class LocalCalendarRepository implements CalendarRepository {
     required DomainEventBus bus,
     required Clock clock,
     required AppLogger logger,
-  })  : _bus = bus,
-        _clock = clock,
-        _logger = logger,
-        _events = JsonListStore<_Json>(
-          store: store,
-          key: _eventsKey,
-          fromJson: (_Json json) => json,
-          toJson: (_Json value) => value,
-        ),
-        _cells = JsonListStore<_Json>(
-          store: store,
-          key: _cellsKey,
-          fromJson: (_Json json) => json,
-          toJson: (_Json value) => value,
-        );
+  }) : _bus = bus,
+       _clock = clock,
+       _logger = logger,
+       _events = JsonListStore<_Json>(
+         store: store,
+         key: _eventsKey,
+         fromJson: (_Json json) => json,
+         toJson: (_Json value) => value,
+       ),
+       _cells = JsonListStore<_Json>(
+         store: store,
+         key: _cellsKey,
+         fromJson: (_Json json) => json,
+         toJson: (_Json value) => value,
+       );
 
   static const String _eventsKey = 'planstar.calendar.events.v1';
   static const String _cellsKey = 'planstar.calendar.cells.v1';
@@ -53,9 +53,8 @@ final class LocalCalendarRepository implements CalendarRepository {
   Future<Result<List<CalendarEvent>>> allEvents() async {
     final result = await guardAsync<List<_Json>>(() => _events.readAll());
     return result.map(
-      (List<_Json> items) => items
-          .map(CalendarEvent.fromJson)
-          .toList(growable: false),
+      (List<_Json> items) =>
+          items.map(CalendarEvent.fromJson).toList(growable: false),
     );
   }
 
@@ -80,10 +79,7 @@ final class LocalCalendarRepository implements CalendarRepository {
     final next = List<_Json>.of(items)
       ..removeWhere((_Json item) => item['id'] == event.id)
       ..add(event.toJson());
-    return _persist(
-      () => _events.writeAll(next),
-      event.pullDomainEvents(),
-    );
+    return _persist(() => _events.writeAll(next), event.pullDomainEvents());
   }
 
   @override
@@ -94,12 +90,9 @@ final class LocalCalendarRepository implements CalendarRepository {
     }
     final next = List<_Json>.of(current.requireData)
       ..removeWhere((_Json item) => item['id'] == id);
-    return _persist(
-      () => _events.writeAll(next),
-      <DomainEvent>[
-        CalendarEventRemoved(aggregateId: id, occurredAt: _clock.now()),
-      ],
-    );
+    return _persist(() => _events.writeAll(next), <DomainEvent>[
+      CalendarEventRemoved(aggregateId: id, occurredAt: _clock.now()),
+    ]);
   }
 
   @override
@@ -131,10 +124,7 @@ final class LocalCalendarRepository implements CalendarRepository {
     final next = List<_Json>.of(current.requireData)
       ..removeWhere((_Json item) => item['date'] == cell.date.key)
       ..add(cell.toJson());
-    return _persist(
-      () => _cells.writeAll(next),
-      cell.pullDomainEvents(),
-    );
+    return _persist(() => _cells.writeAll(next), cell.pullDomainEvents());
   }
 
   @override
@@ -145,17 +135,14 @@ final class LocalCalendarRepository implements CalendarRepository {
     }
     final next = List<_Json>.of(current.requireData)
       ..removeWhere((_Json item) => item['date'] == date.key);
-    return _persist(
-      () => _cells.writeAll(next),
-      <DomainEvent>[
-        DayCellChanged(
-          aggregateId: date.key,
-          occurredAt: _clock.now(),
-          date: date,
-          snapshot: '',
-        ),
-      ],
-    );
+    return _persist(() => _cells.writeAll(next), <DomainEvent>[
+      DayCellChanged(
+        aggregateId: date.key,
+        occurredAt: _clock.now(),
+        date: date,
+        snapshot: '',
+      ),
+    ]);
   }
 
   @override

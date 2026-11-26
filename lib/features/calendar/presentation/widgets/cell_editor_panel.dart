@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../bootstrap/core_providers.dart';
 import '../../../../core/value_objects.dart';
+import '../../../../l10n/l10n.dart';
 import '../../../../shared/widgets/common.dart';
 import '../../application/calendar_controllers.dart';
 import '../../domain/day_cell.dart';
@@ -21,12 +22,11 @@ final class CellEditorPanel extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
     final colors = context.appColors;
     final state = ref.watch(calendarControllerProvider);
     final cell = state.cells.where((DayCell c) => c.date == date).toList();
-    final lines = cell.isEmpty
-        ? const <RichLine>[]
-        : cell.first.lines;
+    final lines = cell.isEmpty ? const <RichLine>[] : cell.first.lines;
     final controller = ref.read(calendarControllerProvider.notifier);
 
     return Container(
@@ -43,7 +43,10 @@ final class CellEditorPanel extends ConsumerWidget {
             child: Row(
               children: <Widget>[
                 Text(
-                  '${date.cnFull} 周${date.cnWeekday}',
+                  l10n.calendarDateWithWeekday(
+                    date.fullDate(l10n),
+                    weekdayLong(date.weekday, l10n),
+                  ),
                   style: TextStyle(
                     fontSize: AppTypography.subtitle,
                     fontWeight: AppTypography.medium,
@@ -52,6 +55,7 @@ final class CellEditorPanel extends ConsumerWidget {
                 ),
                 const Spacer(),
                 IconButton(
+                  tooltip: l10n.commonClose,
                   icon: const Icon(LucideIcons.x, size: 18),
                   onPressed: () =>
                       ref.read(selectedDateProvider.notifier).clear(),
@@ -72,10 +76,8 @@ final class CellEditorPanel extends ConsumerWidget {
                         children: <Widget>[
                           Checkbox(
                             value: line.completed,
-                            onChanged: (_) => controller.toggleLineCompleted(
-                              date,
-                              line.id,
-                            ),
+                            onChanged: (_) =>
+                                controller.toggleLineCompleted(date, line.id),
                           ),
                           Expanded(
                             child: TextFormField(
@@ -95,18 +97,19 @@ final class CellEditorPanel extends ConsumerWidget {
                               ),
                               onChanged: (String value) =>
                                   controller.saveCellLines(
-                                date,
-                                lines
-                                    .map(
-                                      (RichLine l) => l.id == line.id
-                                          ? l.copyWith(text: value)
-                                          : l,
-                                    )
-                                    .toList(),
-                              ),
+                                    date,
+                                    lines
+                                        .map(
+                                          (RichLine l) => l.id == line.id
+                                              ? l.copyWith(text: value)
+                                              : l,
+                                        )
+                                        .toList(),
+                                  ),
                             ),
                           ),
                           IconButton(
+                            tooltip: l10n.calendarLineTextColor,
                             icon: const Icon(LucideIcons.palette, size: 16),
                             onPressed: () async {
                               final picked = await showColorPickerDialog(
@@ -124,10 +127,11 @@ final class CellEditorPanel extends ConsumerWidget {
                           ),
                           IconButton(
                             icon: const Icon(LucideIcons.repeat, size: 16),
-                            tooltip: '设为重复任务',
+                            tooltip: l10n.calendarMakeRecurringTask,
                             onPressed: () => _promote(context, ref, line),
                           ),
                           IconButton(
+                            tooltip: l10n.commonDelete,
                             icon: const Icon(LucideIcons.trash2, size: 16),
                             onPressed: () =>
                                 controller.removeLine(date, line.id),
@@ -140,7 +144,7 @@ final class CellEditorPanel extends ConsumerWidget {
                   Padding(
                     padding: const EdgeInsets.only(top: AppSpacing.lg),
                     child: Text(
-                      '双击单元格或直接添加一行开始记录',
+                      l10n.calendarCellEditorEmptyHint,
                       style: TextStyle(
                         fontSize: AppTypography.caption,
                         color: colors.textTertiary,
@@ -157,18 +161,15 @@ final class CellEditorPanel extends ConsumerWidget {
               runSpacing: AppSpacing.xs,
               children: <Widget>[
                 FilledButton.icon(
-                  onPressed: () => controller.saveCellLines(
-                    date,
-                    <RichLine>[
-                      ...lines,
-                      RichLine(
-                        id: ref.read(idGeneratorProvider).next(),
-                        text: '',
-                      ),
-                    ],
-                  ),
+                  onPressed: () => controller.saveCellLines(date, <RichLine>[
+                    ...lines,
+                    RichLine(
+                      id: ref.read(idGeneratorProvider).next(),
+                      text: '',
+                    ),
+                  ]),
                   icon: const Icon(LucideIcons.plus, size: 16),
-                  label: const Text('添加一行'),
+                  label: Text(l10n.calendarAddLine),
                 ),
                 OutlinedButton.icon(
                   onPressed: () async {
@@ -181,21 +182,20 @@ final class CellEditorPanel extends ConsumerWidget {
                     }
                   },
                   icon: const Icon(LucideIcons.paintBucket, size: 16),
-                  label: const Text('单元格颜色'),
+                  label: Text(l10n.calendarCellColor),
                 ),
                 OutlinedButton.icon(
                   onPressed: () async {
-                    final confirmed =
-                        await showClearConfirmDialog(context, '本日内容');
+                    final confirmed = await showClearConfirmDialog(
+                      context,
+                      l10n.calendarDayContent,
+                    );
                     if (confirmed) {
-                      await controller.saveCellLines(
-                        date,
-                        const <RichLine>[],
-                      );
+                      await controller.saveCellLines(date, const <RichLine>[]);
                     }
                   },
                   icon: const Icon(LucideIcons.eraser, size: 16),
-                  label: const Text('清空'),
+                  label: Text(l10n.calendarClearAction),
                 ),
               ],
             ),
@@ -216,7 +216,9 @@ final class CellEditorPanel extends ConsumerWidget {
       initialContent: line.text,
     );
     if (result == null) return;
-    await ref.read(calendarControllerProvider.notifier).promoteLineToEvent(
+    await ref
+        .read(calendarControllerProvider.notifier)
+        .promoteLineToEvent(
           date,
           line.id,
           result.type,

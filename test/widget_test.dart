@@ -20,16 +20,15 @@ void main() {
     RecurrenceRule recurrence = const RecurrenceRule(),
     List<DateKey> excluded = const <DateKey>[],
     DateKey? until,
-  }) =>
-      CalendarEvent.create(
-        id: 'evt-1',
-        content: '写周报',
-        startDate: origin,
-        occurredAt: occurredAt,
-        recurrence: recurrence,
-        excludedDates: excluded,
-        recurrenceUntil: until,
-      );
+  }) => CalendarEvent.create(
+    id: 'evt-1',
+    content: '写周报',
+    startDate: origin,
+    occurredAt: occurredAt,
+    recurrence: recurrence,
+    excludedDates: excluded,
+    recurrenceUntil: until,
+  );
 
   group('日期值对象', () {
     test('归一化时分秒并支持天数差', () {
@@ -59,14 +58,8 @@ void main() {
   group('重复规则', () {
     test('不重复只在起始日发生', () {
       final event = build();
-      expect(
-        RecurrencePolicy.happensOn(event, origin),
-        isTrue,
-      );
-      expect(
-        RecurrencePolicy.happensOn(event, origin.addDays(1)),
-        isFalse,
-      );
+      expect(RecurrencePolicy.happensOn(event, origin), isTrue);
+      expect(RecurrencePolicy.happensOn(event, origin.addDays(1)), isFalse);
     });
 
     test('每隔 2 天重复', () {
@@ -77,9 +70,10 @@ void main() {
         ),
       );
       final range = DateRange(origin, origin.addDays(8));
-      final dates = RecurrencePolicy.occurrences(event, range)
-          .map((DateKey d) => d.key)
-          .toList();
+      final dates = RecurrencePolicy.occurrences(
+        event,
+        range,
+      ).map((DateKey d) => d.key).toList();
       expect(dates, <String>[
         '2026-11-16',
         '2026-11-18',
@@ -99,10 +93,7 @@ void main() {
         excluded: <DateKey>[origin.addDays(2)],
       );
       final range = DateRange(origin, origin.addDays(14));
-      expect(
-        RecurrencePolicy.occurrences(event, range).length,
-        2,
-      );
+      expect(RecurrencePolicy.occurrences(event, range).length, 2);
     });
 
     test('仅删除当前 = 例外，删除当前及未来 = 截断', () {
@@ -110,22 +101,14 @@ void main() {
         recurrence: const RecurrenceRule(kind: RecurrenceKind.daily),
       );
       final excluded = event.exclude(origin.addDays(2), occurredAt);
-      expect(
-        RecurrencePolicy.happensOn(excluded, origin.addDays(2)),
-        isFalse,
-      );
+      expect(RecurrencePolicy.happensOn(excluded, origin.addDays(2)), isFalse);
       final truncated = event.truncateBefore(origin.addDays(4), occurredAt);
-      expect(
-        RecurrencePolicy.happensOn(truncated, origin.addDays(5)),
-        isFalse,
-      );
+      expect(RecurrencePolicy.happensOn(truncated, origin.addDays(5)), isFalse);
     });
 
     test('艾宾浩斯偏移固定为 1/2/4/7/15/30 天', () {
       final event = build(
-        recurrence: const RecurrenceRule(
-          kind: RecurrenceKind.ebbinghaus,
-        ),
+        recurrence: const RecurrenceRule(kind: RecurrenceKind.ebbinghaus),
       );
       final range = DateRange(origin, origin.addDays(31));
       expect(RecurrencePolicy.occurrences(event, range).length, 7);

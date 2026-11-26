@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../bootstrap/core_providers.dart';
 import '../../../core/value_objects.dart';
+import '../../../l10n/l10n.dart';
 import '../../../shared/widgets/common.dart';
 import '../application/timetable_controller.dart';
 import '../domain/timetable.dart';
@@ -19,6 +20,7 @@ final class TimetablePage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(timetableControllerProvider);
     final controller = ref.read(timetableControllerProvider.notifier);
+    final l10n = context.l10n;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
@@ -27,7 +29,7 @@ final class TimetablePage extends ConsumerWidget {
           child: Row(
             children: <Widget>[
               Text(
-                '课程表',
+                l10n.timetableTitle,
                 style: TextStyle(
                   fontSize: AppTypography.title,
                   fontWeight: AppTypography.bold,
@@ -38,19 +40,18 @@ final class TimetablePage extends ConsumerWidget {
               OutlinedButton.icon(
                 onPressed: () => _showSettings(context, ref),
                 icon: const Icon(LucideIcons.settings, size: 16),
-                label: const Text('课程表设置'),
+                label: Text(l10n.timetableSettings),
               ),
               const SizedBox(width: AppSpacing.sm),
               FilledButton.icon(
                 onPressed: () async {
                   await controller.create(
-                    name: '新建课程表',
-                    startDate:
-                        DateKey.today(ref.read(clockProvider).now()),
+                    name: l10n.timetableNewName,
+                    startDate: DateKey.today(ref.read(clockProvider).now()),
                   );
                 },
                 icon: const Icon(LucideIcons.plus, size: 16),
-                label: const Text('新建课程表'),
+                label: Text(l10n.timetableNewName),
               ),
             ],
           ),
@@ -68,10 +69,10 @@ final class TimetablePage extends ConsumerWidget {
           ),
         Expanded(
           child: state.items.isEmpty
-              ? const EmptyState(
+              ? EmptyState(
                   icon: LucideIcons.table2,
-                  title: '暂无课程表',
-                  hint: '支持单双周、节次时间与课程冲突检测',
+                  title: l10n.timetableEmptyTitle,
+                  hint: l10n.timetableEmptyHint,
                 )
               : ListView(
                   padding: const EdgeInsets.all(AppSpacing.md),
@@ -89,33 +90,37 @@ final class TimetablePage extends ConsumerWidget {
     final state = ref.read(timetableControllerProvider);
     if (state.items.isEmpty) return;
     final timetable = state.items.first;
+    final l10n = context.l10n;
+    final name = timetable.localizedName(l10n);
     await showDialog<void>(
       context: context,
       builder: (BuildContext context) => AppDialogFrame(
-        title: '课程表设置：${timetable.name}',
+        title: l10n.timetableSettingsTitle(name),
         actions: <Widget>[
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('关闭'),
+            child: Text(l10n.commonClose),
           ),
         ],
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
             ListTile(
-              title: const Text('开学日期'),
-              trailing: Text(timetable.startDate.cnFull),
+              title: Text(l10n.timetableStartDate),
+              trailing: Text(timetable.startDate.fullDate(l10n)),
             ),
             ListTile(
-              title: const Text('学期周数'),
-              trailing: Text('${timetable.weeks} 周'),
+              title: Text(l10n.timetableSemesterWeeks),
+              trailing: Text(l10n.timetableWeeksCount(timetable.weeks)),
             ),
             ListTile(
-              title: const Text('每天节次'),
-              trailing: Text('${timetable.periodsPerDay} 节'),
+              title: Text(l10n.timetablePeriodsPerDay),
+              trailing: Text(
+                l10n.timetablePeriodsPerDayCount(timetable.periodsPerDay),
+              ),
             ),
             SwitchListTile(
-              title: const Text('隐藏周末'),
+              title: Text(l10n.timetableHideWeekend),
               value: timetable.hideWeekend,
               onChanged: (bool v) => ref
                   .read(timetableControllerProvider.notifier)
@@ -136,35 +141,36 @@ final class _TimetableCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final colors = context.appColors;
+    final l10n = context.l10n;
+    final name = timetable.localizedName(l10n);
     final dayCount = timetable.hideWeekend ? 5 : 7;
     return AppSectionCard(
-      title: timetable.name,
-      subtitle: '${timetable.startDate.cnFull} 开学 · ${timetable.weeks} 周',
+      title: name,
+      subtitle: l10n.timetableSummary(
+        timetable.startDate.fullDate(l10n),
+        timetable.weeks,
+      ),
       trailing: IconButton(
         icon: Icon(LucideIcons.trash2, size: 16, color: colors.error),
-        onPressed: () => ref
-            .read(timetableControllerProvider.notifier)
-            .remove(timetable.id),
+        tooltip: l10n.timetableRemoveTooltip(name),
+        onPressed: () =>
+            ref.read(timetableControllerProvider.notifier).remove(timetable.id),
       ),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: DataTable(
           columns: <DataColumn>[
-            const DataColumn(label: Text('节次')),
+            DataColumn(label: Text(l10n.timetablePeriod)),
             for (var day = 1; day <= dayCount; day++)
-              DataColumn(label: Text('周$day')),
+              DataColumn(label: Text(weekdayShort(day, l10n))),
           ],
           rows: <DataRow>[
             for (final period in timetable.periods)
               DataRow(
                 cells: <DataCell>[
-                  DataCell(
-                    Text('${period.index}\n${period.startLabel}'),
-                  ),
+                  DataCell(Text('${period.index}\n${period.startLabel}')),
                   for (var day = 1; day <= dayCount; day++)
-                    DataCell(
-                      _lessonCell(context, ref, day, period.index),
-                    ),
+                    DataCell(_lessonCell(context, ref, day, period.index)),
                 ],
               ),
           ],
@@ -180,20 +186,26 @@ final class _TimetableCard extends ConsumerWidget {
     int period,
   ) {
     final matches = timetable.lessons
-        .where(
-          (Lesson l) => l.weekday == weekday && l.period == period,
-        )
+        .where((Lesson l) => l.weekday == weekday && l.period == period)
         .toList();
+    final l10n = context.l10n;
+    final addTooltip = l10n.timetableAddLessonTooltip(
+      weekdayLong(weekday, l10n),
+      period,
+    );
     if (matches.isEmpty) {
       return InkWell(
         onTap: () => _addLesson(context, ref, weekday, period),
         child: SizedBox(
           width: 88,
           height: 36,
-          child: Icon(
-            LucideIcons.plus,
-            size: 14,
-            color: context.appColors.textDisabled,
+          child: Tooltip(
+            message: addTooltip,
+            child: Icon(
+              LucideIcons.plus,
+              size: 14,
+              color: context.appColors.textDisabled,
+            ),
           ),
         ),
       );
@@ -202,20 +214,23 @@ final class _TimetableCard extends ConsumerWidget {
       onTap: () => ref
           .read(timetableControllerProvider.notifier)
           .removeLesson(timetable.id, matches.first.id),
-      child: Container(
-        width: 88,
-        height: 36,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: matches.first.color.toColor().withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(AppRadius.xs),
-        ),
-        child: Text(
-          matches.first.name,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            fontSize: AppTypography.label,
-            color: matches.first.color.toColor(),
+      child: Tooltip(
+        message: l10n.timetableRemoveLessonTooltip(matches.first.name),
+        child: Container(
+          width: 88,
+          height: 36,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: matches.first.color.toColor().withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(AppRadius.xs),
+          ),
+          child: Text(
+            matches.first.name,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: AppTypography.label,
+              color: matches.first.color.toColor(),
+            ),
           ),
         ),
       ),
@@ -229,21 +244,24 @@ final class _TimetableCard extends ConsumerWidget {
     int period,
   ) async {
     final nameController = TextEditingController();
+    final l10n = context.l10n;
     var parity = WeekParity.all;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (BuildContext context) => StatefulBuilder(
-        builder: (BuildContext context, StateSetter setState) =>
-            AppDialogFrame(
-          title: '添加课程（周$weekday 第$period节）',
+        builder: (BuildContext context, StateSetter setState) => AppDialogFrame(
+          title: l10n.timetableAddLessonTitle(
+            weekdayLong(weekday, l10n),
+            period,
+          ),
           actions: <Widget>[
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('取消'),
+              child: Text(l10n.commonCancel),
             ),
             FilledButton(
               onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('添加'),
+              child: Text(l10n.timetableAdd),
             ),
           ],
           child: Column(
@@ -251,7 +269,9 @@ final class _TimetableCard extends ConsumerWidget {
             children: <Widget>[
               TextField(
                 controller: nameController,
-                decoration: const InputDecoration(labelText: '课程名称'),
+                decoration: InputDecoration(
+                  labelText: l10n.timetableCourseName,
+                ),
               ),
               const SizedBox(height: AppSpacing.sm),
               DropdownButton<WeekParity>(
@@ -261,7 +281,7 @@ final class _TimetableCard extends ConsumerWidget {
                     .map(
                       (WeekParity p) => DropdownMenuItem<WeekParity>(
                         value: p,
-                        child: Text(p.label),
+                        child: Text(p.localizedLabel(l10n)),
                       ),
                     )
                     .toList(),
@@ -274,7 +294,9 @@ final class _TimetableCard extends ConsumerWidget {
       ),
     );
     if (confirmed != true || nameController.text.trim().isEmpty) return;
-    await ref.read(timetableControllerProvider.notifier).addLesson(
+    await ref
+        .read(timetableControllerProvider.notifier)
+        .addLesson(
           timetable.id,
           Lesson(
             id: ref.read(idGeneratorProvider).next(),

@@ -1,0 +1,2601 @@
+{
+  "@@locale": "zh",
+  "accountAutoLogin": "自动登录",
+  "@accountAutoLogin": {
+    "description": "账号自动登录状态"
+  },
+  "accountAutoSyncHourly": "每个整点自动同步",
+  "@accountAutoSyncHourly": {
+    "description": "每小时自动同步开关"
+  },
+  "accountCloudSyncSubtitle": "记录变更 → 手动 / 自动同步 → 状态回写",
+  "@accountCloudSyncSubtitle": {
+    "description": "云同步流程说明"
+  },
+  "accountCloudSyncTitle": "云同步",
+  "@accountCloudSyncTitle": {
+    "description": "云同步区域标题"
+  },
+  "accountDownloadedCount": "{count, plural, =1{下载 1 条} other{下载 {count} 条}}",
+  "@accountDownloadedCount": {
+    "description": "已下载记录数量",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "accountEmailOrPhone": "邮箱 / 手机号",
+  "@accountEmailOrPhone": {
+    "description": "登录邮箱或手机号输入框标签"
+  },
+  "accountIdentity": "{displayName}（{email}）",
+  "@accountIdentity": {
+    "description": "已登录账号的显示名称和邮箱",
+    "placeholders": {
+      "displayName": {
+        "type": "String"
+      },
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "accountLastSyncAt": "上次同步：{dateTime}",
+  "@accountLastSyncAt": {
+    "description": "按当前语言格式化的上次同步时间",
+    "placeholders": {
+      "dateTime": {
+        "type": "String"
+      }
+    }
+  },
+  "accountLoginOrRegister": "登录 / 注册",
+  "@accountLoginOrRegister": {
+    "description": "登录或注册按钮"
+  },
+  "accountLogout": "退出登录",
+  "@accountLogout": {
+    "description": "退出登录按钮"
+  },
+  "accountManualSync": "手动同步",
+  "@accountManualSync": {
+    "description": "手动同步按钮"
+  },
+  "accountNeverSynced": "从未同步",
+  "@accountNeverSynced": {
+    "description": "从未同步时的状态"
+  },
+  "accountPassword": "密码",
+  "@accountPassword": {
+    "description": "登录密码输入框标签"
+  },
+  "accountPendingChanges": "{count, plural, =0{没有待同步变更} =1{待同步变更 1 条} other{待同步变更 {count} 条}}",
+  "@accountPendingChanges": {
+    "description": "待同步变更数量",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "accountReadOnlyMember": "只读成员",
+  "@accountReadOnlyMember": {
+    "description": "账号只读成员状态"
+  },
+  "accountStatusFailure": "同步失败",
+  "@accountStatusFailure": {
+    "description": "同步失败状态"
+  },
+  "accountStatusIdle": "空闲",
+  "@accountStatusIdle": {
+    "description": "同步空闲状态"
+  },
+  "accountStatusSuccess": "同步成功",
+  "@accountStatusSuccess": {
+    "description": "同步成功状态"
+  },
+  "accountStatusSyncing": "同步中",
+  "@accountStatusSyncing": {
+    "description": "同步进行中状态"
+  },
+  "accountSubtitle": "登录后可以同步和备份日历清单",
+  "@accountSubtitle": {
+    "description": "账号页面说明"
+  },
+  "accountTeamAccount": "团队账号",
+  "@accountTeamAccount": {
+    "description": "账号团队账号状态"
+  },
+  "accountTitle": "账号",
+  "@accountTitle": {
+    "description": "账号页面标题"
+  },
+  "accountUploadedCount": "{count, plural, =1{上传 1 条} other{上传 {count} 条}}",
+  "@accountUploadedCount": {
+    "description": "已上传记录数量",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "accountVip": "VIP",
+  "@accountVip": {
+    "description": "账号 VIP 标识"
+  },
+  "appTitle": "企划星 · 桌面日历清单",
+  "@appTitle": {
+    "description": "Localized desktop text: appTitle"
+  },
+  "bulletStyleDot": "圆点",
+  "@bulletStyleDot": {
+    "description": "圆点项目符号"
+  },
+  "bulletStyleNone": "无",
+  "@bulletStyleNone": {
+    "description": "无项目符号"
+  },
+  "bulletStyleNumber": "数字编号",
+  "@bulletStyleNumber": {
+    "description": "数字编号项目符号"
+  },
+  "calendarAddCountdown": "添加倒数日",
+  "@calendarAddCountdown": {
+    "description": "Context menu action to add a countdown for the selected day."
+  },
+  "calendarAddLine": "添加一行",
+  "@calendarAddLine": {
+    "description": "Button label for adding a line to a day cell."
+  },
+  "calendarAllColors": "全部颜色",
+  "@calendarAllColors": {
+    "description": "Section heading for the full calendar color palette."
+  },
+  "calendarCellColor": "单元格颜色",
+  "@calendarCellColor": {
+    "description": "Label and tooltip for the day-cell background color."
+  },
+  "calendarCellEditorEmptyHint": "双击单元格或直接添加一行开始记录",
+  "@calendarCellEditorEmptyHint": {
+    "description": "Empty-state instructions in the day editor."
+  },
+  "calendarClearAction": "清空",
+  "@calendarClearAction": {
+    "description": "Button label confirming a clear action."
+  },
+  "calendarClearConfirmMessage": "将清空 {target} 的全部内容，此操作不可撤销。",
+  "@calendarClearConfirmMessage": {
+    "description": "Warning that clearing the selected content cannot be undone.",
+    "placeholders": {
+      "target": {
+        "type": "String",
+        "example": "本日内容"
+      }
+    }
+  },
+  "calendarClearConfirmTitle": "确认清空",
+  "@calendarClearConfirmTitle": {
+    "description": "Title of the clear-content confirmation dialog."
+  },
+  "calendarClearDayContent": "清空本日内容",
+  "@calendarClearDayContent": {
+    "description": "Context menu action to clear the selected day's content."
+  },
+  "calendarColorLabel": "颜色",
+  "@calendarColorLabel": {
+    "description": "Section label for event and cell colors."
+  },
+  "calendarColorPickerDescription": "文字颜色 / 单元格颜色",
+  "@calendarColorPickerDescription": {
+    "description": "Description of the colors available in the calendar picker."
+  },
+  "calendarColorPickerTitle": "选择颜色",
+  "@calendarColorPickerTitle": {
+    "description": "Title of the calendar color picker dialog."
+  },
+  "calendarColorValue": "颜色 {color}",
+  "@calendarColorValue": {
+    "description": "Accessible label and tooltip for a color swatch.",
+    "placeholders": {
+      "color": {
+        "type": "String",
+        "example": "#FF4086FF"
+      }
+    }
+  },
+  "calendarContentHint": "输入任务或提醒内容",
+  "@calendarContentHint": {
+    "description": "Input hint for task or reminder content."
+  },
+  "calendarContentLabel": "内容",
+  "@calendarContentLabel": {
+    "description": "Input label for task or reminder content."
+  },
+  "calendarCopyDayContent": "复制本日内容",
+  "@calendarCopyDayContent": {
+    "description": "Context menu action to copy the selected day's content."
+  },
+  "calendarCountdownAdded": "已添加倒数日",
+  "@calendarCountdownAdded": {
+    "description": "Toast confirming that a countdown was added."
+  },
+  "calendarDateWithWeekday": "{date} {weekday}",
+  "@calendarDateWithWeekday": {
+    "description": "Date and weekday heading in the day editor.",
+    "placeholders": {
+      "date": {
+        "type": "String",
+        "example": "2026年11月26日"
+      },
+      "weekday": {
+        "type": "String",
+        "example": "星期四"
+      }
+    }
+  },
+  "calendarDayContent": "本日内容",
+  "@calendarDayContent": {
+    "description": "Name of the selected day's content in clear confirmations."
+  },
+  "calendarDayContentCopied": "已复制本日内容",
+  "@calendarDayContentCopied": {
+    "description": "Toast confirming that the selected day's content was copied."
+  },
+  "calendarDeleteRecurringEvent": "删除重复任务…",
+  "@calendarDeleteRecurringEvent": {
+    "description": "Context menu action to delete a recurring task."
+  },
+  "calendarDeleteRecurringEventTitle": "删除重复任务",
+  "@calendarDeleteRecurringEventTitle": {
+    "description": "Title of the recurring-event deletion scope dialog."
+  },
+  "calendarDeleteScopeAll": "删除所有事件",
+  "@calendarDeleteScopeAll": {
+    "description": "Delete every occurrence of a recurring event."
+  },
+  "calendarDeleteScopeCurrent": "仅删除当前事件",
+  "@calendarDeleteScopeCurrent": {
+    "description": "Delete only the selected occurrence of a recurring event."
+  },
+  "calendarDeleteScopeCurrentAndFuture": "删除当前及未来全部事件",
+  "@calendarDeleteScopeCurrentAndFuture": {
+    "description": "Delete the selected occurrence and all future occurrences."
+  },
+  "calendarDeleteScopeRememberChoice": "所有冲突都选择该方法",
+  "@calendarDeleteScopeRememberChoice": {
+    "description": "Option label for applying the same choice to future delete conflicts."
+  },
+  "calendarDisplayModeFixedSingleLine": "固定单行",
+  "@calendarDisplayModeFixedSingleLine": {
+    "description": "Calendar display mode label for a fixed single row."
+  },
+  "calendarDisplayModeFloatingMonth": "浮动月份",
+  "@calendarDisplayModeFloatingMonth": {
+    "description": "Calendar display mode label for floating months."
+  },
+  "calendarDisplayModeFloatingSingleLine": "浮动单行",
+  "@calendarDisplayModeFloatingSingleLine": {
+    "description": "Calendar display mode label for a floating single row."
+  },
+  "calendarDisplayModeFullMonth": "完整月份",
+  "@calendarDisplayModeFullMonth": {
+    "description": "Calendar display mode label for full months."
+  },
+  "calendarEditDayContent": "编辑本日内容",
+  "@calendarEditDayContent": {
+    "description": "Context menu action to edit the selected day's content."
+  },
+  "calendarEditTaskOrReminder": "编辑任务 / 提醒",
+  "@calendarEditTaskOrReminder": {
+    "description": "Dialog title for editing a task or reminder."
+  },
+  "calendarEventTypeCountdown": "倒数纪念日",
+  "@calendarEventTypeCountdown": {
+    "description": "Calendar event type label for countdown anniversaries."
+  },
+  "calendarEventTypeReminder": "提醒",
+  "@calendarEventTypeReminder": {
+    "description": "Calendar event type label for reminders."
+  },
+  "calendarEventTypeSubscription": "订阅推送",
+  "@calendarEventTypeSubscription": {
+    "description": "Calendar event type label for subscription notifications."
+  },
+  "calendarEventTypeTask": "重复任务",
+  "@calendarEventTypeTask": {
+    "description": "Calendar event type label for recurring tasks."
+  },
+  "calendarIntervalLabel": "间隔",
+  "@calendarIntervalLabel": {
+    "description": "Input label for the recurrence interval."
+  },
+  "calendarLineTextColor": "行文字颜色",
+  "@calendarLineTextColor": {
+    "description": "Tooltip for changing a cell line's text color."
+  },
+  "calendarMakeRecurringTask": "设为重复任务",
+  "@calendarMakeRecurringTask": {
+    "description": "Tooltip for converting a cell line into a recurring task."
+  },
+  "calendarMakeupWorkdayBadge": "班",
+  "@calendarMakeupWorkdayBadge": {
+    "description": "Compact badge for a makeup workday."
+  },
+  "calendarMarkEventComplete": "标记任务为已完成",
+  "@calendarMarkEventComplete": {
+    "description": "Accessibility action for marking an event complete."
+  },
+  "calendarMarkEventIncomplete": "标记任务为未完成",
+  "@calendarMarkEventIncomplete": {
+    "description": "Accessibility action for marking a completed event incomplete."
+  },
+  "calendarMarkLineComplete": "标记为已完成",
+  "@calendarMarkLineComplete": {
+    "description": "Accessibility action for marking a cell line complete."
+  },
+  "calendarMarkLineIncomplete": "标记为未完成",
+  "@calendarMarkLineIncomplete": {
+    "description": "Accessibility action for marking a completed cell line incomplete."
+  },
+  "calendarNewTask": "新建任务",
+  "@calendarNewTask": {
+    "description": "Button label for creating a calendar task."
+  },
+  "calendarNewTaskOrReminder": "新建任务 / 提醒",
+  "@calendarNewTaskOrReminder": {
+    "description": "Context menu action and dialog title for a new task or reminder."
+  },
+  "calendarNextMonth": "下个月",
+  "@calendarNextMonth": {
+    "description": "Localized desktop text: calendarNextMonth"
+  },
+  "calendarNoTasksOnDay": "本日没有任务",
+  "@calendarNoTasksOnDay": {
+    "description": "Toast shown when deleting a task from a day with no tasks."
+  },
+  "calendarOpenCountdownCard": "点击打开桌面卡片",
+  "@calendarOpenCountdownCard": {
+    "description": "Tooltip and hint for opening the countdown desktop card."
+  },
+  "calendarOpenDesktopNote": "打开桌面便签",
+  "@calendarOpenDesktopNote": {
+    "description": "Context menu action to open a desktop note for the selected day."
+  },
+  "calendarPasteToDay": "粘贴到本日",
+  "@calendarPasteToDay": {
+    "description": "Context menu action to paste text into the selected day."
+  },
+  "calendarPreviousMonth": "上个月",
+  "@calendarPreviousMonth": {
+    "description": "Localized desktop text: calendarPreviousMonth"
+  },
+  "calendarRecurrenceCustomDay": "自定义日重复",
+  "@calendarRecurrenceCustomDay": {
+    "description": "Recurrence option for a custom daily interval."
+  },
+  "calendarRecurrenceCustomMonthDay": "自定义月重复（按日期）",
+  "@calendarRecurrenceCustomMonthDay": {
+    "description": "Recurrence option for selected days of the month."
+  },
+  "calendarRecurrenceCustomMonthWeek": "自定义月重复（按星期）",
+  "@calendarRecurrenceCustomMonthWeek": {
+    "description": "Recurrence option for a selected ordinal weekday of the month."
+  },
+  "calendarRecurrenceCustomWeek": "自定义周重复",
+  "@calendarRecurrenceCustomWeek": {
+    "description": "Recurrence option for selected weekdays at a custom interval."
+  },
+  "calendarRecurrenceCustomYear": "自定义年重复",
+  "@calendarRecurrenceCustomYear": {
+    "description": "Recurrence option for a custom yearly interval."
+  },
+  "calendarRecurrenceDaily": "日重复",
+  "@calendarRecurrenceDaily": {
+    "description": "Recurrence option to repeat daily."
+  },
+  "calendarRecurrenceEbbinghaus": "艾宾浩斯记忆曲线",
+  "@calendarRecurrenceEbbinghaus": {
+    "description": "Recurrence option for an Ebbinghaus review schedule."
+  },
+  "calendarRecurrenceLegalWorkday": "法定工作日重复",
+  "@calendarRecurrenceLegalWorkday": {
+    "description": "Recurrence option to repeat on official workdays."
+  },
+  "calendarRecurrenceLunarYearly": "农历年重复",
+  "@calendarRecurrenceLunarYearly": {
+    "description": "Recurrence option to repeat on the same lunar-calendar date each year."
+  },
+  "calendarRecurrenceMonthLastDay": "每月最后一天",
+  "@calendarRecurrenceMonthLastDay": {
+    "description": "Recurrence option for the last day of every month."
+  },
+  "calendarRecurrenceMonthly": "月重复",
+  "@calendarRecurrenceMonthly": {
+    "description": "Recurrence option to repeat monthly."
+  },
+  "calendarRecurrenceNone": "不重复",
+  "@calendarRecurrenceNone": {
+    "description": "Recurrence option for a one-time event."
+  },
+  "calendarRecurrenceQuarterly": "每季度",
+  "@calendarRecurrenceQuarterly": {
+    "description": "Recurrence option to repeat quarterly."
+  },
+  "calendarRecurrenceRule": "重复规则",
+  "@calendarRecurrenceRule": {
+    "description": "Section label for recurrence settings."
+  },
+  "calendarRecurrenceWeekly": "周重复",
+  "@calendarRecurrenceWeekly": {
+    "description": "Recurrence option to repeat weekly."
+  },
+  "calendarRecurrenceWorkday": "工作日重复",
+  "@calendarRecurrenceWorkday": {
+    "description": "Recurrence option to repeat on workdays."
+  },
+  "calendarRecurrenceYearly": "年重复",
+  "@calendarRecurrenceYearly": {
+    "description": "Recurrence option to repeat yearly."
+  },
+  "calendarReminderCustom": "自定义",
+  "@calendarReminderCustom": {
+    "description": "Reminder choice for a custom advance period."
+  },
+  "calendarReminderDaysBefore": "{count, plural, other{# 天前}}",
+  "@calendarReminderDaysBefore": {
+    "description": "Reminder choice to notify a number of days before the event.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "calendarReminderLabel": "提醒",
+  "@calendarReminderLabel": {
+    "description": "Section label for reminder settings."
+  },
+  "calendarReminderSameDay": "当天",
+  "@calendarReminderSameDay": {
+    "description": "Reminder choice to notify on the event day."
+  },
+  "calendarRestDayBadge": "休",
+  "@calendarRestDayBadge": {
+    "description": "Compact badge for a rest day."
+  },
+  "calendarSetCellColor": "设置单元格颜色",
+  "@calendarSetCellColor": {
+    "description": "Context menu action to choose a day-cell background color."
+  },
+  "calendarTextColor": "文字颜色",
+  "@calendarTextColor": {
+    "description": "Label and tooltip for event text color."
+  },
+  "calendarToday": "今天",
+  "@calendarToday": {
+    "description": "Localized desktop text: calendarToday"
+  },
+  "calendarTransparentColor": "透明",
+  "@calendarTransparentColor": {
+    "description": "Accessible label and tooltip for the transparent color swatch."
+  },
+  "calendarTypeLabel": "类型",
+  "@calendarTypeLabel": {
+    "description": "Input label for the calendar event type."
+  },
+  "calendarWechatNotification": "微信通知",
+  "@calendarWechatNotification": {
+    "description": "Checkbox label for WeChat reminder notifications."
+  },
+  "calendarWeekNumberAccessibility": "第 {week} 周",
+  "@calendarWeekNumberAccessibility": {
+    "description": "Accessibility label for an ISO week number shown in a day cell.",
+    "placeholders": {
+      "week": {
+        "type": "int",
+        "example": "48"
+      }
+    }
+  },
+  "calendarWeekdayFriday": "五",
+  "@calendarWeekdayFriday": {
+    "description": "Short weekday header for Friday."
+  },
+  "calendarWeekdayLongFriday": "星期五",
+  "@calendarWeekdayLongFriday": {
+    "description": "Long weekday label for Friday."
+  },
+  "calendarWeekdayLongMonday": "星期一",
+  "@calendarWeekdayLongMonday": {
+    "description": "Long weekday label for Monday."
+  },
+  "calendarWeekdayLongSaturday": "星期六",
+  "@calendarWeekdayLongSaturday": {
+    "description": "Long weekday label for Saturday."
+  },
+  "calendarWeekdayLongSunday": "星期日",
+  "@calendarWeekdayLongSunday": {
+    "description": "Long weekday label for Sunday."
+  },
+  "calendarWeekdayLongThursday": "星期四",
+  "@calendarWeekdayLongThursday": {
+    "description": "Long weekday label for Thursday."
+  },
+  "calendarWeekdayLongTuesday": "星期二",
+  "@calendarWeekdayLongTuesday": {
+    "description": "Long weekday label for Tuesday."
+  },
+  "calendarWeekdayLongWednesday": "星期三",
+  "@calendarWeekdayLongWednesday": {
+    "description": "Long weekday label for Wednesday."
+  },
+  "calendarWeekdayMonday": "一",
+  "@calendarWeekdayMonday": {
+    "description": "Short weekday header for Monday."
+  },
+  "calendarWeekdaySaturday": "六",
+  "@calendarWeekdaySaturday": {
+    "description": "Short weekday header for Saturday."
+  },
+  "calendarWeekdaySunday": "日",
+  "@calendarWeekdaySunday": {
+    "description": "Short weekday header for Sunday."
+  },
+  "calendarWeekdayThursday": "四",
+  "@calendarWeekdayThursday": {
+    "description": "Short weekday header for Thursday."
+  },
+  "calendarWeekdayTuesday": "二",
+  "@calendarWeekdayTuesday": {
+    "description": "Short weekday header for Tuesday."
+  },
+  "calendarWeekdayWednesday": "三",
+  "@calendarWeekdayWednesday": {
+    "description": "Short weekday header for Wednesday."
+  },
+  "commonAdd": "添加",
+  "@commonAdd": {
+    "description": "通用添加按钮"
+  },
+  "commonAllColors": "全部颜色",
+  "@commonAllColors": {
+    "description": "Localized desktop text: commonAllColors"
+  },
+  "commonCancel": "取消",
+  "@commonCancel": {
+    "description": "Localized desktop text: commonCancel"
+  },
+  "commonClose": "关闭",
+  "@commonClose": {
+    "description": "Localized desktop text: commonClose"
+  },
+  "commonColorPickerHint": "文字颜色 / 单元格颜色",
+  "@commonColorPickerHint": {
+    "description": "Localized desktop text: commonColorPickerHint"
+  },
+  "commonCountdowns": "倒数日",
+  "@commonCountdowns": {
+    "description": "Localized desktop text: commonCountdowns"
+  },
+  "commonDelete": "删除",
+  "@commonDelete": {
+    "description": "Localized desktop text: commonDelete"
+  },
+  "commonMaximize": "最大化",
+  "@commonMaximize": {
+    "description": "Localized desktop text: commonMaximize"
+  },
+  "commonMinimize": "最小化",
+  "@commonMinimize": {
+    "description": "Localized desktop text: commonMinimize"
+  },
+  "commonNoCountdowns": "暂无倒数日",
+  "@commonNoCountdowns": {
+    "description": "Localized desktop text: commonNoCountdowns"
+  },
+  "commonNotes": "便签",
+  "@commonNotes": {
+    "description": "Localized desktop text: commonNotes"
+  },
+  "commonRecentColors": "最近使用",
+  "@commonRecentColors": {
+    "description": "Localized desktop text: commonRecentColors"
+  },
+  "commonRetry": "重试",
+  "@commonRetry": {
+    "description": "Localized desktop text: commonRetry"
+  },
+  "commonSave": "保存",
+  "@commonSave": {
+    "description": "Localized desktop text: commonSave"
+  },
+  "commonSettings": "设置",
+  "@commonSettings": {
+    "description": "Localized desktop text: commonSettings"
+  },
+  "commonSyncNow": "手动同步",
+  "@commonSyncNow": {
+    "description": "Localized desktop text: commonSyncNow"
+  },
+  "commonToday": "今天",
+  "@commonToday": {
+    "description": "Localized desktop text: commonToday"
+  },
+  "countdownBirthdayAge": "{age}岁生日",
+  "@countdownBirthdayAge": {
+    "description": "Age at the next birthday occurrence",
+    "placeholders": {
+      "age": {
+        "type": "int",
+        "example": "30"
+      }
+    }
+  },
+  "countdownCreate": "新建倒数日",
+  "@countdownCreate": {
+    "description": "Button and dialog title for creating a countdown"
+  },
+  "countdownCreated": "创建",
+  "@countdownCreated": {
+    "description": "Confirmation button for creating a countdown"
+  },
+  "countdownDaysRemaining": "{count, plural, other{还有{count}天}}",
+  "@countdownDaysRemaining": {
+    "description": "Number of days remaining until a countdown date",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "5"
+      }
+    }
+  },
+  "countdownDaysSince": "{count, plural, other{已过{count}天}}",
+  "@countdownDaysSince": {
+    "description": "Number of days since a recurring anniversary or birthday occurrence",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "2"
+      }
+    }
+  },
+  "countdownDeleteTooltip": "删除倒数日：{title}",
+  "@countdownDeleteTooltip": {
+    "description": "Accessibility tooltip for deleting a countdown item",
+    "placeholders": {
+      "title": {
+        "type": "String",
+        "example": "毕业典礼"
+      }
+    }
+  },
+  "countdownEmptyHint": "支持倒计时、累计日、生日、纪念日",
+  "@countdownEmptyHint": {
+    "description": "Supported countdown kinds shown in the empty state"
+  },
+  "countdownEmptyTitle": "暂无倒数日",
+  "@countdownEmptyTitle": {
+    "description": "Empty countdown list title"
+  },
+  "countdownExpiredDays": "{count, plural, other{过期{count}天}}",
+  "@countdownExpiredDays": {
+    "description": "Number of days since a fixed-date countdown expired",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "2"
+      }
+    }
+  },
+  "countdownLoadFailed": "加载倒数日失败：{message}",
+  "@countdownLoadFailed": {
+    "description": "message must be a safe localized category from failureLabel, never raw error details",
+    "placeholders": {
+      "message": {
+        "type": "String",
+        "example": "本地数据读取失败，请稍后重试。"
+      }
+    }
+  },
+  "countdownNameField": "名称",
+  "@countdownNameField": {
+    "description": "Countdown name text field label"
+  },
+  "countdownOpenDesktopCard": "打开桌面卡片",
+  "@countdownOpenDesktopCard": {
+    "description": "Action for opening the desktop countdown card"
+  },
+  "countdownShowTypeBoth": "两者都显示",
+  "@countdownShowTypeBoth": {
+    "description": "Show a countdown in both locations"
+  },
+  "countdownShowTypeCalendarBottom": "日历底部",
+  "@countdownShowTypeCalendarBottom": {
+    "description": "Show a countdown in the calendar bottom bar only"
+  },
+  "countdownShowTypeDesktopCard": "桌面卡片",
+  "@countdownShowTypeDesktopCard": {
+    "description": "Show a countdown on the desktop card only"
+  },
+  "countdownShowTypeField": "显示位置",
+  "@countdownShowTypeField": {
+    "description": "Countdown display location dropdown field label"
+  },
+  "countdownTargetDateValue": "目标日期：{date}",
+  "@countdownTargetDateValue": {
+    "description": "Selected target date shown in the countdown editor",
+    "placeholders": {
+      "date": {
+        "type": "String",
+        "example": "2026年11月26日"
+      }
+    }
+  },
+  "countdownTitle": "{count, plural, other{倒数日（{count}）}}",
+  "@countdownTitle": {
+    "description": "Countdown page title with the number of countdown items",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "countdownTypeBirthday": "生日",
+  "@countdownTypeBirthday": {
+    "description": "Countdown type: birthday"
+  },
+  "countdownTypeCustom": "倒计时",
+  "@countdownTypeCustom": {
+    "description": "Countdown type: fixed-date countdown"
+  },
+  "countdownTypeExam": "考试",
+  "@countdownTypeExam": {
+    "description": "Countdown type: exam"
+  },
+  "countdownTypeFestival": "节日",
+  "@countdownTypeFestival": {
+    "description": "Countdown type: festival"
+  },
+  "countdownTypeField": "类型",
+  "@countdownTypeField": {
+    "description": "Countdown type dropdown field label"
+  },
+  "countdownTypeMemorial": "纪念日",
+  "@countdownTypeMemorial": {
+    "description": "Countdown type: anniversary"
+  },
+  "countdownWindowTitle": "倒数日",
+  "@countdownWindowTitle": {
+    "description": "Localized desktop text: countdownWindowTitle"
+  },
+  "desktopWidgetFailed": "桌面小组件启动失败：{message}",
+  "@desktopWidgetFailed": {
+    "description": "message must be a safe localized category from caughtErrorLabel, never raw exception details",
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "desktopWidgetHidden": "桌面可编辑月历已隐藏",
+  "@desktopWidgetHidden": {
+    "description": "Localized desktop text: desktopWidgetHidden"
+  },
+  "desktopWidgetShown": "桌面可编辑月历已显示",
+  "@desktopWidgetShown": {
+    "description": "Localized desktop text: desktopWidgetShown"
+  },
+  "desktopWidgetTitle": "桌面日历清单",
+  "@desktopWidgetTitle": {
+    "description": "Localized desktop text: desktopWidgetTitle"
+  },
+  "exportCancelled": "已取消导出",
+  "@exportCancelled": {
+    "description": "Localized desktop text: exportCancelled"
+  },
+  "exportCellType": "日历清单",
+  "@exportCellType": {
+    "description": "Localized desktop text: exportCellType"
+  },
+  "exportColumnColor": "颜色",
+  "@exportColumnColor": {
+    "description": "Localized desktop text: exportColumnColor"
+  },
+  "exportColumnContent": "内容",
+  "@exportColumnContent": {
+    "description": "Localized desktop text: exportColumnContent"
+  },
+  "exportColumnDate": "日期",
+  "@exportColumnDate": {
+    "description": "Localized desktop text: exportColumnDate"
+  },
+  "exportColumnStatus": "状态",
+  "@exportColumnStatus": {
+    "description": "Localized desktop text: exportColumnStatus"
+  },
+  "exportColumnType": "类型",
+  "@exportColumnType": {
+    "description": "Localized desktop text: exportColumnType"
+  },
+  "exportCompleted": "已完成",
+  "@exportCompleted": {
+    "description": "Localized desktop text: exportCompleted"
+  },
+  "exportFailed": "导出失败：{message}",
+  "@exportFailed": {
+    "description": "message must be a safe localized category from caughtErrorLabel, never raw exception details",
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "exportIncomplete": "未完成",
+  "@exportIncomplete": {
+    "description": "Localized desktop text: exportIncomplete"
+  },
+  "exportPreparing": "正在准备导出…",
+  "@exportPreparing": {
+    "description": "Localized desktop text: exportPreparing"
+  },
+  "exportSuccess": "导出成功：{path}",
+  "@exportSuccess": {
+    "description": "Localized desktop text: exportSuccess",
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "exportTextTitle": "企划星日历清单 · 导出于 {date}",
+  "@exportTextTitle": {
+    "description": "Localized desktop text: exportTextTitle",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "failureGeneric": "操作未能完成，请稍后重试。",
+  "@failureGeneric": {
+    "description": "Safe fallback for an unclassified failure; never includes diagnostic details."
+  },
+  "failureNetwork": "网络连接失败，请检查网络后重试。",
+  "@failureNetwork": {
+    "description": "Safe presentation label for a network connection failure."
+  },
+  "failureOffline": "当前处于离线状态，请检查网络后重试。",
+  "@failureOffline": {
+    "description": "Safe presentation label for offline or unavailable cached data."
+  },
+  "failureTimeout": "请求超时，请稍后重试。",
+  "@failureTimeout": {
+    "description": "Safe presentation label for a timeout."
+  },
+  "failureAuthentication": "登录状态无效，请重新登录。",
+  "@failureAuthentication": {
+    "description": "Safe presentation label for an authentication failure."
+  },
+  "failureSessionExpired": "登录已过期，请重新登录。",
+  "@failureSessionExpired": {
+    "description": "Safe presentation label for an expired login session."
+  },
+  "failureForbidden": "没有执行此操作的权限。",
+  "@failureForbidden": {
+    "description": "Safe presentation label for a forbidden operation."
+  },
+  "failureBadRequest": "请求内容有误，请检查后重试。",
+  "@failureBadRequest": {
+    "description": "Safe presentation label for an invalid request."
+  },
+  "failureNotFound": "未找到所需内容，它可能已被删除。",
+  "@failureNotFound": {
+    "description": "Safe presentation label for content that cannot be found."
+  },
+  "failureConflict": "数据状态已变化，请刷新后重试。",
+  "@failureConflict": {
+    "description": "Safe presentation label for conflicting data state."
+  },
+  "failureRateLimit": "操作过于频繁，请稍后再试。",
+  "@failureRateLimit": {
+    "description": "Safe presentation label for rate limiting."
+  },
+  "failureServer": "服务暂时不可用，请稍后重试。",
+  "@failureServer": {
+    "description": "Safe presentation label for a server failure."
+  },
+  "failureData": "数据读取失败，请稍后重试。",
+  "@failureData": {
+    "description": "Safe presentation label for malformed or unreadable data."
+  },
+  "failureValidation": "输入内容不符合要求，请检查后重试。",
+  "@failureValidation": {
+    "description": "Safe presentation label for input validation failures."
+  },
+  "failureCancelled": "操作已取消。",
+  "@failureCancelled": {
+    "description": "Safe presentation label for a cancelled operation."
+  },
+  "failureCertificate": "安全连接校验失败，请检查网络或证书。",
+  "@failureCertificate": {
+    "description": "Safe presentation label for a TLS certificate failure."
+  },
+  "failureLocalData": "本地数据读取失败，请稍后重试。",
+  "@failureLocalData": {
+    "description": "Safe presentation label for local data access failures."
+  },
+  "failureFile": "文件操作失败，请检查文件后重试。",
+  "@failureFile": {
+    "description": "Safe presentation label for file system failures."
+  },
+  "failurePlatform": "当前设备操作失败，请稍后重试。",
+  "@failurePlatform": {
+    "description": "Safe presentation label for an uncategorized platform failure."
+  },
+  "historyAuthorLocal": "本机",
+  "@historyAuthorLocal": {
+    "description": "本机生成的历史记录作者名称"
+  },
+  "historyClearAction": "清空历史",
+  "@historyClearAction": {
+    "description": "清空全部历史记录的按钮"
+  },
+  "historyClearConfirmMessage": "将永久删除所有历史记录，此操作不可撤销。",
+  "@historyClearConfirmMessage": {
+    "description": "清空全部历史记录的确认说明"
+  },
+  "historyClearConfirmTitle": "清空历史记录？",
+  "@historyClearConfirmTitle": {
+    "description": "清空全部历史记录的确认标题"
+  },
+  "historyClearedContent": "（清空内容）",
+  "@historyClearedContent": {
+    "description": "历史快照内容为空时显示的占位文本"
+  },
+  "historyDateAt": "{date} {time}",
+  "@historyDateAt": {
+    "description": "较早历史记录的本地化日期及具体时间",
+    "placeholders": {
+      "date": {
+        "type": "String",
+        "example": "11月25日"
+      },
+      "time": {
+        "type": "String",
+        "example": "14:30"
+      }
+    }
+  },
+  "historyDeleteConfirmMessage": "删除后无法恢复这条历史记录。",
+  "@historyDeleteConfirmMessage": {
+    "description": "删除单条历史记录的确认说明"
+  },
+  "historyDeleteConfirmTitle": "删除这条历史记录？",
+  "@historyDeleteConfirmTitle": {
+    "description": "删除单条历史记录的确认标题"
+  },
+  "historyDeleteRecordTooltip": "删除这条记录",
+  "@historyDeleteRecordTooltip": {
+    "description": "删除单条历史记录按钮的提示"
+  },
+  "historyEmptyHint": "编辑日历格子或便签会自动留痕",
+  "@historyEmptyHint": {
+    "description": "没有历史记录时的空状态说明"
+  },
+  "historyEmptyTitle": "暂无历史记录",
+  "@historyEmptyTitle": {
+    "description": "没有历史记录时的空状态标题"
+  },
+  "historyEntryMetadata": "{relativeTime} · {kind} · {target}",
+  "@historyEntryMetadata": {
+    "description": "历史条目的时间、类型和目标摘要",
+    "placeholders": {
+      "relativeTime": {
+        "type": "String",
+        "example": "刚刚"
+      },
+      "kind": {
+        "type": "String",
+        "example": "日历格子"
+      },
+      "target": {
+        "type": "String",
+        "example": "2026年11月26日"
+      }
+    }
+  },
+  "historyFilterAll": "全部",
+  "@historyFilterAll": {
+    "description": "历史类型筛选的全部选项"
+  },
+  "historyJustNow": "刚刚",
+  "@historyJustNow": {
+    "description": "一分钟内发生的历史记录相对时间"
+  },
+  "historyKindCell": "日历格子",
+  "@historyKindCell": {
+    "description": "日历格子历史类型"
+  },
+  "historyKindNote": "便签",
+  "@historyKindNote": {
+    "description": "便签历史类型"
+  },
+  "historyLoadFailed": "加载失败：{message}",
+  "@historyLoadFailed": {
+    "description": "message must be a safe localized category from failureLabel, never raw error details",
+    "placeholders": {
+      "message": {
+        "type": "String",
+        "example": "存储不可用"
+      }
+    }
+  },
+  "historyMinutesAgo": "{count,plural, other{{count} 分钟前 · {time}}}",
+  "@historyMinutesAgo": {
+    "description": "一小时内发生的历史记录相对时间及具体时间",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "5"
+      },
+      "time": {
+        "type": "String",
+        "example": "14:30"
+      }
+    }
+  },
+  "historyNewerContentMessage": "{date} 的当前内容比这条历史更新，恢复会覆盖较新内容。确定继续吗？",
+  "@historyNewerContentMessage": {
+    "description": "覆盖较新内容前的恢复确认说明",
+    "placeholders": {
+      "date": {
+        "type": "String",
+        "example": "2026年11月26日"
+      }
+    }
+  },
+  "historyNewerContentTitle": "当前内容更新",
+  "@historyNewerContentTitle": {
+    "description": "历史快照与当前内容冲突时的确认标题"
+  },
+  "historyNoMatchesHint": "换个关键词或筛选条件试试",
+  "@historyNoMatchesHint": {
+    "description": "历史搜索或筛选无结果时的说明"
+  },
+  "historyNoMatchesTitle": "没有匹配的历史",
+  "@historyNoMatchesTitle": {
+    "description": "历史搜索或筛选无结果时的标题"
+  },
+  "historyNoteRemoved": "删除便签",
+  "@historyNoteRemoved": {
+    "description": "无标题便签被删除时生成的历史内容"
+  },
+  "historyNoteRemovedWithTitle": "删除便签：{title}",
+  "@historyNoteRemovedWithTitle": {
+    "description": "有标题便签被删除时生成的历史内容",
+    "placeholders": {
+      "title": {
+        "type": "String",
+        "example": "购物清单"
+      }
+    }
+  },
+  "historyNoteWithSummary": "{title}：{summary}",
+  "@historyNoteWithSummary": {
+    "description": "便签标题与摘要不同时生成的历史内容",
+    "placeholders": {
+      "title": {
+        "type": "String",
+        "example": "购物清单"
+      },
+      "summary": {
+        "type": "String",
+        "example": "买牛奶"
+      }
+    }
+  },
+  "historyRestoreAction": "恢复",
+  "@historyRestoreAction": {
+    "description": "恢复历史快照的按钮"
+  },
+  "historyRestoreCancelled": "当前内容更新，已取消恢复",
+  "@historyRestoreCancelled": {
+    "description": "检测到较新内容后取消恢复的提示"
+  },
+  "historyRestoreFailed": "恢复失败，请稍后重试",
+  "@historyRestoreFailed": {
+    "description": "历史快照恢复失败的提示"
+  },
+  "historyRestoreInvalid": "这条记录无法恢复",
+  "@historyRestoreInvalid": {
+    "description": "历史记录不是可恢复快照时的提示"
+  },
+  "historyRestoreMessage": "将 {date} 的格子内容恢复为这条历史快照？",
+  "@historyRestoreMessage": {
+    "description": "恢复历史快照的确认说明",
+    "placeholders": {
+      "date": {
+        "type": "String",
+        "example": "2026年11月26日"
+      }
+    }
+  },
+  "historyRestoreTitle": "恢复历史内容",
+  "@historyRestoreTitle": {
+    "description": "恢复历史快照的确认标题"
+  },
+  "historyRestoredMessage": "已恢复到 {date}",
+  "@historyRestoredMessage": {
+    "description": "历史快照恢复成功的提示",
+    "placeholders": {
+      "date": {
+        "type": "String",
+        "example": "2026年11月26日"
+      }
+    }
+  },
+  "historySearchHint": "搜索历史内容…",
+  "@historySearchHint": {
+    "description": "历史内容搜索框提示"
+  },
+  "historyTitle": "{count,plural, other{历史记录（{count}）}}",
+  "@historyTitle": {
+    "description": "历史页标题，包含历史条目总数",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "historyTodayAt": "今天 {time}",
+  "@historyTodayAt": {
+    "description": "今天发生的历史记录相对时间及具体时间",
+    "placeholders": {
+      "time": {
+        "type": "String",
+        "example": "14:30"
+      }
+    }
+  },
+  "historyVisibleCount": "{count,plural, other{显示 {count} 条}}",
+  "@historyVisibleCount": {
+    "description": "当前筛选条件下可见的历史条目数量",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "2"
+      }
+    }
+  },
+  "historyYesterday": "昨天",
+  "@historyYesterday": {
+    "description": "历史按日期分组时的昨天标签"
+  },
+  "historyYesterdayAt": "昨天 {time}",
+  "@historyYesterdayAt": {
+    "description": "昨天发生的历史记录相对时间及具体时间",
+    "placeholders": {
+      "time": {
+        "type": "String",
+        "example": "14:30"
+      }
+    }
+  },
+  "importCancelled": "已取消导入",
+  "@importCancelled": {
+    "description": "Localized desktop text: importCancelled"
+  },
+  "importChoosing": "请选择要导入的文件…",
+  "@importChoosing": {
+    "description": "Localized desktop text: importChoosing"
+  },
+  "importFailed": "导入失败：{message}",
+  "@importFailed": {
+    "description": "message must be a safe localized category from caughtErrorLabel, never raw exception details",
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "importInvalidFormat": "导入失败：文件格式不正确",
+  "@importInvalidFormat": {
+    "description": "Localized desktop text: importInvalidFormat"
+  },
+  "importSummary": "导入完成，共 {imported} 条记录，发现 {conflicts} 个日期冲突。",
+  "@importSummary": {
+    "description": "Localized desktop text: importSummary",
+    "placeholders": {
+      "imported": {
+        "type": "int"
+      },
+      "conflicts": {
+        "type": "int"
+      }
+    }
+  },
+  "languageChinese": "简体中文",
+  "@languageChinese": {
+    "description": "Localized desktop text: languageChinese"
+  },
+  "languageEnglish": "英语",
+  "@languageEnglish": {
+    "description": "Localized desktop text: languageEnglish"
+  },
+  "navAccountSync": "账号同步",
+  "@navAccountSync": {
+    "description": "Localized desktop text: navAccountSync"
+  },
+  "navAnonymousAccount": "未登录",
+  "@navAnonymousAccount": {
+    "description": "Localized desktop text: navAnonymousAccount"
+  },
+  "navCalendar": "日历",
+  "@navCalendar": {
+    "description": "Localized desktop text: navCalendar"
+  },
+  "navGoToToday": "返回今天",
+  "@navGoToToday": {
+    "description": "Localized desktop text: navGoToToday"
+  },
+  "navHideToTray": "隐藏到托盘（右键托盘图标可退出）",
+  "@navHideToTray": {
+    "description": "Localized desktop text: navHideToTray"
+  },
+  "navHistory": "历史",
+  "@navHistory": {
+    "description": "Localized desktop text: navHistory"
+  },
+  "navNextMonth": "下个月",
+  "@navNextMonth": {
+    "description": "Localized desktop text: navNextMonth"
+  },
+  "navPreviousMonth": "上个月",
+  "@navPreviousMonth": {
+    "description": "Localized desktop text: navPreviousMonth"
+  },
+  "navReminderStatus": "提醒（已安排 {count} 条）",
+  "@navReminderStatus": {
+    "description": "Localized desktop text: navReminderStatus",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "navSearch": "搜索",
+  "@navSearch": {
+    "description": "Localized desktop text: navSearch"
+  },
+  "navSearchAction": "搜索日历与清单",
+  "@navSearchAction": {
+    "description": "Localized desktop text: navSearchAction"
+  },
+  "navToggleTheme": "切换主题",
+  "@navToggleTheme": {
+    "description": "Localized desktop text: navToggleTheme"
+  },
+  "navTransfer": "导入导出",
+  "@navTransfer": {
+    "description": "Localized desktop text: navTransfer"
+  },
+  "noteTitle": "便签",
+  "@noteTitle": {
+    "description": "Localized desktop text: noteTitle"
+  },
+  "notesAddLine": "添加一行",
+  "@notesAddLine": {
+    "description": "添加便签单行按钮"
+  },
+  "notesBackgroundColor": "背景颜色",
+  "@notesBackgroundColor": {
+    "description": "便签背景颜色区域标题"
+  },
+  "notesDeleteLine": "删除此行",
+  "@notesDeleteLine": {
+    "description": "删除便签单行按钮提示"
+  },
+  "notesEditNote": "编辑便签",
+  "@notesEditNote": {
+    "description": "便签编辑弹窗标题"
+  },
+  "notesEditorMissing": "便签不存在或已被删除",
+  "@notesEditorMissing": {
+    "description": "便签已不存在时的提示"
+  },
+  "notesEditorTitle": "便签",
+  "@notesEditorTitle": {
+    "description": "便签编辑弹窗标题"
+  },
+  "notesEmpty": "（空便签）",
+  "@notesEmpty": {
+    "description": "便签正文为空时显示的内容"
+  },
+  "notesEmptyHint": "点击右上角新建，便签可以独立窗口置顶显示",
+  "@notesEmptyHint": {
+    "description": "便签列表为空状态说明"
+  },
+  "notesEmptyTitle": "暂无便签",
+  "@notesEmptyTitle": {
+    "description": "便签列表为空状态标题"
+  },
+  "notesHeading": "{count, plural, =1{便签（{count}）} other{便签（{count}）}}",
+  "@notesHeading": {
+    "description": "便签管理页标题和便签数量",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "notesHide": "隐藏",
+  "@notesHide": {
+    "description": "隐藏便签按钮提示"
+  },
+  "notesLineColor": "此行文字颜色",
+  "@notesLineColor": {
+    "description": "修改便签单行文字颜色按钮提示"
+  },
+  "notesMarkLineComplete": "标记此行完成",
+  "@notesMarkLineComplete": {
+    "description": "便签单行完成复选框无障碍标签"
+  },
+  "notesNewNote": "新建便签",
+  "@notesNewNote": {
+    "description": "新建便签按钮和新便签默认标题"
+  },
+  "notesOpenWindow": "打开独立窗口",
+  "@notesOpenWindow": {
+    "description": "打开便签独立窗口按钮提示"
+  },
+  "notesPinWindow": "窗口置顶",
+  "@notesPinWindow": {
+    "description": "切换便签窗口置顶按钮提示"
+  },
+  "notesPinned": "置顶",
+  "@notesPinned": {
+    "description": "便签已置顶标记"
+  },
+  "notesShow": "显示",
+  "@notesShow": {
+    "description": "显示便签按钮提示"
+  },
+  "notesStandaloneWindow": "独立窗口",
+  "@notesStandaloneWindow": {
+    "description": "在独立窗口打开便签按钮"
+  },
+  "notesTitleField": "标题",
+  "@notesTitleField": {
+    "description": "便签标题输入框标签"
+  },
+  "notesUnavailable": "暂无便签",
+  "@notesUnavailable": {
+    "description": "Localized desktop text: notesUnavailable"
+  },
+  "notificationChannel": "任务提醒",
+  "@notificationChannel": {
+    "description": "Localized desktop text: notificationChannel"
+  },
+  "notificationChannelDescription": "日历任务与纪念日提醒",
+  "@notificationChannelDescription": {
+    "description": "Localized desktop text: notificationChannelDescription"
+  },
+  "notificationOpenCalendar": "打开日历",
+  "@notificationOpenCalendar": {
+    "description": "Localized desktop text: notificationOpenCalendar"
+  },
+  "reminderAcknowledge": "知道了",
+  "@reminderAcknowledge": {
+    "description": "Acknowledgment action for a reminder"
+  },
+  "reminderDismissTooltip": "关闭提醒",
+  "@reminderDismissTooltip": {
+    "description": "Accessibility tooltip for dismissing the reminder overlay"
+  },
+  "reminderDontShowAgain": "不再显示窗口",
+  "@reminderDontShowAgain": {
+    "description": "Action for dismissing the reminder window without showing it again"
+  },
+  "reminderLogCancelFailed": "取消提醒失败：{notificationId}",
+  "@reminderLogCancelFailed": {
+    "description": "Log message for a failed reminder cancellation; technical error details are logged separately",
+    "placeholders": {
+      "notificationId": {
+        "type": "String",
+        "example": "100123"
+      }
+    }
+  },
+  "reminderLogClearFailed": "清空提醒失败",
+  "@reminderLogClearFailed": {
+    "description": "Log message for a failed reminder queue clear; technical error details are logged separately"
+  },
+  "reminderLogInitializeFailed": "本地通知初始化失败，改用应用内提醒",
+  "@reminderLogInitializeFailed": {
+    "description": "Log message when falling back to in-app reminders"
+  },
+  "reminderLogInitialized": "本地通知插件初始化完成",
+  "@reminderLogInitialized": {
+    "description": "Log message after local notification initialization succeeds"
+  },
+  "reminderLogScheduleFailed": "提醒调度失败：{eventId}",
+  "@reminderLogScheduleFailed": {
+    "description": "Log message for a failed reminder schedule; technical error details are logged separately",
+    "placeholders": {
+      "eventId": {
+        "type": "String",
+        "example": "event-123"
+      }
+    }
+  },
+  "reminderNotificationBody": "{date} {time}",
+  "@reminderNotificationBody": {
+    "description": "Local notification body with localized occurrence date and reminder time",
+    "placeholders": {
+      "date": {
+        "type": "String",
+        "example": "2026年11月26日"
+      },
+      "time": {
+        "type": "String",
+        "example": "09:30"
+      }
+    }
+  },
+  "reminderRescheduleFailed": "重新安排提醒失败：{message}",
+  "@reminderRescheduleFailed": {
+    "description": "message must be a safe localized category from failureLabel, never raw error details",
+    "placeholders": {
+      "message": {
+        "type": "String",
+        "example": "本地数据读取失败，请稍后重试。"
+      }
+    }
+  },
+  "reminderTaskTitle": "任务提醒",
+  "@reminderTaskTitle": {
+    "description": "Title of an in-app or fallback task reminder"
+  },
+  "searchChooseCustomRange": "选择自定义范围",
+  "@searchChooseCustomRange": {
+    "description": "尚未选择自定义日期范围时的按钮"
+  },
+  "searchClearQueryTooltip": "清空搜索",
+  "@searchClearQueryTooltip": {
+    "description": "清空搜索关键词按钮的提示"
+  },
+  "searchCourseSubtitle": "{course} · 周{weekday} 第{period}节",
+  "@searchCourseSubtitle": {
+    "description": "课程搜索结果所属课表、星期及节次",
+    "placeholders": {
+      "course": {
+        "type": "String",
+        "example": "高等数学"
+      },
+      "weekday": {
+        "type": "String",
+        "example": "周一"
+      },
+      "period": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "searchCustomRangeLabel": "{start} 至 {end}",
+  "@searchCustomRangeLabel": {
+    "description": "已选择的自定义日期范围摘要",
+    "placeholders": {
+      "start": {
+        "type": "String",
+        "example": "2026年11月1日"
+      },
+      "end": {
+        "type": "String",
+        "example": "2026年11月26日"
+      }
+    }
+  },
+  "searchEmptyHint": "输入关键词后即时检索全部模块",
+  "@searchEmptyHint": {
+    "description": "搜索无结果时的空状态说明"
+  },
+  "searchEmptyTitle": "没有匹配内容",
+  "@searchEmptyTitle": {
+    "description": "搜索无结果时的空状态标题"
+  },
+  "searchEventSubtitle": "{date} · {recurrence}",
+  "@searchEventSubtitle": {
+    "description": "日历事件搜索结果的发生日期及重复规则",
+    "placeholders": {
+      "date": {
+        "type": "String",
+        "example": "2026年11月26日"
+      },
+      "recurrence": {
+        "type": "String",
+        "example": "不重复"
+      }
+    }
+  },
+  "searchFieldHint": "内容、任务、便签、倒数日、订阅、课程",
+  "@searchFieldHint": {
+    "description": "搜索框输入提示"
+  },
+  "searchFieldLabel": "搜日历清单",
+  "@searchFieldLabel": {
+    "description": "搜索框标签"
+  },
+  "searchKindCell": "单元格",
+  "@searchKindCell": {
+    "description": "日历单元格搜索结果类型"
+  },
+  "searchKindCountdown": "倒数日",
+  "@searchKindCountdown": {
+    "description": "倒数日搜索结果类型"
+  },
+  "searchKindCourse": "课程",
+  "@searchKindCourse": {
+    "description": "课程搜索结果类型"
+  },
+  "searchKindNote": "便签",
+  "@searchKindNote": {
+    "description": "便签搜索结果类型"
+  },
+  "searchKindSubscription": "订阅",
+  "@searchKindSubscription": {
+    "description": "订阅搜索结果类型"
+  },
+  "searchRangeAll": "全部",
+  "@searchRangeAll": {
+    "description": "搜索全部日期范围"
+  },
+  "searchRangeCustom": "自定义",
+  "@searchRangeCustom": {
+    "description": "搜索自定义日期范围"
+  },
+  "searchRangeOneMonth": "近一月",
+  "@searchRangeOneMonth": {
+    "description": "搜索最近一个月"
+  },
+  "searchRangeOneYear": "近一年",
+  "@searchRangeOneYear": {
+    "description": "搜索最近一年"
+  },
+  "searchRangeThreeMonths": "近三月",
+  "@searchRangeThreeMonths": {
+    "description": "搜索最近三个月"
+  },
+  "searchResultCount": "{count,plural, other{共找到 {count} 条结果}}",
+  "@searchResultCount": {
+    "description": "搜索结果总数",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "4"
+      }
+    }
+  },
+  "searchSubscriptionSubtitle": "{name} · {date}",
+  "@searchSubscriptionSubtitle": {
+    "description": "订阅搜索结果所属订阅及发生日期",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "工作日历"
+      },
+      "date": {
+        "type": "String",
+        "example": "2026年11月26日"
+      }
+    }
+  },
+  "settingsAboutAppVersion": "{appTitle} {version}",
+  "@settingsAboutAppVersion": {
+    "description": "关于页应用名称和版本号",
+    "placeholders": {
+      "appTitle": {
+        "type": "String"
+      },
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsAboutData": "关于 / 数据",
+  "@settingsAboutData": {
+    "description": "关于和数据设置分组标题"
+  },
+  "settingsAdvanced": "高级设置",
+  "@settingsAdvanced": {
+    "description": "高级设置分组标题"
+  },
+  "settingsApplyToDesktop": "立即应用到桌面",
+  "@settingsApplyToDesktop": {
+    "description": "立即应用桌面壁纸按钮"
+  },
+  "settingsAutoCheckUpdates": "自动检查更新",
+  "@settingsAutoCheckUpdates": {
+    "description": "自动检查更新开关"
+  },
+  "settingsAutoDelay": "未完成任务 30 天内自动顺延",
+  "@settingsAutoDelay": {
+    "description": "未完成任务自动顺延开关"
+  },
+  "settingsBulletStyle": "项目符号",
+  "@settingsBulletStyle": {
+    "description": "任务项目符号设置标签"
+  },
+  "settingsCalendarColors": "日历颜色",
+  "@settingsCalendarColors": {
+    "description": "日历颜色选择器的无障碍标签"
+  },
+  "settingsCalendarDisplay": "日历显示",
+  "@settingsCalendarDisplay": {
+    "description": "日历显示设置分组标题"
+  },
+  "settingsCalendarFontSize": "日历字号",
+  "@settingsCalendarFontSize": {
+    "description": "日历字号设置标签"
+  },
+  "settingsCalendarOpacity": "日历透明度",
+  "@settingsCalendarOpacity": {
+    "description": "日历透明度设置标签"
+  },
+  "settingsCellGap": "单元格间距",
+  "@settingsCellGap": {
+    "description": "单元格间距设置标签"
+  },
+  "settingsCellSection": "单元格",
+  "@settingsCellSection": {
+    "description": "单元格设置分组标题"
+  },
+  "settingsCheckNow": "立即检查",
+  "@settingsCheckNow": {
+    "description": "立即检查更新按钮"
+  },
+  "settingsCheckUpdates": "检查更新",
+  "@settingsCheckUpdates": {
+    "description": "检查更新设置项标题"
+  },
+  "settingsChooseImageDirectory": "选择图片目录",
+  "@settingsChooseImageDirectory": {
+    "description": "选择壁纸图片目录按钮"
+  },
+  "settingsClearImageDirectory": "清除图片目录",
+  "@settingsClearImageDirectory": {
+    "description": "清除壁纸图片目录按钮提示"
+  },
+  "settingsCloudSync": "云同步",
+  "@settingsCloudSync": {
+    "description": "云同步设置项标题"
+  },
+  "settingsCompletedLast": "完成项目排到最后",
+  "@settingsCompletedLast": {
+    "description": "已完成任务排序开关"
+  },
+  "settingsContentFontSize": "内容字号",
+  "@settingsContentFontSize": {
+    "description": "内容字号设置标签"
+  },
+  "settingsCountdownOpacity": "倒数日透明度",
+  "@settingsCountdownOpacity": {
+    "description": "倒数日透明度设置标签"
+  },
+  "settingsDesktop": "桌面",
+  "@settingsDesktop": {
+    "description": "桌面设置分组标题"
+  },
+  "settingsDesktopBehavior": "组件常驻所有窗口下面，卡片内可直接输入/勾选/拖动，卡片外点击穿透到桌面图标。",
+  "@settingsDesktopBehavior": {
+    "description": "可编辑桌面组件交互说明"
+  },
+  "settingsDesktopDescription": "可编辑月历组件常驻桌面层；静态壁纸快照仅作可选备份",
+  "@settingsDesktopDescription": {
+    "description": "桌面设置分组说明"
+  },
+  "settingsDesktopWidgetHidden": "桌面组件：已隐藏",
+  "@settingsDesktopWidgetHidden": {
+    "description": "桌面组件已隐藏状态"
+  },
+  "settingsDesktopWidgetVisible": "桌面组件：已显示（可编辑）",
+  "@settingsDesktopWidgetVisible": {
+    "description": "桌面组件已显示状态"
+  },
+  "settingsDisplayMode": "显示模式",
+  "@settingsDisplayMode": {
+    "description": "日历显示模式设置标签"
+  },
+  "settingsEditableDesktopCalendar": "在桌面上显示可编辑月历（真·桌面层）",
+  "@settingsEditableDesktopCalendar": {
+    "description": "可编辑桌面月历开关"
+  },
+  "settingsFestivalInfo": "显示节日 / 农历 / 节气",
+  "@settingsFestivalInfo": {
+    "description": "节日、农历和节气显示开关"
+  },
+  "settingsFontColors": "字体和颜色",
+  "@settingsFontColors": {
+    "description": "字体和颜色设置分组标题"
+  },
+  "settingsGlassEffect": "显示透明玻璃效果",
+  "@settingsGlassEffect": {
+    "description": "透明玻璃效果开关"
+  },
+  "settingsHideHotkey": "Crtl+H 显示隐藏 / 快捷键开关",
+  "@settingsHideHotkey": {
+    "description": "显示隐藏快捷键开关"
+  },
+  "settingsHolidays": "显示法定节假日",
+  "@settingsHolidays": {
+    "description": "法定节假日显示开关"
+  },
+  "settingsHotSearchFloating": "显示热搜 / 浮动按钮",
+  "@settingsHotSearchFloating": {
+    "description": "热搜和浮动按钮显示开关"
+  },
+  "settingsIeProxy": "使用 IE 代理设置",
+  "@settingsIeProxy": {
+    "description": "IE 代理设置开关"
+  },
+  "settingsJiyi": "显示黄历宜忌",
+  "@settingsJiyi": {
+    "description": "黄历宜忌显示开关"
+  },
+  "settingsLanguage": "语言",
+  "@settingsLanguage": {
+    "description": "应用语言设置标签"
+  },
+  "settingsLegacyCalendarHint": "对应旧版「日历」设置页",
+  "@settingsLegacyCalendarHint": {
+    "description": "日历显示设置分组说明"
+  },
+  "settingsLineSpacing": "行间距",
+  "@settingsLineSpacing": {
+    "description": "日历内容行间距设置标签"
+  },
+  "settingsLunar": "显示农历",
+  "@settingsLunar": {
+    "description": "农历显示开关"
+  },
+  "settingsMonthDetails": "显示月间隔 / 周数 / 阴影 / 标题栏",
+  "@settingsMonthDetails": {
+    "description": "月历辅助信息显示开关"
+  },
+  "settingsNoImageDirectory": "未选择图片目录",
+  "@settingsNoImageDirectory": {
+    "description": "未选择壁纸图片目录时的提示"
+  },
+  "settingsNotesLineSpacing": "行间距",
+  "@settingsNotesLineSpacing": {
+    "description": "便签行间距设置标签"
+  },
+  "settingsNotesOpacity": "便签透明度",
+  "@settingsNotesOpacity": {
+    "description": "便签透明度设置标签"
+  },
+  "settingsNotesSection": "便签",
+  "@settingsNotesSection": {
+    "description": "便签设置分组标题"
+  },
+  "settingsReminderTone": "提醒提示音",
+  "@settingsReminderTone": {
+    "description": "提醒提示音设置标签"
+  },
+  "settingsRescheduleReminders": "重排提醒",
+  "@settingsRescheduleReminders": {
+    "description": "重新排程全部提醒按钮"
+  },
+  "settingsRestoreDefaults": "恢复默认设置",
+  "@settingsRestoreDefaults": {
+    "description": "恢复默认设置按钮"
+  },
+  "settingsRestoreSystemWallpaper": "恢复系统原壁纸",
+  "@settingsRestoreSystemWallpaper": {
+    "description": "恢复系统原始壁纸按钮"
+  },
+  "settingsScheduledReminders": "{count, plural, =1{已排程提醒 {count} 条} other{已排程提醒 {count} 条}}",
+  "@settingsScheduledReminders": {
+    "description": "已排程提醒数量",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsSearchEngine": "搜索引擎",
+  "@settingsSearchEngine": {
+    "description": "搜索引擎设置标签"
+  },
+  "settingsSearchEngineBaidu": "百度",
+  "@settingsSearchEngineBaidu": {
+    "description": "百度搜索引擎"
+  },
+  "settingsSearchEngineBing": "必应",
+  "@settingsSearchEngineBing": {
+    "description": "必应搜索引擎"
+  },
+  "settingsShowAllNotes": "显示所有便签",
+  "@settingsShowAllNotes": {
+    "description": "显示所有便签开关"
+  },
+  "settingsShowCompleted": "显示已完成项目",
+  "@settingsShowCompleted": {
+    "description": "已完成任务显示开关"
+  },
+  "settingsShowReminderTime": "显示提醒时间",
+  "@settingsShowReminderTime": {
+    "description": "提醒时间显示开关"
+  },
+  "settingsSolarTerms": "显示节气",
+  "@settingsSolarTerms": {
+    "description": "节气显示开关"
+  },
+  "settingsStartOfWeek": "周起始日",
+  "@settingsStartOfWeek": {
+    "description": "每周起始日期设置标签"
+  },
+  "settingsStartWithWindows": "开机自启（随 Windows 启动）",
+  "@settingsStartWithWindows": {
+    "description": "开机自启开关"
+  },
+  "settingsStaticWallpaperGenerated": "静态壁纸：已生成",
+  "@settingsStaticWallpaperGenerated": {
+    "description": "静态壁纸已生成状态"
+  },
+  "settingsStaticWallpaperNotEnabled": "静态壁纸：未启用",
+  "@settingsStaticWallpaperNotEnabled": {
+    "description": "静态壁纸未启用状态"
+  },
+  "settingsStaticWallpaperSnapshot": "（可选）生成静态壁纸快照",
+  "@settingsStaticWallpaperSnapshot": {
+    "description": "静态壁纸快照开关"
+  },
+  "settingsStorageName": "Clean DDD + Riverpod · 本地存储：{storageName}",
+  "@settingsStorageName": {
+    "description": "应用架构和本地存储名称说明",
+    "placeholders": {
+      "storageName": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsSyncNow": "立即同步",
+  "@settingsSyncNow": {
+    "description": "立即同步按钮"
+  },
+  "settingsTabAbout": "关于",
+  "@settingsTabAbout": {
+    "description": "设置页关于页签"
+  },
+  "settingsTabAdvanced": "高级",
+  "@settingsTabAdvanced": {
+    "description": "设置页高级页签"
+  },
+  "settingsTabCalendar": "日历",
+  "@settingsTabCalendar": {
+    "description": "设置页日历页签"
+  },
+  "settingsTabCell": "单元格",
+  "@settingsTabCell": {
+    "description": "设置页单元格页签"
+  },
+  "settingsTabFontColors": "字体和颜色",
+  "@settingsTabFontColors": {
+    "description": "设置页字体和颜色页签"
+  },
+  "settingsTabNotes": "便签",
+  "@settingsTabNotes": {
+    "description": "设置页便签页签"
+  },
+  "settingsTabWallpaper": "壁纸",
+  "@settingsTabWallpaper": {
+    "description": "设置页壁纸页签"
+  },
+  "settingsTaskCompleteTone": "完成提示音",
+  "@settingsTaskCompleteTone": {
+    "description": "任务完成提示音设置标签"
+  },
+  "settingsTheme": "主题",
+  "@settingsTheme": {
+    "description": "应用主题设置标签"
+  },
+  "settingsVisibleColumns": "{count, plural, =1{{count} 列} other{{count} 列}}",
+  "@settingsVisibleColumns": {
+    "description": "日历显示月份列数的滑块值",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsVisibleColumnsLabel": "显示月份列",
+  "@settingsVisibleColumnsLabel": {
+    "description": "日历显示月份列数设置标签"
+  },
+  "settingsVisibleRows": "{count, plural, =1{{count} 行} other{{count} 行}}",
+  "@settingsVisibleRows": {
+    "description": "日历显示行数的滑块值",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsVisibleRowsLabel": "显示行数",
+  "@settingsVisibleRowsLabel": {
+    "description": "日历显示行数设置标签"
+  },
+  "settingsWallpaperFit": "图片适配",
+  "@settingsWallpaperFit": {
+    "description": "壁纸图片适配方式设置标签"
+  },
+  "settingsWallpaperFitFill": "填充（裁切铺满）",
+  "@settingsWallpaperFitFill": {
+    "description": "裁切并铺满的图片适配方式"
+  },
+  "settingsWallpaperFitFit": "适应（完整显示）",
+  "@settingsWallpaperFitFit": {
+    "description": "完整显示图片的适配方式"
+  },
+  "settingsWallpaperFitStretch": "拉伸",
+  "@settingsWallpaperFitStretch": {
+    "description": "拉伸图片的适配方式"
+  },
+  "settingsWallpaperImage": "壁纸底图",
+  "@settingsWallpaperImage": {
+    "description": "壁纸底图模式设置标签"
+  },
+  "settingsWallpaperIntervalLabel": "切换间隔（分钟）",
+  "@settingsWallpaperIntervalLabel": {
+    "description": "壁纸切换间隔设置标签"
+  },
+  "settingsWallpaperIntervalMinutes": "{count, plural, =1{{count} 分钟} other{{count} 分钟}}",
+  "@settingsWallpaperIntervalMinutes": {
+    "description": "壁纸切换间隔的滑块值",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsWallpaperShowAll": "循环目录下全部图片",
+  "@settingsWallpaperShowAll": {
+    "description": "循环显示目录中全部图片的开关"
+  },
+  "settingsWeekNumbers": "显示周序号",
+  "@settingsWeekNumbers": {
+    "description": "周序号显示开关"
+  },
+  "settingsWeekday": "周{weekday}",
+  "@settingsWeekday": {
+    "description": "周起始日选项，weekday 为本地化星期名称",
+    "placeholders": {
+      "weekday": {
+        "type": "String"
+      }
+    }
+  },
+  "soundToneDing": "滴答",
+  "@soundToneDing": {
+    "description": "滴答提示音"
+  },
+  "soundToneDing2": "叮当",
+  "@soundToneDing2": {
+    "description": "叮当提示音"
+  },
+  "soundToneDing3": "叮咚",
+  "@soundToneDing3": {
+    "description": "叮咚提示音"
+  },
+  "soundToneDong": "咚",
+  "@soundToneDong": {
+    "description": "咚提示音"
+  },
+  "soundToneLittleStar": "小星星",
+  "@soundToneLittleStar": {
+    "description": "小星星提示音"
+  },
+  "soundToneNone": "无",
+  "@soundToneNone": {
+    "description": "关闭提示音"
+  },
+  "subWindowCommand": "子窗口指令：{command}",
+  "@subWindowCommand": {
+    "description": "Localized desktop text: subWindowCommand",
+    "placeholders": {
+      "command": {
+        "type": "String"
+      }
+    }
+  },
+  "subscriptionAdd": "添加订阅",
+  "@subscriptionAdd": {
+    "description": "添加订阅按钮"
+  },
+  "subscriptionCopyLink": "复制分享链接",
+  "@subscriptionCopyLink": {
+    "description": "复制订阅分享链接按钮提示"
+  },
+  "subscriptionCreateTitle": "添加订阅日历",
+  "@subscriptionCreateTitle": {
+    "description": "添加订阅弹窗标题"
+  },
+  "subscriptionDelete": "删除订阅",
+  "@subscriptionDelete": {
+    "description": "删除订阅按钮提示"
+  },
+  "subscriptionEmptyHint": "支持本地订阅与 Google / Outlook / iCloud / CalDAV",
+  "@subscriptionEmptyHint": {
+    "description": "订阅列表为空状态说明"
+  },
+  "subscriptionEmptyTitle": "暂无订阅日历",
+  "@subscriptionEmptyTitle": {
+    "description": "订阅列表为空状态标题"
+  },
+  "subscriptionEnabled": "启用此订阅",
+  "@subscriptionEnabled": {
+    "description": "订阅启用开关无障碍标签"
+  },
+  "subscriptionFetchFailed": "订阅拉取失败，保留本地缓存：{name}",
+  "@subscriptionFetchFailed": {
+    "description": "订阅拉取失败时保留本地缓存的日志消息",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "subscriptionHeading": "{count, plural, =1{订阅日历（{count}）} other{订阅日历（{count}）}}",
+  "@subscriptionHeading": {
+    "description": "订阅日历页标题和订阅数量",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "subscriptionLastSyncedAt": "最近同步：{date} {time}",
+  "@subscriptionLastSyncedAt": {
+    "description": "订阅最近同步日期和时间",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "subscriptionName": "订阅名称",
+  "@subscriptionName": {
+    "description": "订阅名称输入框标签"
+  },
+  "subscriptionNeverSynced": "尚未同步",
+  "@subscriptionNeverSynced": {
+    "description": "订阅尚未同步状态"
+  },
+  "subscriptionShareLinkHint": "分享链接（留空则生成本地订阅）",
+  "@subscriptionShareLinkHint": {
+    "description": "订阅分享链接输入框标签"
+  },
+  "subscriptionSource": "订阅来源",
+  "@subscriptionSource": {
+    "description": "订阅来源下拉框无障碍标签"
+  },
+  "subscriptionSourceCaldav": "CalDAV",
+  "@subscriptionSourceCaldav": {
+    "description": "CalDAV 订阅来源"
+  },
+  "subscriptionSourceGoogle": "Google 日历",
+  "@subscriptionSourceGoogle": {
+    "description": "Google 日历订阅来源"
+  },
+  "subscriptionSourceIcloud": "iCloud 日历",
+  "@subscriptionSourceIcloud": {
+    "description": "iCloud 日历订阅来源"
+  },
+  "subscriptionSourceLocal": "本地订阅",
+  "@subscriptionSourceLocal": {
+    "description": "本地订阅来源"
+  },
+  "subscriptionSourceOutlook": "Outlook 日历",
+  "@subscriptionSourceOutlook": {
+    "description": "Outlook 日历订阅来源"
+  },
+  "subscriptionSummary": "{source} · {count, plural, =1{{count} 条推送} other{{count} 条推送}} · {lastSync}",
+  "@subscriptionSummary": {
+    "description": "订阅来源、推送数量和最近同步时间",
+    "placeholders": {
+      "source": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      },
+      "lastSync": {
+        "type": "String"
+      }
+    }
+  },
+  "subscriptionSync": "同步",
+  "@subscriptionSync": {
+    "description": "同步单个订阅按钮"
+  },
+  "subscriptionSyncAll": "同步全部",
+  "@subscriptionSyncAll": {
+    "description": "同步全部订阅按钮"
+  },
+  "syncFailed": "同步失败：{message}",
+  "@syncFailed": {
+    "description": "message must be a safe localized category from failureLabel, never server or exception details",
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "syncLocalAccount": "{message}（已切换为本地账号）",
+  "@syncLocalAccount": {
+    "description": "message must be a safe localized category from failureLabel, never server or exception details",
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "syncLoginRequired": "请先登录账号后再同步",
+  "@syncLoginRequired": {
+    "description": "Localized desktop text: syncLoginRequired"
+  },
+  "syncLoginSuccess": "登录成功",
+  "@syncLoginSuccess": {
+    "description": "Localized desktop text: syncLoginSuccess"
+  },
+  "syncSummary": "上传 {uploaded} 条记录，下载 {downloaded} 条记录。",
+  "@syncSummary": {
+    "description": "Localized desktop text: syncSummary",
+    "placeholders": {
+      "uploaded": {
+        "type": "int"
+      },
+      "downloaded": {
+        "type": "int"
+      }
+    }
+  },
+  "themeModeDark": "深色",
+  "@themeModeDark": {
+    "description": "深色主题"
+  },
+  "themeModeLight": "浅色",
+  "@themeModeLight": {
+    "description": "浅色主题"
+  },
+  "themeModeSystem": "跟随系统",
+  "@themeModeSystem": {
+    "description": "跟随系统主题"
+  },
+  "timetableAdd": "添加",
+  "@timetableAdd": {
+    "description": "添加课程按钮"
+  },
+  "timetableAddLessonTitle": "添加课程（{weekday} 第{period}节）",
+  "@timetableAddLessonTitle": {
+    "description": "添加课程对话框标题",
+    "placeholders": {
+      "weekday": {
+        "type": "String"
+      },
+      "period": {
+        "type": "int"
+      }
+    }
+  },
+  "timetableAddLessonTooltip": "添加课程（{weekday} 第{period}节）",
+  "@timetableAddLessonTooltip": {
+    "description": "添加课程单元格图标提示",
+    "placeholders": {
+      "weekday": {
+        "type": "String"
+      },
+      "period": {
+        "type": "int"
+      }
+    }
+  },
+  "timetableCourseName": "课程名称",
+  "@timetableCourseName": {
+    "description": "课程名称输入框标签"
+  },
+  "timetableEmptyHint": "支持单双周、节次时间与课程冲突检测",
+  "@timetableEmptyHint": {
+    "description": "课程表空状态提示"
+  },
+  "timetableEmptyTitle": "暂无课程表",
+  "@timetableEmptyTitle": {
+    "description": "课程表空状态标题"
+  },
+  "timetableHideWeekend": "隐藏周末",
+  "@timetableHideWeekend": {
+    "description": "隐藏周末开关"
+  },
+  "timetableLessonConflict": "新增课程与其他课程有时间冲突",
+  "@timetableLessonConflict": {
+    "description": "新增课程发生时间冲突时的错误"
+  },
+  "timetableNewName": "新建课程表",
+  "@timetableNewName": {
+    "description": "新建课程表按钮及默认名称"
+  },
+  "timetableParityAll": "全选",
+  "@timetableParityAll": {
+    "description": "课程单双周选项：所有周"
+  },
+  "timetableParityEven": "双周",
+  "@timetableParityEven": {
+    "description": "课程单双周选项：双周"
+  },
+  "timetableParityOdd": "单周",
+  "@timetableParityOdd": {
+    "description": "课程单双周选项：单周"
+  },
+  "timetablePeriod": "节次",
+  "@timetablePeriod": {
+    "description": "课程表节次列标题"
+  },
+  "timetablePeriodsPerDay": "每天节次",
+  "@timetablePeriodsPerDay": {
+    "description": "每天节次数标签"
+  },
+  "timetablePeriodsPerDayCount": "{count, plural, =1{1 节} other{{count} 节}}",
+  "@timetablePeriodsPerDayCount": {
+    "description": "每天节次数",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "timetableRemoveLessonTooltip": "删除课程{name}",
+  "@timetableRemoveLessonTooltip": {
+    "description": "删除课程单元格提示",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "timetableRemoveTooltip": "删除{name}",
+  "@timetableRemoveTooltip": {
+    "description": "删除课程表图标提示",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "timetableSemesterWeeks": "学期周数",
+  "@timetableSemesterWeeks": {
+    "description": "学期周数标签"
+  },
+  "timetableSettings": "课程表设置",
+  "@timetableSettings": {
+    "description": "打开课程表设置按钮"
+  },
+  "timetableSettingsTitle": "课程表设置：{name}",
+  "@timetableSettingsTitle": {
+    "description": "课程表设置对话框标题",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "timetableStartDate": "开学日期",
+  "@timetableStartDate": {
+    "description": "开学日期标签"
+  },
+  "timetableSummary": "{startDate} 开学 · {weeks, plural, =1{1 周} other{{weeks} 周}}",
+  "@timetableSummary": {
+    "description": "课程表卡片摘要",
+    "placeholders": {
+      "startDate": {
+        "type": "String"
+      },
+      "weeks": {
+        "type": "int"
+      }
+    }
+  },
+  "timetableTitle": "课程表",
+  "@timetableTitle": {
+    "description": "Localized desktop text: timetableTitle"
+  },
+  "timetableWeeksCount": "{count, plural, =1{1 周} other{{count} 周}}",
+  "@timetableWeeksCount": {
+    "description": "学期周数",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "transferChooseAndImport": "选择文件并导入",
+  "@transferChooseAndImport": {
+    "description": "选择文件并导入按钮"
+  },
+  "transferExportSubtitle": "支持再次导入的数据库文件、可打印文本、Excel 兼容 CSV",
+  "@transferExportSubtitle": {
+    "description": "支持的导出格式说明"
+  },
+  "transferExportTitle": "导出日历清单",
+  "@transferExportTitle": {
+    "description": "导出区域标题"
+  },
+  "transferExportToFile": "导出到文件",
+  "@transferExportToFile": {
+    "description": "导出到文件按钮"
+  },
+  "transferFormatCsv": "Excel 文件（CSV）",
+  "@transferFormatCsv": {
+    "description": "导出格式：Excel 兼容 CSV"
+  },
+  "transferFormatDatabase": "数据库文件（可再导入）",
+  "@transferFormatDatabase": {
+    "description": "导出格式：可再次导入的数据库文件"
+  },
+  "transferFormatText": "文本文件",
+  "@transferFormatText": {
+    "description": "导出格式：文本文件"
+  },
+  "transferImportSubtitle": "从 `*.json` 数据库文件恢复单元格与任务",
+  "@transferImportSubtitle": {
+    "description": "导入数据库文件说明"
+  },
+  "transferImportTitle": "导入日历清单",
+  "@transferImportTitle": {
+    "description": "导入区域标题"
+  },
+  "transferRangeAllTime": "所有时间",
+  "@transferRangeAllTime": {
+    "description": "导出范围：所有时间"
+  },
+  "transferRangeCustom": "自定义",
+  "@transferRangeCustom": {
+    "description": "导出范围：自定义"
+  },
+  "transferRangeSixMonths": "近半年",
+  "@transferRangeSixMonths": {
+    "description": "导出范围：近半年"
+  },
+  "transferReplaceConflicts": "所有冲突都替换为导入内容",
+  "@transferReplaceConflicts": {
+    "description": "导入时替换冲突内容选项"
+  },
+  "trayAbout": "关于",
+  "@trayAbout": {
+    "description": "Localized desktop text: trayAbout"
+  },
+  "trayExit": "退出",
+  "@trayExit": {
+    "description": "Localized desktop text: trayExit"
+  },
+  "trayHide": "隐藏主窗口",
+  "@trayHide": {
+    "description": "Localized desktop text: trayHide"
+  },
+  "trayHideWidget": "隐藏桌面日历窗口",
+  "@trayHideWidget": {
+    "description": "Localized desktop text: trayHideWidget"
+  },
+  "trayNotes": "便签",
+  "@trayNotes": {
+    "description": "Localized desktop text: trayNotes"
+  },
+  "trayRefreshWallpaper": "刷新壁纸",
+  "@trayRefreshWallpaper": {
+    "description": "Localized desktop text: trayRefreshWallpaper"
+  },
+  "traySettings": "设置",
+  "@traySettings": {
+    "description": "Localized desktop text: traySettings"
+  },
+  "trayShow": "显示主窗口",
+  "@trayShow": {
+    "description": "Localized desktop text: trayShow"
+  },
+  "trayShowWidget": "显示桌面日历窗口",
+  "@trayShowWidget": {
+    "description": "Localized desktop text: trayShowWidget"
+  },
+  "traySync": "手动同步",
+  "@traySync": {
+    "description": "Localized desktop text: traySync"
+  },
+  "wallpaperFailed": "壁纸生成失败",
+  "@wallpaperFailed": {
+    "description": "Localized desktop text: wallpaperFailed"
+  },
+  "wallpaperFooter": "今天 {date} · 周{weekday}    数据来自本地日历清单",
+  "@wallpaperFooter": {
+    "description": "Localized desktop text: wallpaperFooter",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "weekday": {
+        "type": "String"
+      }
+    }
+  },
+  "wallpaperModeDesktopCapture": "从桌面抓取图片",
+  "@wallpaperModeDesktopCapture": {
+    "description": "从桌面抓取图片的壁纸模式"
+  },
+  "wallpaperModeRotation": "循环显示选择的图片",
+  "@wallpaperModeRotation": {
+    "description": "循环显示所选图片的壁纸模式"
+  },
+  "wallpaperModeSolidColor": "设置桌面背景颜色",
+  "@wallpaperModeSolidColor": {
+    "description": "纯色桌面背景模式"
+  },
+  "wallpaperRejected": "系统拒绝设置壁纸",
+  "@wallpaperRejected": {
+    "description": "Localized desktop text: wallpaperRejected"
+  },
+  "wallpaperRestored": "已恢复系统原壁纸",
+  "@wallpaperRestored": {
+    "description": "Localized desktop text: wallpaperRestored"
+  },
+  "wallpaperSelectDirectory": "选择壁纸图片目录",
+  "@wallpaperSelectDirectory": {
+    "description": "Localized desktop text: wallpaperSelectDirectory"
+  },
+  "wallpaperUpdated": "壁纸已更新",
+  "@wallpaperUpdated": {
+    "description": "Localized desktop text: wallpaperUpdated"
+  },
+  "widgetAddLine": "添加一行",
+  "@widgetAddLine": {
+    "description": "Localized desktop text: widgetAddLine"
+  },
+  "widgetAddLineTooltip": "添加一行",
+  "@widgetAddLineTooltip": {
+    "description": "Localized desktop text: widgetAddLineTooltip"
+  },
+  "widgetAddToDate": "添加到 {date}",
+  "@widgetAddToDate": {
+    "description": "Localized desktop text: widgetAddToDate",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "widgetCellColor": "单元格颜色",
+  "@widgetCellColor": {
+    "description": "Localized desktop text: widgetCellColor"
+  },
+  "widgetCellColorTooltip": "选择单元格颜色",
+  "@widgetCellColorTooltip": {
+    "description": "Localized desktop text: widgetCellColorTooltip"
+  },
+  "widgetClearDay": "清空本日",
+  "@widgetClearDay": {
+    "description": "Localized desktop text: widgetClearDay"
+  },
+  "widgetClearTooltip": "清空本日内容",
+  "@widgetClearTooltip": {
+    "description": "Localized desktop text: widgetClearTooltip"
+  },
+  "widgetClosePalette": "关闭调色板",
+  "@widgetClosePalette": {
+    "description": "Localized desktop text: widgetClosePalette"
+  },
+  "widgetMoveHint": "拖动以移动桌面日历",
+  "@widgetMoveHint": {
+    "description": "Accessibility label for dragging the desktop widget header."
+  },
+  "widgetResizeLeft": "调整左边缘大小",
+  "@widgetResizeLeft": {
+    "description": "Accessibility label for the left resize handle."
+  },
+  "widgetResizeRight": "调整右边缘大小",
+  "@widgetResizeRight": {
+    "description": "Accessibility label for the right resize handle."
+  },
+  "widgetResizeTop": "调整上边缘大小",
+  "@widgetResizeTop": {
+    "description": "Accessibility label for the top resize handle."
+  },
+  "widgetResizeBottom": "调整下边缘大小",
+  "@widgetResizeBottom": {
+    "description": "Accessibility label for the bottom resize handle."
+  },
+  "widgetResizeTopLeft": "调整左上角大小",
+  "@widgetResizeTopLeft": {
+    "description": "Accessibility label for the top-left resize handle."
+  },
+  "widgetResizeTopRight": "调整右上角大小",
+  "@widgetResizeTopRight": {
+    "description": "Accessibility label for the top-right resize handle."
+  },
+  "widgetResizeBottomLeft": "调整左下角大小",
+  "@widgetResizeBottomLeft": {
+    "description": "Accessibility label for the bottom-left resize handle."
+  },
+  "widgetResizeBottomRight": "调整右下角大小",
+  "@widgetResizeBottomRight": {
+    "description": "Accessibility label for the bottom-right resize handle."
+  },
+  "widgetCollapse": "收起桌面组件",
+  "@widgetCollapse": {
+    "description": "Localized desktop text: widgetCollapse"
+  },
+  "widgetCompleteTooltip": "标记完成",
+  "@widgetCompleteTooltip": {
+    "description": "Localized desktop text: widgetCompleteTooltip"
+  },
+  "widgetConfirmClear": "确认清空",
+  "@widgetConfirmClear": {
+    "description": "Localized desktop text: widgetConfirmClear"
+  },
+  "widgetEditingDate": "正在编辑 {date}",
+  "@widgetEditingDate": {
+    "description": "Localized desktop text: widgetEditingDate",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "widgetFinishEditing": "完成编辑",
+  "@widgetFinishEditing": {
+    "description": "Localized desktop text: widgetFinishEditing"
+  },
+  "widgetFinishEditingTooltip": "保存并完成编辑",
+  "@widgetFinishEditingTooltip": {
+    "description": "Localized desktop text: widgetFinishEditingTooltip"
+  },
+  "widgetMarkComplete": "标记完成",
+  "@widgetMarkComplete": {
+    "description": "Localized desktop text: widgetMarkComplete"
+  },
+  "widgetNewLineHint": "回车新增一行…",
+  "@widgetNewLineHint": {
+    "description": "Localized desktop text: widgetNewLineHint"
+  },
+  "widgetPopupEditor": "浮层编辑",
+  "@widgetPopupEditor": {
+    "description": "Localized desktop text: widgetPopupEditor"
+  },
+  "widgetPopupEditorTooltip": "打开完整编辑器",
+  "@widgetPopupEditorTooltip": {
+    "description": "Localized desktop text: widgetPopupEditorTooltip"
+  },
+  "widgetPromote": "转为任务",
+  "@widgetPromote": {
+    "description": "Localized desktop text: widgetPromote"
+  },
+  "widgetPromoteTooltip": "将这一行转为重复任务",
+  "@widgetPromoteTooltip": {
+    "description": "Localized desktop text: widgetPromoteTooltip"
+  },
+  "widgetQuickInputHint": "输入内容，回车添加",
+  "@widgetQuickInputHint": {
+    "description": "Localized desktop text: widgetQuickInputHint"
+  },
+  "widgetTextColor": "文字颜色",
+  "@widgetTextColor": {
+    "description": "Localized desktop text: widgetTextColor"
+  },
+  "widgetTextColorTooltip": "选择文字颜色",
+  "@widgetTextColorTooltip": {
+    "description": "Localized desktop text: widgetTextColorTooltip"
+  }
+}

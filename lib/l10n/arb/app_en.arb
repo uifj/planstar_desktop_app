@@ -1,0 +1,2601 @@
+{
+  "@@locale": "en",
+  "accountAutoLogin": "Auto sign-in",
+  "@accountAutoLogin": {
+    "description": "Account automatic sign-in status"
+  },
+  "accountAutoSyncHourly": "Sync automatically every hour",
+  "@accountAutoSyncHourly": {
+    "description": "Hourly automatic synchronization switch"
+  },
+  "accountCloudSyncSubtitle": "Changes → manual / automatic sync → status update",
+  "@accountCloudSyncSubtitle": {
+    "description": "Cloud sync workflow description"
+  },
+  "accountCloudSyncTitle": "Cloud sync",
+  "@accountCloudSyncTitle": {
+    "description": "Cloud sync section title"
+  },
+  "accountDownloadedCount": "{count, plural, =1{Downloaded 1 item} other{Downloaded {count} items}}",
+  "@accountDownloadedCount": {
+    "description": "Number of downloaded records",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "accountEmailOrPhone": "Email / phone",
+  "@accountEmailOrPhone": {
+    "description": "Sign-in email or phone field label"
+  },
+  "accountIdentity": "{displayName} ({email})",
+  "@accountIdentity": {
+    "description": "Signed-in account display name and email",
+    "placeholders": {
+      "displayName": {
+        "type": "String"
+      },
+      "email": {
+        "type": "String"
+      }
+    }
+  },
+  "accountLastSyncAt": "Last sync: {dateTime}",
+  "@accountLastSyncAt": {
+    "description": "Last synchronization time formatted for the current locale",
+    "placeholders": {
+      "dateTime": {
+        "type": "String"
+      }
+    }
+  },
+  "accountLoginOrRegister": "Sign in / Register",
+  "@accountLoginOrRegister": {
+    "description": "Sign-in or registration button"
+  },
+  "accountLogout": "Sign out",
+  "@accountLogout": {
+    "description": "Sign-out button"
+  },
+  "accountManualSync": "Sync now",
+  "@accountManualSync": {
+    "description": "Manual synchronization button"
+  },
+  "accountNeverSynced": "Never synced",
+  "@accountNeverSynced": {
+    "description": "Status when synchronization has never run"
+  },
+  "accountPassword": "Password",
+  "@accountPassword": {
+    "description": "Sign-in password field label"
+  },
+  "accountPendingChanges": "{count, plural, =0{No pending changes} =1{1 pending change} other{{count} pending changes}}",
+  "@accountPendingChanges": {
+    "description": "Number of pending changes to sync",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "accountReadOnlyMember": "Read-only member",
+  "@accountReadOnlyMember": {
+    "description": "Account read-only member status"
+  },
+  "accountStatusFailure": "Sync failed",
+  "@accountStatusFailure": {
+    "description": "Failed synchronization status"
+  },
+  "accountStatusIdle": "Idle",
+  "@accountStatusIdle": {
+    "description": "Idle synchronization status"
+  },
+  "accountStatusSuccess": "Sync succeeded",
+  "@accountStatusSuccess": {
+    "description": "Successful synchronization status"
+  },
+  "accountStatusSyncing": "Syncing",
+  "@accountStatusSyncing": {
+    "description": "In-progress synchronization status"
+  },
+  "accountSubtitle": "Sign in to sync and back up your calendar lists",
+  "@accountSubtitle": {
+    "description": "Account page description"
+  },
+  "accountTeamAccount": "Team account",
+  "@accountTeamAccount": {
+    "description": "Account team status"
+  },
+  "accountTitle": "Account",
+  "@accountTitle": {
+    "description": "Account page title"
+  },
+  "accountUploadedCount": "{count, plural, =1{Uploaded 1 item} other{Uploaded {count} items}}",
+  "@accountUploadedCount": {
+    "description": "Number of uploaded records",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "accountVip": "VIP",
+  "@accountVip": {
+    "description": "Account VIP badge"
+  },
+  "appTitle": "Planstar · Desktop Calendar & Checklist",
+  "@appTitle": {
+    "description": "Localized desktop text: appTitle"
+  },
+  "bulletStyleDot": "Dots",
+  "@bulletStyleDot": {
+    "description": "圆点项目符号"
+  },
+  "bulletStyleNone": "None",
+  "@bulletStyleNone": {
+    "description": "无项目符号"
+  },
+  "bulletStyleNumber": "Numbers",
+  "@bulletStyleNumber": {
+    "description": "数字编号项目符号"
+  },
+  "calendarAddCountdown": "Add countdown",
+  "@calendarAddCountdown": {
+    "description": "Context menu action to add a countdown for the selected day."
+  },
+  "calendarAddLine": "Add line",
+  "@calendarAddLine": {
+    "description": "Button label for adding a line to a day cell."
+  },
+  "calendarAllColors": "All colors",
+  "@calendarAllColors": {
+    "description": "Section heading for the full calendar color palette."
+  },
+  "calendarCellColor": "Cell color",
+  "@calendarCellColor": {
+    "description": "Label and tooltip for the day-cell background color."
+  },
+  "calendarCellEditorEmptyHint": "Double-click a cell or add a line to start recording",
+  "@calendarCellEditorEmptyHint": {
+    "description": "Empty-state instructions in the day editor."
+  },
+  "calendarClearAction": "Clear",
+  "@calendarClearAction": {
+    "description": "Button label confirming a clear action."
+  },
+  "calendarClearConfirmMessage": "All content in {target} will be cleared. This action cannot be undone.",
+  "@calendarClearConfirmMessage": {
+    "description": "Warning that clearing the selected content cannot be undone.",
+    "placeholders": {
+      "target": {
+        "type": "String",
+        "example": "this day's content"
+      }
+    }
+  },
+  "calendarClearConfirmTitle": "Confirm clear",
+  "@calendarClearConfirmTitle": {
+    "description": "Title of the clear-content confirmation dialog."
+  },
+  "calendarClearDayContent": "Clear this day's content",
+  "@calendarClearDayContent": {
+    "description": "Context menu action to clear the selected day's content."
+  },
+  "calendarColorLabel": "Colors",
+  "@calendarColorLabel": {
+    "description": "Section label for event and cell colors."
+  },
+  "calendarColorPickerDescription": "Text color / cell color",
+  "@calendarColorPickerDescription": {
+    "description": "Description of the colors available in the calendar picker."
+  },
+  "calendarColorPickerTitle": "Choose a color",
+  "@calendarColorPickerTitle": {
+    "description": "Title of the calendar color picker dialog."
+  },
+  "calendarColorValue": "Color {color}",
+  "@calendarColorValue": {
+    "description": "Accessible label and tooltip for a color swatch.",
+    "placeholders": {
+      "color": {
+        "type": "String",
+        "example": "#FF4086FF"
+      }
+    }
+  },
+  "calendarContentHint": "Enter a task or reminder",
+  "@calendarContentHint": {
+    "description": "Input hint for task or reminder content."
+  },
+  "calendarContentLabel": "Content",
+  "@calendarContentLabel": {
+    "description": "Input label for task or reminder content."
+  },
+  "calendarCopyDayContent": "Copy this day's content",
+  "@calendarCopyDayContent": {
+    "description": "Context menu action to copy the selected day's content."
+  },
+  "calendarCountdownAdded": "Countdown added",
+  "@calendarCountdownAdded": {
+    "description": "Toast confirming that a countdown was added."
+  },
+  "calendarDateWithWeekday": "{date}, {weekday}",
+  "@calendarDateWithWeekday": {
+    "description": "Date and weekday heading in the day editor.",
+    "placeholders": {
+      "date": {
+        "type": "String",
+        "example": "November 26, 2026"
+      },
+      "weekday": {
+        "type": "String",
+        "example": "Thursday"
+      }
+    }
+  },
+  "calendarDayContent": "this day's content",
+  "@calendarDayContent": {
+    "description": "Name of the selected day's content in clear confirmations."
+  },
+  "calendarDayContentCopied": "This day's content has been copied",
+  "@calendarDayContentCopied": {
+    "description": "Toast confirming that the selected day's content was copied."
+  },
+  "calendarDeleteRecurringEvent": "Delete recurring task…",
+  "@calendarDeleteRecurringEvent": {
+    "description": "Context menu action to delete a recurring task."
+  },
+  "calendarDeleteRecurringEventTitle": "Delete recurring task",
+  "@calendarDeleteRecurringEventTitle": {
+    "description": "Title of the recurring-event deletion scope dialog."
+  },
+  "calendarDeleteScopeAll": "Delete all events",
+  "@calendarDeleteScopeAll": {
+    "description": "Delete every occurrence of a recurring event."
+  },
+  "calendarDeleteScopeCurrent": "Delete this event only",
+  "@calendarDeleteScopeCurrent": {
+    "description": "Delete only the selected occurrence of a recurring event."
+  },
+  "calendarDeleteScopeCurrentAndFuture": "Delete this and all future events",
+  "@calendarDeleteScopeCurrentAndFuture": {
+    "description": "Delete the selected occurrence and all future occurrences."
+  },
+  "calendarDeleteScopeRememberChoice": "Use this choice for all conflicts",
+  "@calendarDeleteScopeRememberChoice": {
+    "description": "Option label for applying the same choice to future delete conflicts."
+  },
+  "calendarDisplayModeFixedSingleLine": "Fixed single row",
+  "@calendarDisplayModeFixedSingleLine": {
+    "description": "Calendar display mode label for a fixed single row."
+  },
+  "calendarDisplayModeFloatingMonth": "Floating month",
+  "@calendarDisplayModeFloatingMonth": {
+    "description": "Calendar display mode label for floating months."
+  },
+  "calendarDisplayModeFloatingSingleLine": "Floating single row",
+  "@calendarDisplayModeFloatingSingleLine": {
+    "description": "Calendar display mode label for a floating single row."
+  },
+  "calendarDisplayModeFullMonth": "Full month",
+  "@calendarDisplayModeFullMonth": {
+    "description": "Calendar display mode label for full months."
+  },
+  "calendarEditDayContent": "Edit this day's content",
+  "@calendarEditDayContent": {
+    "description": "Context menu action to edit the selected day's content."
+  },
+  "calendarEditTaskOrReminder": "Edit task / reminder",
+  "@calendarEditTaskOrReminder": {
+    "description": "Dialog title for editing a task or reminder."
+  },
+  "calendarEventTypeCountdown": "Countdown anniversary",
+  "@calendarEventTypeCountdown": {
+    "description": "Calendar event type label for countdown anniversaries."
+  },
+  "calendarEventTypeReminder": "Reminder",
+  "@calendarEventTypeReminder": {
+    "description": "Calendar event type label for reminders."
+  },
+  "calendarEventTypeSubscription": "Subscription update",
+  "@calendarEventTypeSubscription": {
+    "description": "Calendar event type label for subscription notifications."
+  },
+  "calendarEventTypeTask": "Recurring task",
+  "@calendarEventTypeTask": {
+    "description": "Calendar event type label for recurring tasks."
+  },
+  "calendarIntervalLabel": "Interval",
+  "@calendarIntervalLabel": {
+    "description": "Input label for the recurrence interval."
+  },
+  "calendarLineTextColor": "Line text color",
+  "@calendarLineTextColor": {
+    "description": "Tooltip for changing a cell line's text color."
+  },
+  "calendarMakeRecurringTask": "Make recurring task",
+  "@calendarMakeRecurringTask": {
+    "description": "Tooltip for converting a cell line into a recurring task."
+  },
+  "calendarMakeupWorkdayBadge": "Work",
+  "@calendarMakeupWorkdayBadge": {
+    "description": "Compact badge for a makeup workday."
+  },
+  "calendarMarkEventComplete": "Mark task as complete",
+  "@calendarMarkEventComplete": {
+    "description": "Accessibility action for marking an event complete."
+  },
+  "calendarMarkEventIncomplete": "Mark task as incomplete",
+  "@calendarMarkEventIncomplete": {
+    "description": "Accessibility action for marking a completed event incomplete."
+  },
+  "calendarMarkLineComplete": "Mark as complete",
+  "@calendarMarkLineComplete": {
+    "description": "Accessibility action for marking a cell line complete."
+  },
+  "calendarMarkLineIncomplete": "Mark as incomplete",
+  "@calendarMarkLineIncomplete": {
+    "description": "Accessibility action for marking a completed cell line incomplete."
+  },
+  "calendarNewTask": "New task",
+  "@calendarNewTask": {
+    "description": "Button label for creating a calendar task."
+  },
+  "calendarNewTaskOrReminder": "New task / reminder",
+  "@calendarNewTaskOrReminder": {
+    "description": "Context menu action and dialog title for a new task or reminder."
+  },
+  "calendarNextMonth": "Next month",
+  "@calendarNextMonth": {
+    "description": "Localized desktop text: calendarNextMonth"
+  },
+  "calendarNoTasksOnDay": "There are no tasks on this day",
+  "@calendarNoTasksOnDay": {
+    "description": "Toast shown when deleting a task from a day with no tasks."
+  },
+  "calendarOpenCountdownCard": "Click to open the desktop card",
+  "@calendarOpenCountdownCard": {
+    "description": "Tooltip and hint for opening the countdown desktop card."
+  },
+  "calendarOpenDesktopNote": "Open desktop note",
+  "@calendarOpenDesktopNote": {
+    "description": "Context menu action to open a desktop note for the selected day."
+  },
+  "calendarPasteToDay": "Paste into this day",
+  "@calendarPasteToDay": {
+    "description": "Context menu action to paste text into the selected day."
+  },
+  "calendarPreviousMonth": "Previous month",
+  "@calendarPreviousMonth": {
+    "description": "Localized desktop text: calendarPreviousMonth"
+  },
+  "calendarRecurrenceCustomDay": "Custom daily interval",
+  "@calendarRecurrenceCustomDay": {
+    "description": "Recurrence option for a custom daily interval."
+  },
+  "calendarRecurrenceCustomMonthDay": "Custom days of the month",
+  "@calendarRecurrenceCustomMonthDay": {
+    "description": "Recurrence option for selected days of the month."
+  },
+  "calendarRecurrenceCustomMonthWeek": "Custom weekday of the month",
+  "@calendarRecurrenceCustomMonthWeek": {
+    "description": "Recurrence option for a selected ordinal weekday of the month."
+  },
+  "calendarRecurrenceCustomWeek": "Custom weekly schedule",
+  "@calendarRecurrenceCustomWeek": {
+    "description": "Recurrence option for selected weekdays at a custom interval."
+  },
+  "calendarRecurrenceCustomYear": "Custom yearly interval",
+  "@calendarRecurrenceCustomYear": {
+    "description": "Recurrence option for a custom yearly interval."
+  },
+  "calendarRecurrenceDaily": "Repeat daily",
+  "@calendarRecurrenceDaily": {
+    "description": "Recurrence option to repeat daily."
+  },
+  "calendarRecurrenceEbbinghaus": "Ebbinghaus review schedule",
+  "@calendarRecurrenceEbbinghaus": {
+    "description": "Recurrence option for an Ebbinghaus review schedule."
+  },
+  "calendarRecurrenceLegalWorkday": "Repeat on official workdays",
+  "@calendarRecurrenceLegalWorkday": {
+    "description": "Recurrence option to repeat on official workdays."
+  },
+  "calendarRecurrenceLunarYearly": "Repeat on lunar anniversary",
+  "@calendarRecurrenceLunarYearly": {
+    "description": "Recurrence option to repeat on the same lunar-calendar date each year."
+  },
+  "calendarRecurrenceMonthLastDay": "Last day of each month",
+  "@calendarRecurrenceMonthLastDay": {
+    "description": "Recurrence option for the last day of every month."
+  },
+  "calendarRecurrenceMonthly": "Repeat monthly",
+  "@calendarRecurrenceMonthly": {
+    "description": "Recurrence option to repeat monthly."
+  },
+  "calendarRecurrenceNone": "Does not repeat",
+  "@calendarRecurrenceNone": {
+    "description": "Recurrence option for a one-time event."
+  },
+  "calendarRecurrenceQuarterly": "Repeat quarterly",
+  "@calendarRecurrenceQuarterly": {
+    "description": "Recurrence option to repeat quarterly."
+  },
+  "calendarRecurrenceRule": "Recurrence",
+  "@calendarRecurrenceRule": {
+    "description": "Section label for recurrence settings."
+  },
+  "calendarRecurrenceWeekly": "Repeat weekly",
+  "@calendarRecurrenceWeekly": {
+    "description": "Recurrence option to repeat weekly."
+  },
+  "calendarRecurrenceWorkday": "Repeat on workdays",
+  "@calendarRecurrenceWorkday": {
+    "description": "Recurrence option to repeat on workdays."
+  },
+  "calendarRecurrenceYearly": "Repeat yearly",
+  "@calendarRecurrenceYearly": {
+    "description": "Recurrence option to repeat yearly."
+  },
+  "calendarReminderCustom": "Custom",
+  "@calendarReminderCustom": {
+    "description": "Reminder choice for a custom advance period."
+  },
+  "calendarReminderDaysBefore": "{count, plural, one{# day before} other{# days before}}",
+  "@calendarReminderDaysBefore": {
+    "description": "Reminder choice to notify a number of days before the event.",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "calendarReminderLabel": "Reminder",
+  "@calendarReminderLabel": {
+    "description": "Section label for reminder settings."
+  },
+  "calendarReminderSameDay": "On the day",
+  "@calendarReminderSameDay": {
+    "description": "Reminder choice to notify on the event day."
+  },
+  "calendarRestDayBadge": "Rest",
+  "@calendarRestDayBadge": {
+    "description": "Compact badge for a rest day."
+  },
+  "calendarSetCellColor": "Set cell color",
+  "@calendarSetCellColor": {
+    "description": "Context menu action to choose a day-cell background color."
+  },
+  "calendarTextColor": "Text color",
+  "@calendarTextColor": {
+    "description": "Label and tooltip for event text color."
+  },
+  "calendarToday": "Today",
+  "@calendarToday": {
+    "description": "Localized desktop text: calendarToday"
+  },
+  "calendarTransparentColor": "Transparent",
+  "@calendarTransparentColor": {
+    "description": "Accessible label and tooltip for the transparent color swatch."
+  },
+  "calendarTypeLabel": "Type",
+  "@calendarTypeLabel": {
+    "description": "Input label for the calendar event type."
+  },
+  "calendarWechatNotification": "WeChat notifications",
+  "@calendarWechatNotification": {
+    "description": "Checkbox label for WeChat reminder notifications."
+  },
+  "calendarWeekNumberAccessibility": "Week {week}",
+  "@calendarWeekNumberAccessibility": {
+    "description": "Accessibility label for an ISO week number shown in a day cell.",
+    "placeholders": {
+      "week": {
+        "type": "int",
+        "example": "48"
+      }
+    }
+  },
+  "calendarWeekdayFriday": "Fri",
+  "@calendarWeekdayFriday": {
+    "description": "Short weekday header for Friday."
+  },
+  "calendarWeekdayLongFriday": "Friday",
+  "@calendarWeekdayLongFriday": {
+    "description": "Long weekday label for Friday."
+  },
+  "calendarWeekdayLongMonday": "Monday",
+  "@calendarWeekdayLongMonday": {
+    "description": "Long weekday label for Monday."
+  },
+  "calendarWeekdayLongSaturday": "Saturday",
+  "@calendarWeekdayLongSaturday": {
+    "description": "Long weekday label for Saturday."
+  },
+  "calendarWeekdayLongSunday": "Sunday",
+  "@calendarWeekdayLongSunday": {
+    "description": "Long weekday label for Sunday."
+  },
+  "calendarWeekdayLongThursday": "Thursday",
+  "@calendarWeekdayLongThursday": {
+    "description": "Long weekday label for Thursday."
+  },
+  "calendarWeekdayLongTuesday": "Tuesday",
+  "@calendarWeekdayLongTuesday": {
+    "description": "Long weekday label for Tuesday."
+  },
+  "calendarWeekdayLongWednesday": "Wednesday",
+  "@calendarWeekdayLongWednesday": {
+    "description": "Long weekday label for Wednesday."
+  },
+  "calendarWeekdayMonday": "Mon",
+  "@calendarWeekdayMonday": {
+    "description": "Short weekday header for Monday."
+  },
+  "calendarWeekdaySaturday": "Sat",
+  "@calendarWeekdaySaturday": {
+    "description": "Short weekday header for Saturday."
+  },
+  "calendarWeekdaySunday": "Sun",
+  "@calendarWeekdaySunday": {
+    "description": "Short weekday header for Sunday."
+  },
+  "calendarWeekdayThursday": "Thu",
+  "@calendarWeekdayThursday": {
+    "description": "Short weekday header for Thursday."
+  },
+  "calendarWeekdayTuesday": "Tue",
+  "@calendarWeekdayTuesday": {
+    "description": "Short weekday header for Tuesday."
+  },
+  "calendarWeekdayWednesday": "Wed",
+  "@calendarWeekdayWednesday": {
+    "description": "Short weekday header for Wednesday."
+  },
+  "commonAdd": "Add",
+  "@commonAdd": {
+    "description": "通用添加按钮"
+  },
+  "commonAllColors": "All colors",
+  "@commonAllColors": {
+    "description": "Localized desktop text: commonAllColors"
+  },
+  "commonCancel": "Cancel",
+  "@commonCancel": {
+    "description": "Localized desktop text: commonCancel"
+  },
+  "commonClose": "Close",
+  "@commonClose": {
+    "description": "Localized desktop text: commonClose"
+  },
+  "commonColorPickerHint": "Text color / cell color",
+  "@commonColorPickerHint": {
+    "description": "Localized desktop text: commonColorPickerHint"
+  },
+  "commonCountdowns": "Countdowns",
+  "@commonCountdowns": {
+    "description": "Localized desktop text: commonCountdowns"
+  },
+  "commonDelete": "Delete",
+  "@commonDelete": {
+    "description": "Localized desktop text: commonDelete"
+  },
+  "commonMaximize": "Maximize",
+  "@commonMaximize": {
+    "description": "Localized desktop text: commonMaximize"
+  },
+  "commonMinimize": "Minimize",
+  "@commonMinimize": {
+    "description": "Localized desktop text: commonMinimize"
+  },
+  "commonNoCountdowns": "No countdowns yet",
+  "@commonNoCountdowns": {
+    "description": "Localized desktop text: commonNoCountdowns"
+  },
+  "commonNotes": "Notes",
+  "@commonNotes": {
+    "description": "Localized desktop text: commonNotes"
+  },
+  "commonRecentColors": "Recently used",
+  "@commonRecentColors": {
+    "description": "Localized desktop text: commonRecentColors"
+  },
+  "commonRetry": "Retry",
+  "@commonRetry": {
+    "description": "Localized desktop text: commonRetry"
+  },
+  "commonSave": "Save",
+  "@commonSave": {
+    "description": "Localized desktop text: commonSave"
+  },
+  "commonSettings": "Settings",
+  "@commonSettings": {
+    "description": "Localized desktop text: commonSettings"
+  },
+  "commonSyncNow": "Sync now",
+  "@commonSyncNow": {
+    "description": "Localized desktop text: commonSyncNow"
+  },
+  "commonToday": "Today",
+  "@commonToday": {
+    "description": "Localized desktop text: commonToday"
+  },
+  "countdownBirthdayAge": "Turning {age}",
+  "@countdownBirthdayAge": {
+    "description": "Age at the next birthday occurrence",
+    "placeholders": {
+      "age": {
+        "type": "int",
+        "example": "30"
+      }
+    }
+  },
+  "countdownCreate": "New countdown",
+  "@countdownCreate": {
+    "description": "Button and dialog title for creating a countdown"
+  },
+  "countdownCreated": "Create",
+  "@countdownCreated": {
+    "description": "Confirmation button for creating a countdown"
+  },
+  "countdownDaysRemaining": "{count, plural, one{{count} day remaining} other{{count} days remaining}}",
+  "@countdownDaysRemaining": {
+    "description": "Number of days remaining until a countdown date",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "5"
+      }
+    }
+  },
+  "countdownDaysSince": "{count, plural, one{{count} day since} other{{count} days since}}",
+  "@countdownDaysSince": {
+    "description": "Number of days since a recurring anniversary or birthday occurrence",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "2"
+      }
+    }
+  },
+  "countdownDeleteTooltip": "Delete countdown: {title}",
+  "@countdownDeleteTooltip": {
+    "description": "Accessibility tooltip for deleting a countdown item",
+    "placeholders": {
+      "title": {
+        "type": "String",
+        "example": "Graduation"
+      }
+    }
+  },
+  "countdownEmptyHint": "Supports countdowns, elapsed days, birthdays and anniversaries",
+  "@countdownEmptyHint": {
+    "description": "Supported countdown kinds shown in the empty state"
+  },
+  "countdownEmptyTitle": "No countdowns yet",
+  "@countdownEmptyTitle": {
+    "description": "Empty countdown list title"
+  },
+  "countdownExpiredDays": "{count, plural, one{Expired {count} day ago} other{Expired {count} days ago}}",
+  "@countdownExpiredDays": {
+    "description": "Number of days since a fixed-date countdown expired",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "2"
+      }
+    }
+  },
+  "countdownLoadFailed": "Couldn't load countdowns: {message}",
+  "@countdownLoadFailed": {
+    "description": "message must be a safe localized category from failureLabel, never raw error details",
+    "placeholders": {
+      "message": {
+        "type": "String",
+        "example": "Unable to read local data. Please try again."
+      }
+    }
+  },
+  "countdownNameField": "Name",
+  "@countdownNameField": {
+    "description": "Countdown name text field label"
+  },
+  "countdownOpenDesktopCard": "Open desktop card",
+  "@countdownOpenDesktopCard": {
+    "description": "Action for opening the desktop countdown card"
+  },
+  "countdownShowTypeBoth": "Both",
+  "@countdownShowTypeBoth": {
+    "description": "Show a countdown in both locations"
+  },
+  "countdownShowTypeCalendarBottom": "Calendar bottom bar",
+  "@countdownShowTypeCalendarBottom": {
+    "description": "Show a countdown in the calendar bottom bar only"
+  },
+  "countdownShowTypeDesktopCard": "Desktop card",
+  "@countdownShowTypeDesktopCard": {
+    "description": "Show a countdown on the desktop card only"
+  },
+  "countdownShowTypeField": "Display location",
+  "@countdownShowTypeField": {
+    "description": "Countdown display location dropdown field label"
+  },
+  "countdownTargetDateValue": "Target date: {date}",
+  "@countdownTargetDateValue": {
+    "description": "Selected target date shown in the countdown editor",
+    "placeholders": {
+      "date": {
+        "type": "String",
+        "example": "November 26, 2026"
+      }
+    }
+  },
+  "countdownTitle": "{count, plural, one{Countdown ({count})} other{Countdowns ({count})}}",
+  "@countdownTitle": {
+    "description": "Countdown page title with the number of countdown items",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "countdownTypeBirthday": "Birthday",
+  "@countdownTypeBirthday": {
+    "description": "Countdown type: birthday"
+  },
+  "countdownTypeCustom": "Countdown",
+  "@countdownTypeCustom": {
+    "description": "Countdown type: fixed-date countdown"
+  },
+  "countdownTypeExam": "Exam",
+  "@countdownTypeExam": {
+    "description": "Countdown type: exam"
+  },
+  "countdownTypeFestival": "Festival",
+  "@countdownTypeFestival": {
+    "description": "Countdown type: festival"
+  },
+  "countdownTypeField": "Type",
+  "@countdownTypeField": {
+    "description": "Countdown type dropdown field label"
+  },
+  "countdownTypeMemorial": "Anniversary",
+  "@countdownTypeMemorial": {
+    "description": "Countdown type: anniversary"
+  },
+  "countdownWindowTitle": "Countdown",
+  "@countdownWindowTitle": {
+    "description": "Localized desktop text: countdownWindowTitle"
+  },
+  "desktopWidgetFailed": "Failed to start the desktop widget: {message}",
+  "@desktopWidgetFailed": {
+    "description": "message must be a safe localized category from caughtErrorLabel, never raw exception details",
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "desktopWidgetHidden": "Editable desktop calendar is now hidden",
+  "@desktopWidgetHidden": {
+    "description": "Localized desktop text: desktopWidgetHidden"
+  },
+  "desktopWidgetShown": "Editable desktop calendar is now visible",
+  "@desktopWidgetShown": {
+    "description": "Localized desktop text: desktopWidgetShown"
+  },
+  "desktopWidgetTitle": "Desktop calendar & checklist",
+  "@desktopWidgetTitle": {
+    "description": "Localized desktop text: desktopWidgetTitle"
+  },
+  "exportCancelled": "Export canceled",
+  "@exportCancelled": {
+    "description": "Localized desktop text: exportCancelled"
+  },
+  "exportCellType": "Calendar checklist",
+  "@exportCellType": {
+    "description": "Localized desktop text: exportCellType"
+  },
+  "exportColumnColor": "Color",
+  "@exportColumnColor": {
+    "description": "Localized desktop text: exportColumnColor"
+  },
+  "exportColumnContent": "Content",
+  "@exportColumnContent": {
+    "description": "Localized desktop text: exportColumnContent"
+  },
+  "exportColumnDate": "Date",
+  "@exportColumnDate": {
+    "description": "Localized desktop text: exportColumnDate"
+  },
+  "exportColumnStatus": "Status",
+  "@exportColumnStatus": {
+    "description": "Localized desktop text: exportColumnStatus"
+  },
+  "exportColumnType": "Type",
+  "@exportColumnType": {
+    "description": "Localized desktop text: exportColumnType"
+  },
+  "exportCompleted": "Completed",
+  "@exportCompleted": {
+    "description": "Localized desktop text: exportCompleted"
+  },
+  "exportFailed": "Export failed: {message}",
+  "@exportFailed": {
+    "description": "message must be a safe localized category from caughtErrorLabel, never raw exception details",
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "exportIncomplete": "Incomplete",
+  "@exportIncomplete": {
+    "description": "Localized desktop text: exportIncomplete"
+  },
+  "exportPreparing": "Preparing export…",
+  "@exportPreparing": {
+    "description": "Localized desktop text: exportPreparing"
+  },
+  "exportSuccess": "Export successful: {path}",
+  "@exportSuccess": {
+    "description": "Localized desktop text: exportSuccess",
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "exportTextTitle": "Planstar calendar export · Exported {date}",
+  "@exportTextTitle": {
+    "description": "Localized desktop text: exportTextTitle",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "failureGeneric": "Something went wrong. Please try again.",
+  "@failureGeneric": {
+    "description": "Safe fallback for an unclassified failure; never includes diagnostic details."
+  },
+  "failureNetwork": "Network connection failed. Check your connection and try again.",
+  "@failureNetwork": {
+    "description": "Safe presentation label for a network connection failure."
+  },
+  "failureOffline": "You are offline. Check your connection and try again.",
+  "@failureOffline": {
+    "description": "Safe presentation label for offline or unavailable cached data."
+  },
+  "failureTimeout": "The request timed out. Please try again.",
+  "@failureTimeout": {
+    "description": "Safe presentation label for a timeout."
+  },
+  "failureAuthentication": "Your sign-in is invalid. Please sign in again.",
+  "@failureAuthentication": {
+    "description": "Safe presentation label for an authentication failure."
+  },
+  "failureSessionExpired": "Your session has expired. Please sign in again.",
+  "@failureSessionExpired": {
+    "description": "Safe presentation label for an expired login session."
+  },
+  "failureForbidden": "You don't have permission to perform this action.",
+  "@failureForbidden": {
+    "description": "Safe presentation label for a forbidden operation."
+  },
+  "failureBadRequest": "The request is invalid. Check your input and try again.",
+  "@failureBadRequest": {
+    "description": "Safe presentation label for an invalid request."
+  },
+  "failureNotFound": "The requested content could not be found. It may have been removed.",
+  "@failureNotFound": {
+    "description": "Safe presentation label for content that cannot be found."
+  },
+  "failureConflict": "The data has changed. Refresh and try again.",
+  "@failureConflict": {
+    "description": "Safe presentation label for conflicting data state."
+  },
+  "failureRateLimit": "Too many attempts. Please wait and try again.",
+  "@failureRateLimit": {
+    "description": "Safe presentation label for rate limiting."
+  },
+  "failureServer": "The service is temporarily unavailable. Please try again later.",
+  "@failureServer": {
+    "description": "Safe presentation label for a server failure."
+  },
+  "failureData": "Unable to read the data. Please try again.",
+  "@failureData": {
+    "description": "Safe presentation label for malformed or unreadable data."
+  },
+  "failureValidation": "The input is invalid. Check it and try again.",
+  "@failureValidation": {
+    "description": "Safe presentation label for input validation failures."
+  },
+  "failureCancelled": "The operation was cancelled.",
+  "@failureCancelled": {
+    "description": "Safe presentation label for a cancelled operation."
+  },
+  "failureCertificate": "The secure connection could not be verified. Check your network or certificate.",
+  "@failureCertificate": {
+    "description": "Safe presentation label for a TLS certificate failure."
+  },
+  "failureLocalData": "Unable to read local data. Please try again.",
+  "@failureLocalData": {
+    "description": "Safe presentation label for local data access failures."
+  },
+  "failureFile": "The file operation failed. Check the file and try again.",
+  "@failureFile": {
+    "description": "Safe presentation label for file system failures."
+  },
+  "failurePlatform": "The device operation failed. Please try again.",
+  "@failurePlatform": {
+    "description": "Safe presentation label for an uncategorized platform failure."
+  },
+  "historyAuthorLocal": "This device",
+  "@historyAuthorLocal": {
+    "description": "本机生成的历史记录作者名称"
+  },
+  "historyClearAction": "Clear history",
+  "@historyClearAction": {
+    "description": "清空全部历史记录的按钮"
+  },
+  "historyClearConfirmMessage": "All history entries will be permanently deleted. This action cannot be undone.",
+  "@historyClearConfirmMessage": {
+    "description": "清空全部历史记录的确认说明"
+  },
+  "historyClearConfirmTitle": "Clear history?",
+  "@historyClearConfirmTitle": {
+    "description": "清空全部历史记录的确认标题"
+  },
+  "historyClearedContent": "(Cleared content)",
+  "@historyClearedContent": {
+    "description": "历史快照内容为空时显示的占位文本"
+  },
+  "historyDateAt": "{date} at {time}",
+  "@historyDateAt": {
+    "description": "较早历史记录的本地化日期及具体时间",
+    "placeholders": {
+      "date": {
+        "type": "String",
+        "example": "11月25日"
+      },
+      "time": {
+        "type": "String",
+        "example": "14:30"
+      }
+    }
+  },
+  "historyDeleteConfirmMessage": "This history entry cannot be recovered after deletion.",
+  "@historyDeleteConfirmMessage": {
+    "description": "删除单条历史记录的确认说明"
+  },
+  "historyDeleteConfirmTitle": "Delete this history entry?",
+  "@historyDeleteConfirmTitle": {
+    "description": "删除单条历史记录的确认标题"
+  },
+  "historyDeleteRecordTooltip": "Delete this entry",
+  "@historyDeleteRecordTooltip": {
+    "description": "删除单条历史记录按钮的提示"
+  },
+  "historyEmptyHint": "Editing calendar cells or notes automatically creates history",
+  "@historyEmptyHint": {
+    "description": "没有历史记录时的空状态说明"
+  },
+  "historyEmptyTitle": "No history yet",
+  "@historyEmptyTitle": {
+    "description": "没有历史记录时的空状态标题"
+  },
+  "historyEntryMetadata": "{relativeTime} · {kind} · {target}",
+  "@historyEntryMetadata": {
+    "description": "历史条目的时间、类型和目标摘要",
+    "placeholders": {
+      "relativeTime": {
+        "type": "String",
+        "example": "刚刚"
+      },
+      "kind": {
+        "type": "String",
+        "example": "日历格子"
+      },
+      "target": {
+        "type": "String",
+        "example": "2026年11月26日"
+      }
+    }
+  },
+  "historyFilterAll": "All",
+  "@historyFilterAll": {
+    "description": "历史类型筛选的全部选项"
+  },
+  "historyJustNow": "Just now",
+  "@historyJustNow": {
+    "description": "一分钟内发生的历史记录相对时间"
+  },
+  "historyKindCell": "Calendar cell",
+  "@historyKindCell": {
+    "description": "日历格子历史类型"
+  },
+  "historyKindNote": "Note",
+  "@historyKindNote": {
+    "description": "便签历史类型"
+  },
+  "historyLoadFailed": "Unable to load history: {message}",
+  "@historyLoadFailed": {
+    "description": "message must be a safe localized category from failureLabel, never raw error details",
+    "placeholders": {
+      "message": {
+        "type": "String",
+        "example": "存储不可用"
+      }
+    }
+  },
+  "historyMinutesAgo": "{count,plural, one{{count} minute ago · {time}} other{{count} minutes ago · {time}}}",
+  "@historyMinutesAgo": {
+    "description": "一小时内发生的历史记录相对时间及具体时间",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "5"
+      },
+      "time": {
+        "type": "String",
+        "example": "14:30"
+      }
+    }
+  },
+  "historyNewerContentMessage": "The current content for {date} is newer than this history entry. Restoring will overwrite it. Continue?",
+  "@historyNewerContentMessage": {
+    "description": "覆盖较新内容前的恢复确认说明",
+    "placeholders": {
+      "date": {
+        "type": "String",
+        "example": "2026年11月26日"
+      }
+    }
+  },
+  "historyNewerContentTitle": "Newer content exists",
+  "@historyNewerContentTitle": {
+    "description": "历史快照与当前内容冲突时的确认标题"
+  },
+  "historyNoMatchesHint": "Try another keyword or filter",
+  "@historyNoMatchesHint": {
+    "description": "历史搜索或筛选无结果时的说明"
+  },
+  "historyNoMatchesTitle": "No matching history",
+  "@historyNoMatchesTitle": {
+    "description": "历史搜索或筛选无结果时的标题"
+  },
+  "historyNoteRemoved": "Deleted note",
+  "@historyNoteRemoved": {
+    "description": "无标题便签被删除时生成的历史内容"
+  },
+  "historyNoteRemovedWithTitle": "Deleted note: {title}",
+  "@historyNoteRemovedWithTitle": {
+    "description": "有标题便签被删除时生成的历史内容",
+    "placeholders": {
+      "title": {
+        "type": "String",
+        "example": "购物清单"
+      }
+    }
+  },
+  "historyNoteWithSummary": "{title}: {summary}",
+  "@historyNoteWithSummary": {
+    "description": "便签标题与摘要不同时生成的历史内容",
+    "placeholders": {
+      "title": {
+        "type": "String",
+        "example": "购物清单"
+      },
+      "summary": {
+        "type": "String",
+        "example": "买牛奶"
+      }
+    }
+  },
+  "historyRestoreAction": "Restore",
+  "@historyRestoreAction": {
+    "description": "恢复历史快照的按钮"
+  },
+  "historyRestoreCancelled": "Restore canceled because newer content exists",
+  "@historyRestoreCancelled": {
+    "description": "检测到较新内容后取消恢复的提示"
+  },
+  "historyRestoreFailed": "Restore failed. Please try again later",
+  "@historyRestoreFailed": {
+    "description": "历史快照恢复失败的提示"
+  },
+  "historyRestoreInvalid": "This entry cannot be restored",
+  "@historyRestoreInvalid": {
+    "description": "历史记录不是可恢复快照时的提示"
+  },
+  "historyRestoreMessage": "Restore the calendar cell for {date} to this history snapshot?",
+  "@historyRestoreMessage": {
+    "description": "恢复历史快照的确认说明",
+    "placeholders": {
+      "date": {
+        "type": "String",
+        "example": "2026年11月26日"
+      }
+    }
+  },
+  "historyRestoreTitle": "Restore history content",
+  "@historyRestoreTitle": {
+    "description": "恢复历史快照的确认标题"
+  },
+  "historyRestoredMessage": "Restored to {date}",
+  "@historyRestoredMessage": {
+    "description": "历史快照恢复成功的提示",
+    "placeholders": {
+      "date": {
+        "type": "String",
+        "example": "2026年11月26日"
+      }
+    }
+  },
+  "historySearchHint": "Search history…",
+  "@historySearchHint": {
+    "description": "历史内容搜索框提示"
+  },
+  "historyTitle": "{count,plural, one{History ({count} entry)} other{History ({count} entries)}}",
+  "@historyTitle": {
+    "description": "历史页标题，包含历史条目总数",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "historyTodayAt": "Today at {time}",
+  "@historyTodayAt": {
+    "description": "今天发生的历史记录相对时间及具体时间",
+    "placeholders": {
+      "time": {
+        "type": "String",
+        "example": "14:30"
+      }
+    }
+  },
+  "historyVisibleCount": "{count,plural, one{Showing {count} entry} other{Showing {count} entries}}",
+  "@historyVisibleCount": {
+    "description": "当前筛选条件下可见的历史条目数量",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "2"
+      }
+    }
+  },
+  "historyYesterday": "Yesterday",
+  "@historyYesterday": {
+    "description": "历史按日期分组时的昨天标签"
+  },
+  "historyYesterdayAt": "Yesterday at {time}",
+  "@historyYesterdayAt": {
+    "description": "昨天发生的历史记录相对时间及具体时间",
+    "placeholders": {
+      "time": {
+        "type": "String",
+        "example": "14:30"
+      }
+    }
+  },
+  "importCancelled": "Import canceled",
+  "@importCancelled": {
+    "description": "Localized desktop text: importCancelled"
+  },
+  "importChoosing": "Select a file to import…",
+  "@importChoosing": {
+    "description": "Localized desktop text: importChoosing"
+  },
+  "importFailed": "Import failed: {message}",
+  "@importFailed": {
+    "description": "message must be a safe localized category from caughtErrorLabel, never raw exception details",
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "importInvalidFormat": "Import failed: Invalid file format",
+  "@importInvalidFormat": {
+    "description": "Localized desktop text: importInvalidFormat"
+  },
+  "importSummary": "Import complete: {imported} records imported, with {conflicts} date conflicts.",
+  "@importSummary": {
+    "description": "Localized desktop text: importSummary",
+    "placeholders": {
+      "imported": {
+        "type": "int"
+      },
+      "conflicts": {
+        "type": "int"
+      }
+    }
+  },
+  "languageChinese": "Chinese (Simplified)",
+  "@languageChinese": {
+    "description": "Localized desktop text: languageChinese"
+  },
+  "languageEnglish": "English",
+  "@languageEnglish": {
+    "description": "Localized desktop text: languageEnglish"
+  },
+  "navAccountSync": "Account & Sync",
+  "@navAccountSync": {
+    "description": "Localized desktop text: navAccountSync"
+  },
+  "navAnonymousAccount": "Signed out",
+  "@navAnonymousAccount": {
+    "description": "Localized desktop text: navAnonymousAccount"
+  },
+  "navCalendar": "Calendar",
+  "@navCalendar": {
+    "description": "Localized desktop text: navCalendar"
+  },
+  "navGoToToday": "Go to today",
+  "@navGoToToday": {
+    "description": "Localized desktop text: navGoToToday"
+  },
+  "navHideToTray": "Hide to tray (right-click the tray icon to quit)",
+  "@navHideToTray": {
+    "description": "Localized desktop text: navHideToTray"
+  },
+  "navHistory": "History",
+  "@navHistory": {
+    "description": "Localized desktop text: navHistory"
+  },
+  "navNextMonth": "Next month",
+  "@navNextMonth": {
+    "description": "Localized desktop text: navNextMonth"
+  },
+  "navPreviousMonth": "Previous month",
+  "@navPreviousMonth": {
+    "description": "Localized desktop text: navPreviousMonth"
+  },
+  "navReminderStatus": "Reminders ({count} scheduled)",
+  "@navReminderStatus": {
+    "description": "Localized desktop text: navReminderStatus",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "navSearch": "Search",
+  "@navSearch": {
+    "description": "Localized desktop text: navSearch"
+  },
+  "navSearchAction": "Search calendar and checklists",
+  "@navSearchAction": {
+    "description": "Localized desktop text: navSearchAction"
+  },
+  "navToggleTheme": "Toggle theme",
+  "@navToggleTheme": {
+    "description": "Localized desktop text: navToggleTheme"
+  },
+  "navTransfer": "Import / Export",
+  "@navTransfer": {
+    "description": "Localized desktop text: navTransfer"
+  },
+  "noteTitle": "Note",
+  "@noteTitle": {
+    "description": "Localized desktop text: noteTitle"
+  },
+  "notesAddLine": "Add line",
+  "@notesAddLine": {
+    "description": "添加便签单行按钮"
+  },
+  "notesBackgroundColor": "Background color",
+  "@notesBackgroundColor": {
+    "description": "便签背景颜色区域标题"
+  },
+  "notesDeleteLine": "Delete line",
+  "@notesDeleteLine": {
+    "description": "删除便签单行按钮提示"
+  },
+  "notesEditNote": "Edit note",
+  "@notesEditNote": {
+    "description": "便签编辑弹窗标题"
+  },
+  "notesEditorMissing": "This note no longer exists or has been deleted",
+  "@notesEditorMissing": {
+    "description": "便签已不存在时的提示"
+  },
+  "notesEditorTitle": "Note",
+  "@notesEditorTitle": {
+    "description": "便签编辑弹窗标题"
+  },
+  "notesEmpty": "(Empty note)",
+  "@notesEmpty": {
+    "description": "便签正文为空时显示的内容"
+  },
+  "notesEmptyHint": "Select New note above. Notes can stay on top in their own windows.",
+  "@notesEmptyHint": {
+    "description": "便签列表为空状态说明"
+  },
+  "notesEmptyTitle": "No notes yet",
+  "@notesEmptyTitle": {
+    "description": "便签列表为空状态标题"
+  },
+  "notesHeading": "{count, plural, =1{Note ({count})} other{Notes ({count})}}",
+  "@notesHeading": {
+    "description": "便签管理页标题和便签数量",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "notesHide": "Hide",
+  "@notesHide": {
+    "description": "隐藏便签按钮提示"
+  },
+  "notesLineColor": "Line text color",
+  "@notesLineColor": {
+    "description": "修改便签单行文字颜色按钮提示"
+  },
+  "notesMarkLineComplete": "Mark line complete",
+  "@notesMarkLineComplete": {
+    "description": "便签单行完成复选框无障碍标签"
+  },
+  "notesNewNote": "New note",
+  "@notesNewNote": {
+    "description": "新建便签按钮和新便签默认标题"
+  },
+  "notesOpenWindow": "Open in separate window",
+  "@notesOpenWindow": {
+    "description": "打开便签独立窗口按钮提示"
+  },
+  "notesPinWindow": "Keep window on top",
+  "@notesPinWindow": {
+    "description": "切换便签窗口置顶按钮提示"
+  },
+  "notesPinned": "Pinned",
+  "@notesPinned": {
+    "description": "便签已置顶标记"
+  },
+  "notesShow": "Show",
+  "@notesShow": {
+    "description": "显示便签按钮提示"
+  },
+  "notesStandaloneWindow": "Separate window",
+  "@notesStandaloneWindow": {
+    "description": "在独立窗口打开便签按钮"
+  },
+  "notesTitleField": "Title",
+  "@notesTitleField": {
+    "description": "便签标题输入框标签"
+  },
+  "notesUnavailable": "No notes yet",
+  "@notesUnavailable": {
+    "description": "Localized desktop text: notesUnavailable"
+  },
+  "notificationChannel": "Task reminders",
+  "@notificationChannel": {
+    "description": "Localized desktop text: notificationChannel"
+  },
+  "notificationChannelDescription": "Calendar task and anniversary reminders",
+  "@notificationChannelDescription": {
+    "description": "Localized desktop text: notificationChannelDescription"
+  },
+  "notificationOpenCalendar": "Open calendar",
+  "@notificationOpenCalendar": {
+    "description": "Localized desktop text: notificationOpenCalendar"
+  },
+  "reminderAcknowledge": "Got it",
+  "@reminderAcknowledge": {
+    "description": "Acknowledgment action for a reminder"
+  },
+  "reminderDismissTooltip": "Dismiss reminder",
+  "@reminderDismissTooltip": {
+    "description": "Accessibility tooltip for dismissing the reminder overlay"
+  },
+  "reminderDontShowAgain": "Don't show this window again",
+  "@reminderDontShowAgain": {
+    "description": "Action for dismissing the reminder window without showing it again"
+  },
+  "reminderLogCancelFailed": "Reminder cancellation failed: {notificationId}",
+  "@reminderLogCancelFailed": {
+    "description": "Log message for a failed reminder cancellation; technical error details are logged separately",
+    "placeholders": {
+      "notificationId": {
+        "type": "String",
+        "example": "100123"
+      }
+    }
+  },
+  "reminderLogClearFailed": "Failed to clear reminders",
+  "@reminderLogClearFailed": {
+    "description": "Log message for a failed reminder queue clear; technical error details are logged separately"
+  },
+  "reminderLogInitializeFailed": "Local notification initialization failed; using in-app reminders",
+  "@reminderLogInitializeFailed": {
+    "description": "Log message when falling back to in-app reminders"
+  },
+  "reminderLogInitialized": "Local notification plugin initialized",
+  "@reminderLogInitialized": {
+    "description": "Log message after local notification initialization succeeds"
+  },
+  "reminderLogScheduleFailed": "Reminder scheduling failed: {eventId}",
+  "@reminderLogScheduleFailed": {
+    "description": "Log message for a failed reminder schedule; technical error details are logged separately",
+    "placeholders": {
+      "eventId": {
+        "type": "String",
+        "example": "event-123"
+      }
+    }
+  },
+  "reminderNotificationBody": "{date} {time}",
+  "@reminderNotificationBody": {
+    "description": "Local notification body with localized occurrence date and reminder time",
+    "placeholders": {
+      "date": {
+        "type": "String",
+        "example": "November 26, 2026"
+      },
+      "time": {
+        "type": "String",
+        "example": "9:30 AM"
+      }
+    }
+  },
+  "reminderRescheduleFailed": "Couldn't reschedule reminders: {message}",
+  "@reminderRescheduleFailed": {
+    "description": "message must be a safe localized category from failureLabel, never raw error details",
+    "placeholders": {
+      "message": {
+        "type": "String",
+        "example": "Unable to read local data. Please try again."
+      }
+    }
+  },
+  "reminderTaskTitle": "Task reminder",
+  "@reminderTaskTitle": {
+    "description": "Title of an in-app or fallback task reminder"
+  },
+  "searchChooseCustomRange": "Choose custom range",
+  "@searchChooseCustomRange": {
+    "description": "尚未选择自定义日期范围时的按钮"
+  },
+  "searchClearQueryTooltip": "Clear search",
+  "@searchClearQueryTooltip": {
+    "description": "清空搜索关键词按钮的提示"
+  },
+  "searchCourseSubtitle": "{course} · {weekday}, period {period}",
+  "@searchCourseSubtitle": {
+    "description": "课程搜索结果所属课表、星期及节次",
+    "placeholders": {
+      "course": {
+        "type": "String",
+        "example": "高等数学"
+      },
+      "weekday": {
+        "type": "String",
+        "example": "周一"
+      },
+      "period": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "searchCustomRangeLabel": "{start} – {end}",
+  "@searchCustomRangeLabel": {
+    "description": "已选择的自定义日期范围摘要",
+    "placeholders": {
+      "start": {
+        "type": "String",
+        "example": "2026年11月1日"
+      },
+      "end": {
+        "type": "String",
+        "example": "2026年11月26日"
+      }
+    }
+  },
+  "searchEmptyHint": "Enter a keyword to search all modules instantly",
+  "@searchEmptyHint": {
+    "description": "搜索无结果时的空状态说明"
+  },
+  "searchEmptyTitle": "No matching content",
+  "@searchEmptyTitle": {
+    "description": "搜索无结果时的空状态标题"
+  },
+  "searchEventSubtitle": "{date} · {recurrence}",
+  "@searchEventSubtitle": {
+    "description": "日历事件搜索结果的发生日期及重复规则",
+    "placeholders": {
+      "date": {
+        "type": "String",
+        "example": "2026年11月26日"
+      },
+      "recurrence": {
+        "type": "String",
+        "example": "Does not repeat"
+      }
+    }
+  },
+  "searchFieldHint": "Content, tasks, notes, countdowns, subscriptions, courses",
+  "@searchFieldHint": {
+    "description": "搜索框输入提示"
+  },
+  "searchFieldLabel": "Search calendar and lists",
+  "@searchFieldLabel": {
+    "description": "搜索框标签"
+  },
+  "searchKindCell": "Calendar cell",
+  "@searchKindCell": {
+    "description": "日历单元格搜索结果类型"
+  },
+  "searchKindCountdown": "Countdown",
+  "@searchKindCountdown": {
+    "description": "倒数日搜索结果类型"
+  },
+  "searchKindCourse": "Course",
+  "@searchKindCourse": {
+    "description": "课程搜索结果类型"
+  },
+  "searchKindNote": "Note",
+  "@searchKindNote": {
+    "description": "便签搜索结果类型"
+  },
+  "searchKindSubscription": "Subscription",
+  "@searchKindSubscription": {
+    "description": "订阅搜索结果类型"
+  },
+  "searchRangeAll": "All",
+  "@searchRangeAll": {
+    "description": "搜索全部日期范围"
+  },
+  "searchRangeCustom": "Custom",
+  "@searchRangeCustom": {
+    "description": "搜索自定义日期范围"
+  },
+  "searchRangeOneMonth": "Past month",
+  "@searchRangeOneMonth": {
+    "description": "搜索最近一个月"
+  },
+  "searchRangeOneYear": "Past year",
+  "@searchRangeOneYear": {
+    "description": "搜索最近一年"
+  },
+  "searchRangeThreeMonths": "Past 3 months",
+  "@searchRangeThreeMonths": {
+    "description": "搜索最近三个月"
+  },
+  "searchResultCount": "{count,plural, one{{count} result found} other{{count} results found}}",
+  "@searchResultCount": {
+    "description": "搜索结果总数",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "4"
+      }
+    }
+  },
+  "searchSubscriptionSubtitle": "{name} · {date}",
+  "@searchSubscriptionSubtitle": {
+    "description": "订阅搜索结果所属订阅及发生日期",
+    "placeholders": {
+      "name": {
+        "type": "String",
+        "example": "Work calendar"
+      },
+      "date": {
+        "type": "String",
+        "example": "2026年11月26日"
+      }
+    }
+  },
+  "settingsAboutAppVersion": "{appTitle} {version}",
+  "@settingsAboutAppVersion": {
+    "description": "关于页应用名称和版本号",
+    "placeholders": {
+      "appTitle": {
+        "type": "String"
+      },
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsAboutData": "About / data",
+  "@settingsAboutData": {
+    "description": "关于和数据设置分组标题"
+  },
+  "settingsAdvanced": "Advanced settings",
+  "@settingsAdvanced": {
+    "description": "高级设置分组标题"
+  },
+  "settingsApplyToDesktop": "Apply to desktop now",
+  "@settingsApplyToDesktop": {
+    "description": "立即应用桌面壁纸按钮"
+  },
+  "settingsAutoCheckUpdates": "Check for updates automatically",
+  "@settingsAutoCheckUpdates": {
+    "description": "自动检查更新开关"
+  },
+  "settingsAutoDelay": "Automatically postpone unfinished tasks within 30 days",
+  "@settingsAutoDelay": {
+    "description": "未完成任务自动顺延开关"
+  },
+  "settingsBulletStyle": "Bullet style",
+  "@settingsBulletStyle": {
+    "description": "任务项目符号设置标签"
+  },
+  "settingsCalendarColors": "Calendar colors",
+  "@settingsCalendarColors": {
+    "description": "日历颜色选择器的无障碍标签"
+  },
+  "settingsCalendarDisplay": "Calendar display",
+  "@settingsCalendarDisplay": {
+    "description": "日历显示设置分组标题"
+  },
+  "settingsCalendarFontSize": "Calendar font size",
+  "@settingsCalendarFontSize": {
+    "description": "日历字号设置标签"
+  },
+  "settingsCalendarOpacity": "Calendar opacity",
+  "@settingsCalendarOpacity": {
+    "description": "日历透明度设置标签"
+  },
+  "settingsCellGap": "Cell spacing",
+  "@settingsCellGap": {
+    "description": "单元格间距设置标签"
+  },
+  "settingsCellSection": "Cells",
+  "@settingsCellSection": {
+    "description": "单元格设置分组标题"
+  },
+  "settingsCheckNow": "Check now",
+  "@settingsCheckNow": {
+    "description": "立即检查更新按钮"
+  },
+  "settingsCheckUpdates": "Check for updates",
+  "@settingsCheckUpdates": {
+    "description": "检查更新设置项标题"
+  },
+  "settingsChooseImageDirectory": "Choose image folder",
+  "@settingsChooseImageDirectory": {
+    "description": "选择壁纸图片目录按钮"
+  },
+  "settingsClearImageDirectory": "Clear image folder",
+  "@settingsClearImageDirectory": {
+    "description": "清除壁纸图片目录按钮提示"
+  },
+  "settingsCloudSync": "Cloud sync",
+  "@settingsCloudSync": {
+    "description": "云同步设置项标题"
+  },
+  "settingsCompletedLast": "Move completed items to the end",
+  "@settingsCompletedLast": {
+    "description": "已完成任务排序开关"
+  },
+  "settingsContentFontSize": "Content font size",
+  "@settingsContentFontSize": {
+    "description": "内容字号设置标签"
+  },
+  "settingsCountdownOpacity": "Countdown opacity",
+  "@settingsCountdownOpacity": {
+    "description": "倒数日透明度设置标签"
+  },
+  "settingsDesktop": "Desktop",
+  "@settingsDesktop": {
+    "description": "桌面设置分组标题"
+  },
+  "settingsDesktopBehavior": "The widget stays below all windows. Type, check, or drag inside the card; clicks outside it pass through to desktop icons.",
+  "@settingsDesktopBehavior": {
+    "description": "可编辑桌面组件交互说明"
+  },
+  "settingsDesktopDescription": "Keep the editable calendar widget on the desktop layer; static wallpaper snapshots are optional backups only",
+  "@settingsDesktopDescription": {
+    "description": "桌面设置分组说明"
+  },
+  "settingsDesktopWidgetHidden": "Desktop widget: hidden",
+  "@settingsDesktopWidgetHidden": {
+    "description": "桌面组件已隐藏状态"
+  },
+  "settingsDesktopWidgetVisible": "Desktop widget: visible (editable)",
+  "@settingsDesktopWidgetVisible": {
+    "description": "桌面组件已显示状态"
+  },
+  "settingsDisplayMode": "Display mode",
+  "@settingsDisplayMode": {
+    "description": "日历显示模式设置标签"
+  },
+  "settingsEditableDesktopCalendar": "Show editable calendar on the desktop (true desktop layer)",
+  "@settingsEditableDesktopCalendar": {
+    "description": "可编辑桌面月历开关"
+  },
+  "settingsFestivalInfo": "Show festivals / lunar dates / solar terms",
+  "@settingsFestivalInfo": {
+    "description": "节日、农历和节气显示开关"
+  },
+  "settingsFontColors": "Fonts & colors",
+  "@settingsFontColors": {
+    "description": "字体和颜色设置分组标题"
+  },
+  "settingsGlassEffect": "Show transparent glass effect",
+  "@settingsGlassEffect": {
+    "description": "透明玻璃效果开关"
+  },
+  "settingsHideHotkey": "Crtl+H show or hide / hotkey toggle",
+  "@settingsHideHotkey": {
+    "description": "显示隐藏快捷键开关"
+  },
+  "settingsHolidays": "Show public holidays",
+  "@settingsHolidays": {
+    "description": "法定节假日显示开关"
+  },
+  "settingsHotSearchFloating": "Show trending searches / floating button",
+  "@settingsHotSearchFloating": {
+    "description": "热搜和浮动按钮显示开关"
+  },
+  "settingsIeProxy": "Use IE proxy settings",
+  "@settingsIeProxy": {
+    "description": "IE 代理设置开关"
+  },
+  "settingsJiyi": "Show Chinese almanac guidance",
+  "@settingsJiyi": {
+    "description": "黄历宜忌显示开关"
+  },
+  "settingsLanguage": "Language",
+  "@settingsLanguage": {
+    "description": "应用语言设置标签"
+  },
+  "settingsLegacyCalendarHint": "Matches the legacy Calendar settings page",
+  "@settingsLegacyCalendarHint": {
+    "description": "日历显示设置分组说明"
+  },
+  "settingsLineSpacing": "Line spacing",
+  "@settingsLineSpacing": {
+    "description": "日历内容行间距设置标签"
+  },
+  "settingsLunar": "Show lunar calendar",
+  "@settingsLunar": {
+    "description": "农历显示开关"
+  },
+  "settingsMonthDetails": "Show month separators / week numbers / shadows / title bar",
+  "@settingsMonthDetails": {
+    "description": "月历辅助信息显示开关"
+  },
+  "settingsNoImageDirectory": "No image folder selected",
+  "@settingsNoImageDirectory": {
+    "description": "未选择壁纸图片目录时的提示"
+  },
+  "settingsNotesLineSpacing": "Line spacing",
+  "@settingsNotesLineSpacing": {
+    "description": "便签行间距设置标签"
+  },
+  "settingsNotesOpacity": "Note opacity",
+  "@settingsNotesOpacity": {
+    "description": "便签透明度设置标签"
+  },
+  "settingsNotesSection": "Notes",
+  "@settingsNotesSection": {
+    "description": "便签设置分组标题"
+  },
+  "settingsReminderTone": "Reminder sound",
+  "@settingsReminderTone": {
+    "description": "提醒提示音设置标签"
+  },
+  "settingsRescheduleReminders": "Reschedule reminders",
+  "@settingsRescheduleReminders": {
+    "description": "重新排程全部提醒按钮"
+  },
+  "settingsRestoreDefaults": "Restore default settings",
+  "@settingsRestoreDefaults": {
+    "description": "恢复默认设置按钮"
+  },
+  "settingsRestoreSystemWallpaper": "Restore original system wallpaper",
+  "@settingsRestoreSystemWallpaper": {
+    "description": "恢复系统原始壁纸按钮"
+  },
+  "settingsScheduledReminders": "{count, plural, =1{{count} scheduled reminder} other{{count} scheduled reminders}}",
+  "@settingsScheduledReminders": {
+    "description": "已排程提醒数量",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsSearchEngine": "Search engine",
+  "@settingsSearchEngine": {
+    "description": "搜索引擎设置标签"
+  },
+  "settingsSearchEngineBaidu": "Baidu",
+  "@settingsSearchEngineBaidu": {
+    "description": "百度搜索引擎"
+  },
+  "settingsSearchEngineBing": "Bing",
+  "@settingsSearchEngineBing": {
+    "description": "必应搜索引擎"
+  },
+  "settingsShowAllNotes": "Show all notes",
+  "@settingsShowAllNotes": {
+    "description": "显示所有便签开关"
+  },
+  "settingsShowCompleted": "Show completed items",
+  "@settingsShowCompleted": {
+    "description": "已完成任务显示开关"
+  },
+  "settingsShowReminderTime": "Show reminder time",
+  "@settingsShowReminderTime": {
+    "description": "提醒时间显示开关"
+  },
+  "settingsSolarTerms": "Show solar terms",
+  "@settingsSolarTerms": {
+    "description": "节气显示开关"
+  },
+  "settingsStartOfWeek": "First day of week",
+  "@settingsStartOfWeek": {
+    "description": "每周起始日期设置标签"
+  },
+  "settingsStartWithWindows": "Start with Windows",
+  "@settingsStartWithWindows": {
+    "description": "开机自启开关"
+  },
+  "settingsStaticWallpaperGenerated": "Static wallpaper: generated",
+  "@settingsStaticWallpaperGenerated": {
+    "description": "静态壁纸已生成状态"
+  },
+  "settingsStaticWallpaperNotEnabled": "Static wallpaper: not enabled",
+  "@settingsStaticWallpaperNotEnabled": {
+    "description": "静态壁纸未启用状态"
+  },
+  "settingsStaticWallpaperSnapshot": "(Optional) Generate a static wallpaper snapshot",
+  "@settingsStaticWallpaperSnapshot": {
+    "description": "静态壁纸快照开关"
+  },
+  "settingsStorageName": "Clean DDD + Riverpod · Local storage: {storageName}",
+  "@settingsStorageName": {
+    "description": "应用架构和本地存储名称说明",
+    "placeholders": {
+      "storageName": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsSyncNow": "Sync now",
+  "@settingsSyncNow": {
+    "description": "立即同步按钮"
+  },
+  "settingsTabAbout": "About",
+  "@settingsTabAbout": {
+    "description": "设置页关于页签"
+  },
+  "settingsTabAdvanced": "Advanced",
+  "@settingsTabAdvanced": {
+    "description": "设置页高级页签"
+  },
+  "settingsTabCalendar": "Calendar",
+  "@settingsTabCalendar": {
+    "description": "设置页日历页签"
+  },
+  "settingsTabCell": "Cells",
+  "@settingsTabCell": {
+    "description": "设置页单元格页签"
+  },
+  "settingsTabFontColors": "Fonts & colors",
+  "@settingsTabFontColors": {
+    "description": "设置页字体和颜色页签"
+  },
+  "settingsTabNotes": "Notes",
+  "@settingsTabNotes": {
+    "description": "设置页便签页签"
+  },
+  "settingsTabWallpaper": "Wallpaper",
+  "@settingsTabWallpaper": {
+    "description": "设置页壁纸页签"
+  },
+  "settingsTaskCompleteTone": "Task completion sound",
+  "@settingsTaskCompleteTone": {
+    "description": "任务完成提示音设置标签"
+  },
+  "settingsTheme": "Theme",
+  "@settingsTheme": {
+    "description": "应用主题设置标签"
+  },
+  "settingsVisibleColumns": "{count, plural, =1{{count} column} other{{count} columns}}",
+  "@settingsVisibleColumns": {
+    "description": "日历显示月份列数的滑块值",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsVisibleColumnsLabel": "Visible month columns",
+  "@settingsVisibleColumnsLabel": {
+    "description": "日历显示月份列数设置标签"
+  },
+  "settingsVisibleRows": "{count, plural, =1{{count} row} other{{count} rows}}",
+  "@settingsVisibleRows": {
+    "description": "日历显示行数的滑块值",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsVisibleRowsLabel": "Visible rows",
+  "@settingsVisibleRowsLabel": {
+    "description": "日历显示行数设置标签"
+  },
+  "settingsWallpaperFit": "Image fitting",
+  "@settingsWallpaperFit": {
+    "description": "壁纸图片适配方式设置标签"
+  },
+  "settingsWallpaperFitFill": "Fill (crop to cover)",
+  "@settingsWallpaperFitFill": {
+    "description": "裁切并铺满的图片适配方式"
+  },
+  "settingsWallpaperFitFit": "Fit (show entire image)",
+  "@settingsWallpaperFitFit": {
+    "description": "完整显示图片的适配方式"
+  },
+  "settingsWallpaperFitStretch": "Stretch",
+  "@settingsWallpaperFitStretch": {
+    "description": "拉伸图片的适配方式"
+  },
+  "settingsWallpaperImage": "Wallpaper source",
+  "@settingsWallpaperImage": {
+    "description": "壁纸底图模式设置标签"
+  },
+  "settingsWallpaperIntervalLabel": "Interval (minutes)",
+  "@settingsWallpaperIntervalLabel": {
+    "description": "壁纸切换间隔设置标签"
+  },
+  "settingsWallpaperIntervalMinutes": "{count, plural, =1{{count} minute} other{{count} minutes}}",
+  "@settingsWallpaperIntervalMinutes": {
+    "description": "壁纸切换间隔的滑块值",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsWallpaperShowAll": "Cycle through all images in the folder",
+  "@settingsWallpaperShowAll": {
+    "description": "循环显示目录中全部图片的开关"
+  },
+  "settingsWeekNumbers": "Show week numbers",
+  "@settingsWeekNumbers": {
+    "description": "周序号显示开关"
+  },
+  "settingsWeekday": "{weekday}",
+  "@settingsWeekday": {
+    "description": "周起始日选项，weekday 为本地化星期名称",
+    "placeholders": {
+      "weekday": {
+        "type": "String"
+      }
+    }
+  },
+  "soundToneDing": "Ding",
+  "@soundToneDing": {
+    "description": "滴答提示音"
+  },
+  "soundToneDing2": "Ding-dang",
+  "@soundToneDing2": {
+    "description": "叮当提示音"
+  },
+  "soundToneDing3": "Ding-dong",
+  "@soundToneDing3": {
+    "description": "叮咚提示音"
+  },
+  "soundToneDong": "Dong",
+  "@soundToneDong": {
+    "description": "咚提示音"
+  },
+  "soundToneLittleStar": "Twinkle, Twinkle, Little Star",
+  "@soundToneLittleStar": {
+    "description": "小星星提示音"
+  },
+  "soundToneNone": "None",
+  "@soundToneNone": {
+    "description": "关闭提示音"
+  },
+  "subWindowCommand": "Subwindow command: {command}",
+  "@subWindowCommand": {
+    "description": "Localized desktop text: subWindowCommand",
+    "placeholders": {
+      "command": {
+        "type": "String"
+      }
+    }
+  },
+  "subscriptionAdd": "Add subscription",
+  "@subscriptionAdd": {
+    "description": "添加订阅按钮"
+  },
+  "subscriptionCopyLink": "Copy share link",
+  "@subscriptionCopyLink": {
+    "description": "复制订阅分享链接按钮提示"
+  },
+  "subscriptionCreateTitle": "Add subscription calendar",
+  "@subscriptionCreateTitle": {
+    "description": "添加订阅弹窗标题"
+  },
+  "subscriptionDelete": "Delete subscription",
+  "@subscriptionDelete": {
+    "description": "删除订阅按钮提示"
+  },
+  "subscriptionEmptyHint": "Supports local subscriptions and Google / Outlook / iCloud / CalDAV",
+  "@subscriptionEmptyHint": {
+    "description": "订阅列表为空状态说明"
+  },
+  "subscriptionEmptyTitle": "No subscription calendars yet",
+  "@subscriptionEmptyTitle": {
+    "description": "订阅列表为空状态标题"
+  },
+  "subscriptionEnabled": "Enable this subscription",
+  "@subscriptionEnabled": {
+    "description": "订阅启用开关无障碍标签"
+  },
+  "subscriptionFetchFailed": "Failed to fetch subscription; keeping local cache: {name}",
+  "@subscriptionFetchFailed": {
+    "description": "订阅拉取失败时保留本地缓存的日志消息",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "subscriptionHeading": "{count, plural, =1{Subscription calendar ({count})} other{Subscription calendars ({count})}}",
+  "@subscriptionHeading": {
+    "description": "订阅日历页标题和订阅数量",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "subscriptionLastSyncedAt": "Last synced: {date} at {time}",
+  "@subscriptionLastSyncedAt": {
+    "description": "订阅最近同步日期和时间",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "subscriptionName": "Subscription name",
+  "@subscriptionName": {
+    "description": "订阅名称输入框标签"
+  },
+  "subscriptionNeverSynced": "Not synced yet",
+  "@subscriptionNeverSynced": {
+    "description": "订阅尚未同步状态"
+  },
+  "subscriptionShareLinkHint": "Share link (leave blank to create a local subscription)",
+  "@subscriptionShareLinkHint": {
+    "description": "订阅分享链接输入框标签"
+  },
+  "subscriptionSource": "Subscription source",
+  "@subscriptionSource": {
+    "description": "订阅来源下拉框无障碍标签"
+  },
+  "subscriptionSourceCaldav": "CalDAV",
+  "@subscriptionSourceCaldav": {
+    "description": "CalDAV 订阅来源"
+  },
+  "subscriptionSourceGoogle": "Google Calendar",
+  "@subscriptionSourceGoogle": {
+    "description": "Google 日历订阅来源"
+  },
+  "subscriptionSourceIcloud": "iCloud Calendar",
+  "@subscriptionSourceIcloud": {
+    "description": "iCloud 日历订阅来源"
+  },
+  "subscriptionSourceLocal": "Local subscription",
+  "@subscriptionSourceLocal": {
+    "description": "本地订阅来源"
+  },
+  "subscriptionSourceOutlook": "Outlook Calendar",
+  "@subscriptionSourceOutlook": {
+    "description": "Outlook 日历订阅来源"
+  },
+  "subscriptionSummary": "{source} · {count, plural, =1{{count} event} other{{count} events}} · {lastSync}",
+  "@subscriptionSummary": {
+    "description": "订阅来源、推送数量和最近同步时间",
+    "placeholders": {
+      "source": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      },
+      "lastSync": {
+        "type": "String"
+      }
+    }
+  },
+  "subscriptionSync": "Sync",
+  "@subscriptionSync": {
+    "description": "同步单个订阅按钮"
+  },
+  "subscriptionSyncAll": "Sync all",
+  "@subscriptionSyncAll": {
+    "description": "同步全部订阅按钮"
+  },
+  "syncFailed": "Sync failed: {message}",
+  "@syncFailed": {
+    "description": "message must be a safe localized category from failureLabel, never server or exception details",
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "syncLocalAccount": "{message} (switched to a local account)",
+  "@syncLocalAccount": {
+    "description": "message must be a safe localized category from failureLabel, never server or exception details",
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
+  "syncLoginRequired": "Sign in before syncing",
+  "@syncLoginRequired": {
+    "description": "Localized desktop text: syncLoginRequired"
+  },
+  "syncLoginSuccess": "Signed in successfully",
+  "@syncLoginSuccess": {
+    "description": "Localized desktop text: syncLoginSuccess"
+  },
+  "syncSummary": "Uploaded {uploaded} records and downloaded {downloaded} records.",
+  "@syncSummary": {
+    "description": "Localized desktop text: syncSummary",
+    "placeholders": {
+      "uploaded": {
+        "type": "int"
+      },
+      "downloaded": {
+        "type": "int"
+      }
+    }
+  },
+  "themeModeDark": "Dark",
+  "@themeModeDark": {
+    "description": "深色主题"
+  },
+  "themeModeLight": "Light",
+  "@themeModeLight": {
+    "description": "浅色主题"
+  },
+  "themeModeSystem": "Follow system",
+  "@themeModeSystem": {
+    "description": "跟随系统主题"
+  },
+  "timetableAdd": "Add",
+  "@timetableAdd": {
+    "description": "Add-course button"
+  },
+  "timetableAddLessonTitle": "Add course ({weekday}, period {period})",
+  "@timetableAddLessonTitle": {
+    "description": "Add-course dialog title",
+    "placeholders": {
+      "weekday": {
+        "type": "String"
+      },
+      "period": {
+        "type": "int"
+      }
+    }
+  },
+  "timetableAddLessonTooltip": "Add course ({weekday}, period {period})",
+  "@timetableAddLessonTooltip": {
+    "description": "Add-course cell icon tooltip",
+    "placeholders": {
+      "weekday": {
+        "type": "String"
+      },
+      "period": {
+        "type": "int"
+      }
+    }
+  },
+  "timetableCourseName": "Course name",
+  "@timetableCourseName": {
+    "description": "Course-name field label"
+  },
+  "timetableEmptyHint": "Supports odd/even weeks, period times, and course conflict detection",
+  "@timetableEmptyHint": {
+    "description": "Timetable empty-state hint"
+  },
+  "timetableEmptyTitle": "No timetables yet",
+  "@timetableEmptyTitle": {
+    "description": "Timetable empty-state title"
+  },
+  "timetableHideWeekend": "Hide weekends",
+  "@timetableHideWeekend": {
+    "description": "Hide-weekends switch"
+  },
+  "timetableLessonConflict": "The new course conflicts with another course at the same time",
+  "@timetableLessonConflict": {
+    "description": "Error shown when a new course has a time conflict"
+  },
+  "timetableNewName": "New timetable",
+  "@timetableNewName": {
+    "description": "New timetable button and default name"
+  },
+  "timetableParityAll": "All weeks",
+  "@timetableParityAll": {
+    "description": "Course week-parity option: all weeks"
+  },
+  "timetableParityEven": "Even weeks",
+  "@timetableParityEven": {
+    "description": "Course week-parity option: even weeks"
+  },
+  "timetableParityOdd": "Odd weeks",
+  "@timetableParityOdd": {
+    "description": "Course week-parity option: odd weeks"
+  },
+  "timetablePeriod": "Period",
+  "@timetablePeriod": {
+    "description": "Timetable period column heading"
+  },
+  "timetablePeriodsPerDay": "Periods per day",
+  "@timetablePeriodsPerDay": {
+    "description": "Daily period-count label"
+  },
+  "timetablePeriodsPerDayCount": "{count, plural, =1{1 period} other{{count} periods}}",
+  "@timetablePeriodsPerDayCount": {
+    "description": "Number of periods per day",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "timetableRemoveLessonTooltip": "Delete course {name}",
+  "@timetableRemoveLessonTooltip": {
+    "description": "Delete-course cell tooltip",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "timetableRemoveTooltip": "Delete {name}",
+  "@timetableRemoveTooltip": {
+    "description": "Delete-timetable icon tooltip",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "timetableSemesterWeeks": "Term length",
+  "@timetableSemesterWeeks": {
+    "description": "Term week-count label"
+  },
+  "timetableSettings": "Timetable settings",
+  "@timetableSettings": {
+    "description": "Open timetable settings button"
+  },
+  "timetableSettingsTitle": "Timetable settings: {name}",
+  "@timetableSettingsTitle": {
+    "description": "Timetable settings dialog title",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "timetableStartDate": "Start date",
+  "@timetableStartDate": {
+    "description": "Term start-date label"
+  },
+  "timetableSummary": "Starts {startDate} · {weeks, plural, =1{1 week} other{{weeks} weeks}}",
+  "@timetableSummary": {
+    "description": "Timetable card summary",
+    "placeholders": {
+      "startDate": {
+        "type": "String"
+      },
+      "weeks": {
+        "type": "int"
+      }
+    }
+  },
+  "timetableTitle": "Timetable",
+  "@timetableTitle": {
+    "description": "Localized desktop text: timetableTitle"
+  },
+  "timetableWeeksCount": "{count, plural, =1{1 week} other{{count} weeks}}",
+  "@timetableWeeksCount": {
+    "description": "Number of weeks in the term",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "transferChooseAndImport": "Choose file and import",
+  "@transferChooseAndImport": {
+    "description": "Choose-file-and-import button"
+  },
+  "transferExportSubtitle": "Re-importable database files, printable text, and Excel-compatible CSV",
+  "@transferExportSubtitle": {
+    "description": "Supported export formats"
+  },
+  "transferExportTitle": "Export calendar list",
+  "@transferExportTitle": {
+    "description": "Export section title"
+  },
+  "transferExportToFile": "Export to file",
+  "@transferExportToFile": {
+    "description": "Export-to-file button"
+  },
+  "transferFormatCsv": "Excel (CSV)",
+  "@transferFormatCsv": {
+    "description": "Export format: Excel-compatible CSV"
+  },
+  "transferFormatDatabase": "Database (re-importable)",
+  "@transferFormatDatabase": {
+    "description": "Export format: re-importable database file"
+  },
+  "transferFormatText": "Text file",
+  "@transferFormatText": {
+    "description": "Export format: text file"
+  },
+  "transferImportSubtitle": "Restore cells and tasks from a `*.json` database file",
+  "@transferImportSubtitle": {
+    "description": "Database-file import description"
+  },
+  "transferImportTitle": "Import calendar list",
+  "@transferImportTitle": {
+    "description": "Import section title"
+  },
+  "transferRangeAllTime": "All time",
+  "@transferRangeAllTime": {
+    "description": "Export range: all time"
+  },
+  "transferRangeCustom": "Custom",
+  "@transferRangeCustom": {
+    "description": "Export range: custom"
+  },
+  "transferRangeSixMonths": "Last 6 months",
+  "@transferRangeSixMonths": {
+    "description": "Export range: last six months"
+  },
+  "transferReplaceConflicts": "Replace all conflicts with imported content",
+  "@transferReplaceConflicts": {
+    "description": "Replace conflicting content during import"
+  },
+  "trayAbout": "About",
+  "@trayAbout": {
+    "description": "Localized desktop text: trayAbout"
+  },
+  "trayExit": "Exit",
+  "@trayExit": {
+    "description": "Localized desktop text: trayExit"
+  },
+  "trayHide": "Hide main window",
+  "@trayHide": {
+    "description": "Localized desktop text: trayHide"
+  },
+  "trayHideWidget": "Hide desktop calendar widget",
+  "@trayHideWidget": {
+    "description": "Localized desktop text: trayHideWidget"
+  },
+  "trayNotes": "Notes",
+  "@trayNotes": {
+    "description": "Localized desktop text: trayNotes"
+  },
+  "trayRefreshWallpaper": "Refresh wallpaper",
+  "@trayRefreshWallpaper": {
+    "description": "Localized desktop text: trayRefreshWallpaper"
+  },
+  "traySettings": "Settings",
+  "@traySettings": {
+    "description": "Localized desktop text: traySettings"
+  },
+  "trayShow": "Show main window",
+  "@trayShow": {
+    "description": "Localized desktop text: trayShow"
+  },
+  "trayShowWidget": "Show desktop calendar widget",
+  "@trayShowWidget": {
+    "description": "Localized desktop text: trayShowWidget"
+  },
+  "traySync": "Sync now",
+  "@traySync": {
+    "description": "Localized desktop text: traySync"
+  },
+  "wallpaperFailed": "Failed to generate wallpaper",
+  "@wallpaperFailed": {
+    "description": "Localized desktop text: wallpaperFailed"
+  },
+  "wallpaperFooter": "Today: {date}, {weekday}    Data from your local calendar and checklists",
+  "@wallpaperFooter": {
+    "description": "Localized desktop text: wallpaperFooter",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "weekday": {
+        "type": "String"
+      }
+    }
+  },
+  "wallpaperModeDesktopCapture": "Capture an image from the desktop",
+  "@wallpaperModeDesktopCapture": {
+    "description": "从桌面抓取图片的壁纸模式"
+  },
+  "wallpaperModeRotation": "Cycle through selected images",
+  "@wallpaperModeRotation": {
+    "description": "循环显示所选图片的壁纸模式"
+  },
+  "wallpaperModeSolidColor": "Set a solid desktop background color",
+  "@wallpaperModeSolidColor": {
+    "description": "纯色桌面背景模式"
+  },
+  "wallpaperRejected": "The system rejected the wallpaper change",
+  "@wallpaperRejected": {
+    "description": "Localized desktop text: wallpaperRejected"
+  },
+  "wallpaperRestored": "Original system wallpaper restored",
+  "@wallpaperRestored": {
+    "description": "Localized desktop text: wallpaperRestored"
+  },
+  "wallpaperSelectDirectory": "Select wallpaper image folder",
+  "@wallpaperSelectDirectory": {
+    "description": "Localized desktop text: wallpaperSelectDirectory"
+  },
+  "wallpaperUpdated": "Wallpaper updated",
+  "@wallpaperUpdated": {
+    "description": "Localized desktop text: wallpaperUpdated"
+  },
+  "widgetAddLine": "Add a line",
+  "@widgetAddLine": {
+    "description": "Localized desktop text: widgetAddLine"
+  },
+  "widgetAddLineTooltip": "Add a line",
+  "@widgetAddLineTooltip": {
+    "description": "Localized desktop text: widgetAddLineTooltip"
+  },
+  "widgetAddToDate": "Add to {date}",
+  "@widgetAddToDate": {
+    "description": "Localized desktop text: widgetAddToDate",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "widgetCellColor": "Cell color",
+  "@widgetCellColor": {
+    "description": "Localized desktop text: widgetCellColor"
+  },
+  "widgetCellColorTooltip": "Choose cell color",
+  "@widgetCellColorTooltip": {
+    "description": "Localized desktop text: widgetCellColorTooltip"
+  },
+  "widgetClearDay": "Clear this day",
+  "@widgetClearDay": {
+    "description": "Localized desktop text: widgetClearDay"
+  },
+  "widgetClearTooltip": "Clear this day",
+  "@widgetClearTooltip": {
+    "description": "Localized desktop text: widgetClearTooltip"
+  },
+  "widgetClosePalette": "Close color palette",
+  "@widgetClosePalette": {
+    "description": "Localized desktop text: widgetClosePalette"
+  },
+  "widgetMoveHint": "Drag to move the desktop calendar",
+  "@widgetMoveHint": {
+    "description": "Accessibility label for dragging the desktop widget header."
+  },
+  "widgetResizeLeft": "Resize from the left edge",
+  "@widgetResizeLeft": {
+    "description": "Accessibility label for the left resize handle."
+  },
+  "widgetResizeRight": "Resize from the right edge",
+  "@widgetResizeRight": {
+    "description": "Accessibility label for the right resize handle."
+  },
+  "widgetResizeTop": "Resize from the top edge",
+  "@widgetResizeTop": {
+    "description": "Accessibility label for the top resize handle."
+  },
+  "widgetResizeBottom": "Resize from the bottom edge",
+  "@widgetResizeBottom": {
+    "description": "Accessibility label for the bottom resize handle."
+  },
+  "widgetResizeTopLeft": "Resize from the top-left corner",
+  "@widgetResizeTopLeft": {
+    "description": "Accessibility label for the top-left resize handle."
+  },
+  "widgetResizeTopRight": "Resize from the top-right corner",
+  "@widgetResizeTopRight": {
+    "description": "Accessibility label for the top-right resize handle."
+  },
+  "widgetResizeBottomLeft": "Resize from the bottom-left corner",
+  "@widgetResizeBottomLeft": {
+    "description": "Accessibility label for the bottom-left resize handle."
+  },
+  "widgetResizeBottomRight": "Resize from the bottom-right corner",
+  "@widgetResizeBottomRight": {
+    "description": "Accessibility label for the bottom-right resize handle."
+  },
+  "widgetCollapse": "Collapse desktop widget",
+  "@widgetCollapse": {
+    "description": "Localized desktop text: widgetCollapse"
+  },
+  "widgetCompleteTooltip": "Mark complete",
+  "@widgetCompleteTooltip": {
+    "description": "Localized desktop text: widgetCompleteTooltip"
+  },
+  "widgetConfirmClear": "Confirm clear",
+  "@widgetConfirmClear": {
+    "description": "Localized desktop text: widgetConfirmClear"
+  },
+  "widgetEditingDate": "Editing {date}",
+  "@widgetEditingDate": {
+    "description": "Localized desktop text: widgetEditingDate",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "widgetFinishEditing": "Finish editing",
+  "@widgetFinishEditing": {
+    "description": "Localized desktop text: widgetFinishEditing"
+  },
+  "widgetFinishEditingTooltip": "Save and finish editing",
+  "@widgetFinishEditingTooltip": {
+    "description": "Localized desktop text: widgetFinishEditingTooltip"
+  },
+  "widgetMarkComplete": "Mark complete",
+  "@widgetMarkComplete": {
+    "description": "Localized desktop text: widgetMarkComplete"
+  },
+  "widgetNewLineHint": "Press Enter to add a line…",
+  "@widgetNewLineHint": {
+    "description": "Localized desktop text: widgetNewLineHint"
+  },
+  "widgetPopupEditor": "Popup editor",
+  "@widgetPopupEditor": {
+    "description": "Localized desktop text: widgetPopupEditor"
+  },
+  "widgetPopupEditorTooltip": "Open the full editor",
+  "@widgetPopupEditorTooltip": {
+    "description": "Localized desktop text: widgetPopupEditorTooltip"
+  },
+  "widgetPromote": "Make task",
+  "@widgetPromote": {
+    "description": "Localized desktop text: widgetPromote"
+  },
+  "widgetPromoteTooltip": "Turn this line into a recurring task",
+  "@widgetPromoteTooltip": {
+    "description": "Localized desktop text: widgetPromoteTooltip"
+  },
+  "widgetQuickInputHint": "Type something and press Enter",
+  "@widgetQuickInputHint": {
+    "description": "Localized desktop text: widgetQuickInputHint"
+  },
+  "widgetTextColor": "Text color",
+  "@widgetTextColor": {
+    "description": "Localized desktop text: widgetTextColor"
+  },
+  "widgetTextColorTooltip": "Choose text color",
+  "@widgetTextColorTooltip": {
+    "description": "Localized desktop text: widgetTextColorTooltip"
+  }
+}

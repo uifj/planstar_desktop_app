@@ -29,9 +29,7 @@ final class ReminderSpec extends ValueObject {
     for (final advance in advanceDays) {
       final days = advance == -1 ? customAdvanceDays : advance;
       final date = occurrence.addDays(-days).date;
-      result.add(
-        DateTime(date.year, date.month, date.day, hour, minute),
-      );
+      result.add(DateTime(date.year, date.month, date.day, hour, minute));
     }
     return result.toList()..sort();
   }
@@ -42,42 +40,39 @@ final class ReminderSpec extends ValueObject {
     List<int>? advanceDays,
     int? customAdvanceDays,
     bool? wechatNotify,
-  }) =>
-      ReminderSpec(
-        hour: hour ?? this.hour,
-        minute: minute ?? this.minute,
-        advanceDays: advanceDays ?? this.advanceDays,
-        customAdvanceDays: customAdvanceDays ?? this.customAdvanceDays,
-        wechatNotify: wechatNotify ?? this.wechatNotify,
-      );
+  }) => ReminderSpec(
+    hour: hour ?? this.hour,
+    minute: minute ?? this.minute,
+    advanceDays: advanceDays ?? this.advanceDays,
+    customAdvanceDays: customAdvanceDays ?? this.customAdvanceDays,
+    wechatNotify: wechatNotify ?? this.wechatNotify,
+  );
 
   Map<String, Object?> toJson() => <String, Object?>{
-        'hour': hour,
-        'minute': minute,
-        'advanceDays': advanceDays,
-        'customAdvanceDays': customAdvanceDays,
-        'wechatNotify': wechatNotify,
-      };
+    'hour': hour,
+    'minute': minute,
+    'advanceDays': advanceDays,
+    'customAdvanceDays': customAdvanceDays,
+    'wechatNotify': wechatNotify,
+  };
 
   factory ReminderSpec.fromJson(Map<String, Object?> json) => ReminderSpec(
-        hour: (json['hour'] as num?)?.toInt() ?? 9,
-        minute: (json['minute'] as num?)?.toInt() ?? 0,
-        advanceDays:
-            (json['advanceDays'] as List?)?.cast<int>() ?? const <int>[0],
-        customAdvanceDays:
-            (json['customAdvanceDays'] as num?)?.toInt() ?? 0,
-        wechatNotify: json['wechatNotify'] as bool? ?? false,
-      );
+    hour: (json['hour'] as num?)?.toInt() ?? 9,
+    minute: (json['minute'] as num?)?.toInt() ?? 0,
+    advanceDays: (json['advanceDays'] as List?)?.cast<int>() ?? const <int>[0],
+    customAdvanceDays: (json['customAdvanceDays'] as num?)?.toInt() ?? 0,
+    wechatNotify: json['wechatNotify'] as bool? ?? false,
+  );
 
   String get timeLabel =>
       '${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}';
 
   @override
   List<Object?> get props => <Object?>[
-        hour,
-        minute,
-        advanceDays,
-        customAdvanceDays,
-        wechatNotify,
-      ];
+    hour,
+    minute,
+    advanceDays,
+    customAdvanceDays,
+    wechatNotify,
+  ];
 }

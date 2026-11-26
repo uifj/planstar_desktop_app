@@ -8,7 +8,7 @@ import '../domain/timetable.dart';
 
 final class LocalTimetableRepository implements TimetableRepository {
   const LocalTimetableRepository({required JsonEntityStore<Timetable> store})
-      : _store = store;
+    : _store = store;
 
   final JsonEntityStore<Timetable> _store;
 
@@ -16,10 +16,8 @@ final class LocalTimetableRepository implements TimetableRepository {
   Future<Result<List<Timetable>>> all() => _store.all();
 
   @override
-  Future<Result<void>> save(Timetable timetable) => _store.upsert(
-        timetable,
-        events: timetable.pullDomainEvents().toList(),
-      );
+  Future<Result<void>> save(Timetable timetable) =>
+      _store.upsert(timetable, events: timetable.pullDomainEvents().toList());
 
   @override
   Future<Result<void>> delete(String id) => _store.delete(id);

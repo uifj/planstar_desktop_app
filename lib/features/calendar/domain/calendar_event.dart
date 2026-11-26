@@ -190,62 +190,58 @@ final class CalendarEvent extends AggregateRoot<String> {
   }
 
   /// 应用「删除当前及未来」：截断重复序列。
-  CalendarEvent truncateBefore(DateKey date, DateTime occurredAt) => changed(
-        recurrenceUntil: date.addDays(-1),
-        occurredAt: occurredAt,
-      );
+  CalendarEvent truncateBefore(DateKey date, DateTime occurredAt) =>
+      changed(recurrenceUntil: date.addDays(-1), occurredAt: occurredAt);
 
   Map<String, Object?> toJson() => <String, Object?>{
-        'id': id,
-        'type': type.name,
-        'content': content,
-        'startDate': startDate.key,
-        'color': color.argb,
-        'backgroundColor': backgroundColor.argb,
-        'recurrence': recurrence.toJson(),
-        'reminder': reminder?.toJson(),
-        'completedDates': completedDates.map((DateKey d) => d.key).toList(),
-        'excludedDates': excludedDates.map((DateKey d) => d.key).toList(),
-        'recurrenceUntil': recurrenceUntil?.key,
-        'createdAt': createdAt.toIso8601String(),
-        'updatedAt': updatedAt.toIso8601String(),
-        'subscriptionId': subscriptionId,
-        'source': source,
-      };
+    'id': id,
+    'type': type.name,
+    'content': content,
+    'startDate': startDate.key,
+    'color': color.argb,
+    'backgroundColor': backgroundColor.argb,
+    'recurrence': recurrence.toJson(),
+    'reminder': reminder?.toJson(),
+    'completedDates': completedDates.map((DateKey d) => d.key).toList(),
+    'excludedDates': excludedDates.map((DateKey d) => d.key).toList(),
+    'recurrenceUntil': recurrenceUntil?.key,
+    'createdAt': createdAt.toIso8601String(),
+    'updatedAt': updatedAt.toIso8601String(),
+    'subscriptionId': subscriptionId,
+    'source': source,
+  };
 
   factory CalendarEvent.fromJson(Map<String, Object?> json) => CalendarEvent._(
-        id: json['id'] as String,
-        type: CalendarEventType.fromName(json['type'] as String?),
-        content: json['content'] as String? ?? '',
-        startDate: DateKey.parse(json['startDate']! as String),
-        color: EventColor(json['color'] as int? ?? 0xFF1F2024),
-        backgroundColor: EventColor(
-          json['backgroundColor'] as int? ?? 0x00000000,
-        ),
-        recurrence: RecurrenceRule.fromJson(
-          Map<String, Object?>.from(
-            (json['recurrence'] as Map?) ?? const <String, Object?>{},
+    id: json['id'] as String,
+    type: CalendarEventType.fromName(json['type'] as String?),
+    content: json['content'] as String? ?? '',
+    startDate: DateKey.parse(json['startDate']! as String),
+    color: EventColor(json['color'] as int? ?? 0xFF1F2024),
+    backgroundColor: EventColor(json['backgroundColor'] as int? ?? 0x00000000),
+    recurrence: RecurrenceRule.fromJson(
+      Map<String, Object?>.from(
+        (json['recurrence'] as Map?) ?? const <String, Object?>{},
+      ),
+    ),
+    reminder: json['reminder'] == null
+        ? null
+        : ReminderSpec.fromJson(
+            Map<String, Object?>.from(json['reminder']! as Map),
           ),
-        ),
-        reminder: json['reminder'] == null
-            ? null
-            : ReminderSpec.fromJson(
-                Map<String, Object?>.from(json['reminder']! as Map),
-              ),
-        completedDates: (json['completedDates'] as List? ?? const <Object?>[])
-            .map((Object? d) => DateKey.parse(d! as String))
-            .toList(),
-        excludedDates: (json['excludedDates'] as List? ?? const <Object?>[])
-            .map((Object? d) => DateKey.parse(d! as String))
-            .toList(),
-        recurrenceUntil: json['recurrenceUntil'] == null
-            ? null
-            : DateKey.parse(json['recurrenceUntil']! as String),
-        createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ??
-            DateTime.now(),
-        updatedAt: DateTime.tryParse(json['updatedAt'] as String? ?? '') ??
-            DateTime.now(),
-        subscriptionId: json['subscriptionId'] as String?,
-        source: json['source'] as String?,
-      );
+    completedDates: (json['completedDates'] as List? ?? const <Object?>[])
+        .map((Object? d) => DateKey.parse(d! as String))
+        .toList(),
+    excludedDates: (json['excludedDates'] as List? ?? const <Object?>[])
+        .map((Object? d) => DateKey.parse(d! as String))
+        .toList(),
+    recurrenceUntil: json['recurrenceUntil'] == null
+        ? null
+        : DateKey.parse(json['recurrenceUntil']! as String),
+    createdAt:
+        DateTime.tryParse(json['createdAt'] as String? ?? '') ?? DateTime.now(),
+    updatedAt:
+        DateTime.tryParse(json['updatedAt'] as String? ?? '') ?? DateTime.now(),
+    subscriptionId: json['subscriptionId'] as String?,
+    source: json['source'] as String?,
+  );
 }

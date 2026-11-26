@@ -2,11 +2,14 @@
 library;
 
 import 'package:core_design_system/core_design_system.dart';
+import 'package:intl/intl.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
 
+import '../../../core/value_objects.dart';
+import '../../../l10n/l10n.dart';
 import '../../../shared/widgets/common.dart';
 import '../application/subscription_controller.dart';
 import '../domain/subscription.dart';
@@ -16,6 +19,7 @@ final class SubscriptionPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
     final state = ref.watch(subscriptionControllerProvider);
     final controller = ref.read(subscriptionControllerProvider.notifier);
     return Column(
@@ -26,7 +30,7 @@ final class SubscriptionPage extends ConsumerWidget {
           child: Row(
             children: <Widget>[
               Text(
-                '订阅日历（${state.items.length}）',
+                l10n.subscriptionHeading(state.items.length),
                 style: TextStyle(
                   fontSize: AppTypography.title,
                   fontWeight: AppTypography.bold,
@@ -37,13 +41,13 @@ final class SubscriptionPage extends ConsumerWidget {
               OutlinedButton.icon(
                 onPressed: () => controller.refresh('', all: true),
                 icon: const Icon(LucideIcons.refreshCw, size: 16),
-                label: const Text('同步全部'),
+                label: Text(l10n.subscriptionSyncAll),
               ),
               const SizedBox(width: AppSpacing.sm),
               FilledButton.icon(
                 onPressed: () => _create(context, ref),
                 icon: const Icon(LucideIcons.plus, size: 16),
-                label: const Text('添加订阅'),
+                label: Text(l10n.subscriptionAdd),
               ),
             ],
           ),
@@ -61,32 +65,45 @@ final class SubscriptionPage extends ConsumerWidget {
           ),
         Expanded(
           child: state.items.isEmpty
-              ? const EmptyState(
+              ? EmptyState(
                   icon: LucideIcons.rss,
-                  title: '暂无订阅日历',
-                  hint: '支持本地订阅与 Google / Outlook / iCloud / CalDAV',
+                  title: l10n.subscriptionEmptyTitle,
+                  hint: l10n.subscriptionEmptyHint,
                 )
               : ListView.builder(
                   padding: const EdgeInsets.all(AppSpacing.md),
                   itemCount: state.items.length,
                   itemBuilder: (BuildContext context, int index) {
                     final item = state.items[index];
+                    final lastSyncAt = item.lastSyncAt;
+                    final lastSync = lastSyncAt == null
+                        ? l10n.subscriptionNeverSynced
+                        : l10n.subscriptionLastSyncedAt(
+                            DateKey(lastSyncAt).fullDate(l10n),
+                            DateFormat.Hm(l10n.localeName).format(lastSyncAt),
+                          );
                     return Padding(
-                      padding:
-                          const EdgeInsets.only(bottom: AppSpacing.sm),
+                      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                       child: AppSectionCard(
                         title: item.name,
-                        subtitle:
-                            '${item.source.label} · ${item.events.length} 条推送 · '
-                            '${item.lastSyncAt == null ? '尚未同步' : item.lastSyncAt!.toIso8601String().substring(0, 16)}',
+                        subtitle: l10n.subscriptionSummary(
+                          item.source.localizedLabel(l10n),
+                          item.events.length,
+                          lastSync,
+                        ),
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: <Widget>[
-                            Switch(
-                              value: item.enabled,
-                              onChanged: (_) => controller.toggle(item.id),
+                            Semantics(
+                              label: l10n.subscriptionEnabled,
+                              toggled: item.enabled,
+                              child: Switch(
+                                value: item.enabled,
+                                onChanged: (_) => controller.toggle(item.id),
+                              ),
                             ),
                             IconButton(
+                              tooltip: l10n.subscriptionDelete,
                               icon: Icon(
                                 LucideIcons.trash2,
                                 size: 16,
@@ -110,16 +127,15 @@ final class SubscriptionPage extends ConsumerWidget {
                               ),
                             ),
                             IconButton(
-                              tooltip: '复制分享链接',
+                              tooltip: l10n.subscriptionCopyLink,
                               icon: const Icon(LucideIcons.copy, size: 16),
                               onPressed: () => Clipboard.setData(
                                 ClipboardData(text: item.shareLink),
                               ),
                             ),
                             OutlinedButton(
-                              onPressed: () =>
-                                  controller.refresh(item.id),
-                              child: const Text('同步'),
+                              onPressed: () => controller.refresh(item.id),
+                              child: Text(l10n.subscriptionSync),
                             ),
                           ],
                         ),
@@ -133,23 +149,23 @@ final class SubscriptionPage extends ConsumerWidget {
   }
 
   Future<void> _create(BuildContext context, WidgetRef ref) async {
+    final l10n = context.l10n;
     final nameController = TextEditingController();
     final linkController = TextEditingController();
     var source = SubscriptionSource.local;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (BuildContext context) => StatefulBuilder(
-        builder: (BuildContext context, StateSetter setState) =>
-            AppDialogFrame(
-          title: '添加订阅日历',
+        builder: (BuildContext context, StateSetter setState) => AppDialogFrame(
+          title: l10n.subscriptionCreateTitle,
           actions: <Widget>[
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('取消'),
+              child: Text(l10n.commonCancel),
             ),
             FilledButton(
               onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('添加'),
+              child: Text(l10n.commonAdd),
             ),
           ],
           child: Column(
@@ -157,31 +173,34 @@ final class SubscriptionPage extends ConsumerWidget {
             children: <Widget>[
               TextField(
                 controller: nameController,
-                decoration: const InputDecoration(labelText: '订阅名称'),
+                decoration: InputDecoration(labelText: l10n.subscriptionName),
               ),
               const SizedBox(height: AppSpacing.sm),
               TextField(
                 controller: linkController,
-                decoration: const InputDecoration(
-                  labelText: '分享链接（留空则生成本地订阅）',
+                decoration: InputDecoration(
+                  labelText: l10n.subscriptionShareLinkHint,
                 ),
               ),
               const SizedBox(height: AppSpacing.sm),
-              DropdownButton<SubscriptionSource>(
-                value: source,
-                icon: const Icon(LucideIcons.chevronDown, size: 16),
-                isExpanded: true,
-                items: SubscriptionSource.values
-                    .map(
-                      (SubscriptionSource s) =>
-                          DropdownMenuItem<SubscriptionSource>(
-                        value: s,
-                        child: Text(s.label),
-                      ),
-                    )
-                    .toList(),
-                onChanged: (SubscriptionSource? v) =>
-                    setState(() => source = v ?? source),
+              Semantics(
+                label: l10n.subscriptionSource,
+                child: DropdownButton<SubscriptionSource>(
+                  value: source,
+                  icon: const Icon(LucideIcons.chevronDown, size: 16),
+                  isExpanded: true,
+                  items: SubscriptionSource.values
+                      .map(
+                        (SubscriptionSource s) =>
+                            DropdownMenuItem<SubscriptionSource>(
+                              value: s,
+                              child: Text(s.localizedLabel(l10n)),
+                            ),
+                      )
+                      .toList(),
+                  onChanged: (SubscriptionSource? v) =>
+                      setState(() => source = v ?? source),
+                ),
               ),
             ],
           ),
@@ -189,7 +208,9 @@ final class SubscriptionPage extends ConsumerWidget {
       ),
     );
     if (confirmed != true || nameController.text.trim().isEmpty) return;
-    await ref.read(subscriptionControllerProvider.notifier).create(
+    await ref
+        .read(subscriptionControllerProvider.notifier)
+        .create(
           name: nameController.text.trim(),
           shareLink: linkController.text.trim(),
           source: source,

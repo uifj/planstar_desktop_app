@@ -56,15 +56,17 @@ void main() {
       const bad = Result<int>.failure(Failure.timeout(message: '超时'));
 
       expect(ok.fold(onFailure: (_) => -1, onSuccess: (d) => d * 10), 20);
-      expect(bad.fold(onFailure: (f) => f.type.name, onSuccess: (_) => 'ok'),
-          'timeout');
+      expect(
+        bad.fold(onFailure: (f) => f.type.name, onSuccess: (_) => 'ok'),
+        'timeout',
+      );
     });
 
     test('sealed 可穷举 switch，不需要 default', () {
       String describe(Result<int> r) => switch (r) {
-            Success(:final data) => 'ok:$data',
-            Fail(:final failure) => 'fail:${failure.code}',
-          };
+        Success(:final data) => 'ok:$data',
+        Fail(:final failure) => 'fail:${failure.code}',
+      };
 
       expect(describe(const Result.success(1)), 'ok:1');
       expect(
@@ -127,9 +129,13 @@ void main() {
 
     test('guard 收敛异常', () {
       expect(Result.guard(() => 1 + 1).requireData, 2);
-      final failed = Result.guard<int>(() => throw StateError('boom'));
+      final detail = StateError('boom: private diagnostic');
+      final failed = Result.guard<int>(() => throw detail);
       expect(failed.isFailure, isTrue);
       expect(failed.failure!.code, 'UNEXPECTED');
+      expect(failed.failure!.message, 'UNEXPECTED_ERROR');
+      expect(failed.failure!.message, isNot(contains('private diagnostic')));
+      expect(failed.failure!.cause, same(detail));
       expect(failed.failure!.type, FailureType.data);
     });
 

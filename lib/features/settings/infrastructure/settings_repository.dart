@@ -23,9 +23,9 @@ final class LocalSettingsRepository implements SettingsRepository {
     required KeyValueStore store,
     required DomainEventBus bus,
     required Clock clock,
-  })  : _store = store,
-        _bus = bus,
-        _clock = clock;
+  }) : _store = store,
+       _bus = bus,
+       _clock = clock;
 
   static const String key = 'planstar.settings.v1';
 
@@ -45,10 +45,9 @@ final class LocalSettingsRepository implements SettingsRepository {
       if (json.containsKey('desktopWidgetEnabled')) {
         return AppSettings.fromJson(json);
       }
-      final migrated = AppSettings.fromJson(json).copyWith(
-        wallpaperAutoRender: false,
-        desktopWidgetEnabled: true,
-      );
+      final migrated = AppSettings.fromJson(
+        json,
+      ).copyWith(wallpaperAutoRender: false, desktopWidgetEnabled: true);
       unawaited(save(migrated));
       return migrated;
     });
@@ -63,10 +62,7 @@ final class LocalSettingsRepository implements SettingsRepository {
       return Fail<void>(failure);
     }
     await _bus.dispatch(<DomainEvent>[
-      SettingsChanged(
-        aggregateId: key,
-        occurredAt: _clock.now(),
-      ),
+      SettingsChanged(aggregateId: key, occurredAt: _clock.now()),
     ]);
     return const Success<void>(null);
   }

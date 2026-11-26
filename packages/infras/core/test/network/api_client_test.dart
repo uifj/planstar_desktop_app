@@ -32,12 +32,12 @@ final class _FakeAdapter implements HttpClientAdapter {
 class _NoopInterceptor extends Interceptor {}
 
 ResponseBody _json(String body, {int status = 200}) => ResponseBody.fromString(
-      body,
-      status,
-      headers: <String, List<String>>{
-        Headers.contentTypeHeader: <String>['application/json; charset=utf-8'],
-      },
-    );
+  body,
+  status,
+  headers: <String, List<String>>{
+    Headers.contentTypeHeader: <String>['application/json; charset=utf-8'],
+  },
+);
 
 ApiClient _clientWith(
   ResponseBody Function(RequestOptions options) responder, {
@@ -75,8 +75,9 @@ void main() {
     });
 
     test('RestCodeEnvelope 可选择 assumeSuccess 兼容未包装接口', () {
-      const env =
-          RestCodeEnvelope(missingEnvelope: MissingEnvelopePolicy.assumeSuccess);
+      const env = RestCodeEnvelope(
+        missingEnvelope: MissingEnvelopePolicy.assumeSuccess,
+      );
       expect(env.isSuccess({'data': 1}, 200), isTrue);
       expect(env.extractData({'data': 1}), {'data': 1});
     });
@@ -142,7 +143,7 @@ void main() {
   });
 
   group('ApiClient 失败路径（全部返回 Failure，不抛）', () {
-    test('业务码失败 → Failure.server 带业务码与 message', () async {
+    test('业务码失败保留诊断信息，但不暴露服务端文案', () async {
       final client = _clientWith(
         (_) => _json('{"code":1001,"message":"票已售罄","requestId":"r-1"}'),
         envelope: const RestCodeEnvelope(),
@@ -152,8 +153,10 @@ void main() {
       final failure = result.failure!;
       expect(failure.type, FailureType.server);
       expect(failure.code, '1001');
-      expect(failure.message, '票已售罄');
+      expect(failure.message, 'BUSINESS_ERROR');
+      expect(failure.message, isNot(contains('票已售罄')));
       expect(failure.requestId, 'r-1');
+      expect((failure.cause as EnvelopeError).message, '票已售罄');
       expect(failure.isRetryable, isFalse);
     });
 
@@ -163,7 +166,12 @@ void main() {
 
       expect(result.failure!.code, 'SERVER_ERROR');
       expect(result.failure!.statusCode, 500);
-      expect(result.failure!.message, '崩了');
+      expect(result.failure!.message, 'SERVER_ERROR');
+      expect(result.failure!.message, isNot(contains('崩了')));
+      expect(
+        (result.failure!.cause as DioException).response?.data,
+        <String, Object?>{'message': '崩了'},
+      );
       expect(result.failure!.isRetryable, isFalse);
     });
 
@@ -174,12 +182,65 @@ void main() {
       expect(result.failure!.type, FailureType.authentication);
       expect(result.failure!.isAuthFailure, isTrue);
       expect(result.failure!.statusCode, 401);
+      expect(result.failure!.message, 'UNAUTHORIZED');
+      expect(result.failure!.cause, isA<DioException>());
+    });
+
+    test(
+      'HTTP status diagnostics are stable and never copy response text',
+      () async {
+        const expected = <int, String>{
+          400: 'BAD_REQUEST',
+          403: 'FORBIDDEN',
+          404: 'NOT_FOUND',
+          409: 'CONFLICT',
+          422: 'HTTP_ERROR',
+          429: 'TOO_MANY_REQUESTS',
+          500: 'SERVER_ERROR',
+          503: 'SERVER_ERROR',
+        };
+        for (final entry in expected.entries) {
+          final client = _clientWith(
+            (_) => _json(
+              '{"code":"REMOTE_PRIVATE_CODE","message":"内部堆栈与密钥"}',
+              status: entry.key,
+            ),
+          );
+          final failure = (await client.get<Object?>('/x')).failure!;
+          expect(failure.statusCode, entry.key);
+          expect(failure.message, entry.value);
+          expect(failure.message, isNot(contains('内部堆栈与密钥')));
+          expect(failure.code, 'REMOTE_PRIVATE_CODE');
+          expect(failure.cause, isA<DioException>());
+        }
+      },
+    );
+
+    test('plain-text HTTP errors stay in cause, not Failure.message', () async {
+      final client = _clientWith(
+        (_) => ResponseBody.fromString(
+          'private gateway diagnostic',
+          502,
+          headers: <String, List<String>>{
+            Headers.contentTypeHeader: <String>['text/plain'],
+          },
+        ),
+      );
+      final failure = (await client.get<Object?>('/x')).failure!;
+      expect(failure.message, 'SERVER_ERROR');
+      expect(failure.message, isNot(contains('private gateway diagnostic')));
+      expect(
+        (failure.cause as DioException).response?.data,
+        'private gateway diagnostic',
+      );
     });
 
     test('HTTP 429 → TOO_MANY_REQUESTS', () async {
       final client = _clientWith((_) => _json('{}', status: 429));
-      expect((await client.get<Object?>('/x')).failure!.code,
-          'TOO_MANY_REQUESTS');
+      expect(
+        (await client.get<Object?>('/x')).failure!.code,
+        'TOO_MANY_REQUESTS',
+      );
     });
 
     test('parser 抛异常 → PARSE_ERROR / FailureType.data', () async {
@@ -193,23 +254,43 @@ void main() {
       );
 
       expect(result.failure!.code, 'PARSE_ERROR');
+      expect(result.failure!.message, 'PARSE_ERROR');
       expect(result.failure!.type, FailureType.data);
+      expect(result.failure!.cause, isNotNull);
     });
 
-    test('适配器抛非 Dio 异常 → 仍收敛为 Failure', () async {
-      final client = _clientWith((_) => throw StateError('boom'));
+    test('适配器异常仍收敛为 Failure，细节仅留在 cause', () async {
+      final detail = StateError('boom: private token /tmp/secret');
+      final client = _clientWith((_) => throw detail);
       final result = await client.get<Object?>('/x');
 
       expect(result.isFailure, isTrue);
-      expect(result.failure!.code, isNotEmpty);
+      expect(result.failure!.code, 'UNKNOWN');
+      expect(result.failure!.message, 'UNKNOWN');
+      expect(result.failure!.message, isNot(contains('private token')));
+      expect((result.failure!.cause as DioException).error, same(detail));
+    });
+
+    test('unknown DioException 不复制异常文案', () async {
+      final detail = StateError('private socket detail');
+      final client = _clientWith(
+        (_) => throw DioException(
+          requestOptions: RequestOptions(path: '/x'),
+          type: DioExceptionType.unknown,
+          error: detail,
+          message: 'private Dio message',
+        ),
+      );
+      final failure = (await client.get<Object?>('/x')).failure!;
+      expect(failure.code, 'UNKNOWN');
+      expect(failure.message, 'UNKNOWN');
+      expect(failure.message, isNot(contains('private')));
+      expect((failure.cause as DioException).error, same(detail));
     });
 
     test('取消请求 → REQUEST_CANCELLED，且可重试', () async {
       final adapter = _FakeAdapter((_) => _json('{}'));
-      final client = _clientWith(
-        (_) => _json('{}'),
-        adapter: adapter,
-      );
+      final client = _clientWith((_) => _json('{}'), adapter: adapter);
       final token = CancelToken();
       token.cancel('用户返回');
 

@@ -91,10 +91,11 @@ abstract final class CalendarMath {
       final month = DateTime(anchor.year, anchor.month + column, 1);
       var firstVisible = startOfWeekOf(firstOfMonth(month), startOfWeek);
       if (passedWeeks > 0) {
-        firstVisible =
-            firstVisible.subtract(Duration(days: 7 * passedWeeks));
+        firstVisible = firstVisible.subtract(Duration(days: 7 * passedWeeks));
       }
-      if (singleLine && today.year == month.year && today.month == month.month) {
+      if (singleLine &&
+          today.year == month.year &&
+          today.month == month.month) {
         firstVisible = startOfWeekOf(today, startOfWeek);
       }
       result.add(

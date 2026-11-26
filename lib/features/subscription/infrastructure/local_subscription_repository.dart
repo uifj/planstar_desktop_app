@@ -14,24 +14,26 @@ final class LocalSubscriptionRepository implements SubscriptionRepository {
     required ApiClient api,
     required AppLogger logger,
     required String endpoint,
-  })  : _store = store,
-        _api = api,
-        _logger = logger,
-        _endpoint = endpoint;
+    this.fetchFailureMessage,
+  }) : _store = store,
+       _api = api,
+       _logger = logger,
+       _endpoint = endpoint;
 
   final JsonEntityStore<Subscription> _store;
   final ApiClient _api;
   final AppLogger _logger;
   final String _endpoint;
+  final String Function(String name)? fetchFailureMessage;
 
   @override
   Future<Result<List<Subscription>>> all() => _store.all();
 
   @override
   Future<Result<void>> save(Subscription subscription) => _store.upsert(
-        subscription,
-        events: subscription.pullDomainEvents().toList(),
-      );
+    subscription,
+    events: subscription.pullDomainEvents().toList(),
+  );
 
   @override
   Future<Result<void>> delete(String id) => _store.delete(id);
@@ -53,8 +55,7 @@ final class LocalSubscriptionRepository implements SubscriptionRepository {
             .map(
               (Map<Object?, Object?> e) => SubscriptionEvent.fromJson(
                 e.map(
-                  (Object? k, Object? v) =>
-                      MapEntry<String, Object?>('$k', v),
+                  (Object? k, Object? v) => MapEntry<String, Object?>('$k', v),
                 ),
               ),
             )
@@ -63,8 +64,14 @@ final class LocalSubscriptionRepository implements SubscriptionRepository {
     );
     if (result case Fail<List<SubscriptionEvent>>(:final Failure failure)) {
       _logger.warn(
-        '订阅拉取失败，保留本地缓存：${subscription.name}',
-        error: failure.message,
+        fetchFailureMessage?.call(subscription.name) ?? '订阅刷新失败',
+        error: failure.cause ?? failure,
+        fields: <String, Object?>{
+          'code': failure.code,
+          'type': failure.type.name,
+          'statusCode': failure.statusCode,
+          'requestId': failure.requestId,
+        },
       );
     }
     return result;

@@ -65,25 +65,22 @@ final class DayCell extends AggregateRoot<String> {
   String get snapshot => lines.map((RichLine l) => l.text).join('\n');
 
   Map<String, Object?> toJson() => <String, Object?>{
-        'date': date.key,
-        'lines': lines.map((RichLine l) => l.toJson()).toList(),
-        'backgroundColor': backgroundColor.argb,
-        'updatedAt': updatedAt.toIso8601String(),
-      };
+    'date': date.key,
+    'lines': lines.map((RichLine l) => l.toJson()).toList(),
+    'backgroundColor': backgroundColor.argb,
+    'updatedAt': updatedAt.toIso8601String(),
+  };
 
   factory DayCell.fromJson(Map<String, Object?> json) => DayCell._(
-        date: DateKey.parse(json['date']! as String),
-        lines: (json['lines'] as List? ?? const <Object?>[])
-            .map(
-              (Object? l) => RichLine.fromJson(
-                Map<String, Object?>.from(l! as Map),
-              ),
-            )
-            .toList(),
-        backgroundColor: EventColor(
-          json['backgroundColor'] as int? ?? 0x00000000,
-        ),
-        updatedAt: DateTime.tryParse(json['updatedAt'] as String? ?? '') ??
-            DateTime.now(),
-      );
+    date: DateKey.parse(json['date']! as String),
+    lines: (json['lines'] as List? ?? const <Object?>[])
+        .map(
+          (Object? l) =>
+              RichLine.fromJson(Map<String, Object?>.from(l! as Map)),
+        )
+        .toList(),
+    backgroundColor: EventColor(json['backgroundColor'] as int? ?? 0x00000000),
+    updatedAt:
+        DateTime.tryParse(json['updatedAt'] as String? ?? '') ?? DateTime.now(),
+  );
 }

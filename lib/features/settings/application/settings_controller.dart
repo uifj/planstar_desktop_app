@@ -17,9 +17,7 @@ final settingsRepositoryProvider = Provider<SettingsRepository>(
 );
 
 final settingsControllerProvider =
-    NotifierProvider<SettingsController, AppSettings>(
-  SettingsController.new,
-);
+    NotifierProvider<SettingsController, AppSettings>(SettingsController.new);
 
 final class SettingsController extends Notifier<AppSettings> {
   @override
@@ -32,6 +30,7 @@ final class SettingsController extends Notifier<AppSettings> {
     final result = await ref.read(settingsRepositoryProvider).load();
     if (result case Success<AppSettings>(:final AppSettings data)) {
       state = data;
+      ref.read(appLocalizationScopeProvider).setLanguage(data.language);
     }
   }
 
@@ -40,6 +39,7 @@ final class SettingsController extends Notifier<AppSettings> {
     final next = transform(state);
     if (next == state) return Future<void>.value();
     state = next;
+    ref.read(appLocalizationScopeProvider).setLanguage(next.language);
     return ref.read(settingsRepositoryProvider).save(next);
   }
 

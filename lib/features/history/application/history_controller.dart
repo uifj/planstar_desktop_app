@@ -3,6 +3,7 @@ library;
 
 import 'package:core/domain.dart';
 import 'package:core/result.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../bootstrap/core_providers.dart';
@@ -11,6 +12,7 @@ import '../../../core/list_state.dart';
 import '../../../core/value_objects.dart';
 import '../../../features/calendar/application/calendar_controllers.dart';
 import '../../../infrastructure/json_entity_store.dart';
+import '../../../l10n/l10n.dart';
 import '../domain/history_entry.dart';
 import '../infrastructure/local_history_repository.dart';
 
@@ -30,38 +32,45 @@ final historyRepositoryProvider = Provider<HistoryRepository>(
 
 final historyControllerProvider =
     NotifierProvider<HistoryController, AsyncListState<HistoryEntry>>(
-  HistoryController.new,
-);
+      HistoryController.new,
+    );
 
 /// 便签留痕的可读文案：用真实标题/摘要，而不是 `NoteChanged` 技术名。
 String noteHistoryContent({
   required String title,
   required String summary,
   bool removed = false,
+  AppLocalizations? l10n,
 }) {
+  final strings = l10n ?? lookupAppLocalizations(const Locale('zh'));
   if (removed) {
-    return title.isEmpty ? '删除便签' : '删除便签：$title';
+    return title.isEmpty
+        ? strings.historyNoteRemoved
+        : strings.historyNoteRemovedWithTitle(title);
   }
   if (title.isEmpty) return summary;
   if (summary.isEmpty || summary == title) return title;
-  return '$title：$summary';
+  return strings.historyNoteWithSummary(title, summary);
 }
 
 /// 恢复历史快照的结果，供 UI 给出准确反馈。
 enum RevertOutcome {
   success,
+
   /// 当前单元格比这条历史更新，直接恢复会丢失较新内容。
   newerContent,
   invalidEntry,
   failed,
 }
 
-final class HistoryController
-    extends Notifier<AsyncListState<HistoryEntry>> {
+final class HistoryController extends Notifier<AsyncListState<HistoryEntry>> {
   @override
   AsyncListState<HistoryEntry> build() {
     // 仅由应用根 ref.read，需保活以持续记录领域事件留痕。
     ref.keepAlive();
+    final scope = ref.read(appLocalizationScopeProvider);
+    scope.addListener(_onLocaleChanged);
+    ref.onDispose(() => scope.removeListener(_onLocaleChanged));
     Future.microtask(load);
     final bus = ref.read(domainEventBusProvider);
     bus.on<DayCellChanged>(_onCellChanged);
@@ -70,8 +79,14 @@ final class HistoryController
     return AsyncListState<HistoryEntry>();
   }
 
-  HistoryRepository get _repository =>
-      ref.read(historyRepositoryProvider);
+  void _onLocaleChanged() {
+    if (state.error != null) state = state.copyWith(clearError: true);
+  }
+
+  HistoryRepository get _repository => ref.read(historyRepositoryProvider);
+
+  AppLocalizations get _l10n =>
+      ref.read(appLocalizationScopeProvider).localizations;
 
   Future<void> _onCellChanged(DomainEvent event) async {
     if (event is! DayCellChanged) return;
@@ -91,12 +106,14 @@ final class HistoryController
       content = noteHistoryContent(
         title: event.title,
         summary: event.summary,
+        l10n: _l10n,
       );
     } else if (event is NoteRemoved) {
       content = noteHistoryContent(
         title: event.title,
         summary: '',
         removed: true,
+        l10n: _l10n,
       );
     } else {
       content = event.eventName;
@@ -120,7 +137,7 @@ final class HistoryController
       targetId: targetId,
       kind: kind,
       content: content,
-      author: '本机',
+      author: _l10n.historyAuthorLocal,
       occurredAt: occurredAt,
     );
     final result = await _repository.append(entry);
@@ -128,15 +145,16 @@ final class HistoryController
       case Success<void>():
         // 就地有序插入，避免每条留痕都全量重读磁盘 + 重排整个列表。
         final next = <HistoryEntry>[entry, ...state.items]
-          ..sort((HistoryEntry a, HistoryEntry b) =>
-              b.occurredAt.compareTo(a.occurredAt));
-        state = state.copyWith(
-          items: next,
-          loading: false,
-          clearError: true,
-        );
+          ..sort(
+            (HistoryEntry a, HistoryEntry b) =>
+                b.occurredAt.compareTo(a.occurredAt),
+          );
+        state = state.copyWith(items: next, loading: false, clearError: true);
       case Fail<void>(:final failure):
-        state = state.copyWith(loading: false, error: failure.message);
+        state = state.copyWith(
+          loading: false,
+          error: failureLabel(failure, _l10n),
+        );
     }
   }
 
@@ -149,13 +167,12 @@ final class HistoryController
             (HistoryEntry a, HistoryEntry b) =>
                 b.occurredAt.compareTo(a.occurredAt),
           );
-        state = state.copyWith(
-          items: sorted,
-          loading: false,
-          clearError: true,
-        );
+        state = state.copyWith(items: sorted, loading: false, clearError: true);
       case Fail<List<HistoryEntry>>(:final failure):
-        state = state.copyWith(loading: false, error: failure.message);
+        state = state.copyWith(
+          loading: false,
+          error: failureLabel(failure, _l10n),
+        );
     }
   }
 
@@ -168,7 +185,7 @@ final class HistoryController
           clearError: true,
         );
       case Fail<void>(:final failure):
-        state = state.copyWith(error: failure.message);
+        state = state.copyWith(error: failureLabel(failure, _l10n));
     }
   }
 
@@ -178,7 +195,7 @@ final class HistoryController
       case Success<void>():
         state = state.copyWith(items: const <HistoryEntry>[], clearError: true);
       case Fail<void>(:final failure):
-        state = state.copyWith(error: failure.message);
+        state = state.copyWith(error: failureLabel(failure, _l10n));
     }
   }
 

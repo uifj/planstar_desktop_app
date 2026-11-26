@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../bootstrap/core_providers.dart';
 import '../../../core/ports.dart';
 import '../../../core/value_objects.dart';
+import '../../../l10n/l10n.dart';
 import '../../../shared/widgets/common.dart';
 import '../../desktop/application/desktop_controller.dart';
 import '../../reminder/application/reminder_controller.dart';
@@ -16,11 +17,22 @@ import '../../sync/application/sync_controller.dart';
 import '../application/settings_controller.dart';
 import '../domain/app_settings.dart';
 
+String _localizedStorageName(BuildContext context, String? configured) {
+  final l10n = context.l10n;
+  if (configured == null ||
+      configured == '企划星 · 桌面日历清单' ||
+      configured == l10n.appTitle) {
+    return l10n.appTitle;
+  }
+  return configured;
+}
+
 final class SettingsPage extends ConsumerWidget {
   const SettingsPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
     final settings = ref.watch(settingsControllerProvider);
     final update = ref.read(settingsControllerProvider.notifier).update;
     return DefaultTabController(
@@ -31,14 +43,14 @@ final class SettingsPage extends ConsumerWidget {
           TabBar(
             isScrollable: true,
             labelColor: context.appColors.brand,
-            tabs: const <Tab>[
-              Tab(text: '日历'),
-              Tab(text: '单元格'),
-              Tab(text: '字体和颜色'),
-              Tab(text: '高级'),
-              Tab(text: '壁纸'),
-              Tab(text: '便签'),
-              Tab(text: '关于'),
+            tabs: <Tab>[
+              Tab(text: l10n.settingsTabCalendar),
+              Tab(text: l10n.settingsTabCell),
+              Tab(text: l10n.settingsTabFontColors),
+              Tab(text: l10n.settingsTabAdvanced),
+              Tab(text: l10n.settingsTabWallpaper),
+              Tab(text: l10n.settingsTabNotes),
+              Tab(text: l10n.settingsTabAbout),
             ],
           ),
           Expanded(
@@ -48,77 +60,77 @@ final class SettingsPage extends ConsumerWidget {
                 children: <Widget>[
                   _scroll(<Widget>[
                     AppSectionCard(
-                      title: '日历显示',
-                      subtitle: '对应旧版「日历」设置页',
+                      title: l10n.settingsCalendarDisplay,
+                      subtitle: l10n.settingsLegacyCalendarHint,
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: <Widget>[
                           SettingDropdown<CalendarDisplayMode>(
-                            label: '显示模式',
+                            label: l10n.settingsDisplayMode,
                             value: settings.displayMode,
                             items: CalendarDisplayMode.values
                                 .map(
                                   (CalendarDisplayMode m) =>
                                       DropdownMenuItem<CalendarDisplayMode>(
-                                    value: m,
-                                    child: Text(m.label),
-                                  ),
+                                        value: m,
+                                        child: Text(m.localizedLabel(l10n)),
+                                      ),
                                 )
                                 .toList(),
                             onChanged: (CalendarDisplayMode? value) => update(
-                              (AppSettings s) =>
-                                  s.copyWith(displayMode: value),
+                              (AppSettings s) => s.copyWith(displayMode: value),
                             ),
                           ),
                           SettingSlider(
-                            label: '显示行数',
+                            label: l10n.settingsVisibleRowsLabel,
                             value: settings.maxRows.toDouble(),
                             min: 1,
                             max: 8,
                             divisions: 7,
-                            display: '${settings.maxRows} 行',
+                            display: l10n.settingsVisibleRows(settings.maxRows),
                             onChanged: (double v) => update(
-                              (AppSettings s) =>
-                                  s.copyWith(maxRows: v.round()),
+                              (AppSettings s) => s.copyWith(maxRows: v.round()),
                             ),
                           ),
                           SettingSlider(
-                            label: '显示月份列',
+                            label: l10n.settingsVisibleColumnsLabel,
                             value: settings.maxColumns.toDouble(),
                             min: 1,
                             max: 6,
                             divisions: 5,
-                            display: '${settings.maxColumns} 列',
+                            display: l10n.settingsVisibleColumns(
+                              settings.maxColumns,
+                            ),
                             onChanged: (double v) => update(
                               (AppSettings s) =>
                                   s.copyWith(maxColumns: v.round()),
                             ),
                           ),
                           SettingDropdown<int>(
-                            label: '周起始日',
+                            label: l10n.settingsStartOfWeek,
                             value: settings.startOfWeek,
                             items: <DropdownMenuItem<int>>[
                               for (var d = 1; d <= 7; d++)
                                 DropdownMenuItem<int>(
                                   value: d,
-                                  child: Text('周${_weekLabel(d)}'),
+                                  child: Text(
+                                    l10n.settingsWeekday(weekdayShort(d, l10n)),
+                                  ),
                                 ),
                             ],
                             onChanged: (int? value) => update(
-                              (AppSettings s) =>
-                                  s.copyWith(startOfWeek: value),
+                              (AppSettings s) => s.copyWith(startOfWeek: value),
                             ),
                           ),
                           SettingSwitch(
-                            label: '显示透明玻璃效果',
+                            label: l10n.settingsGlassEffect,
                             value: settings.showGlassEffect,
                             onChanged: (bool v) => update(
-                              (AppSettings s) =>
-                                  s.copyWith(showGlassEffect: v),
+                              (AppSettings s) => s.copyWith(showGlassEffect: v),
                             ),
                           ),
                           SettingSwitch(
-                            label: '显示月间隔 / 周数 / 阴影 / 标题栏',
+                            label: l10n.settingsMonthDetails,
                             value: settings.showMonthInterval,
                             onChanged: (bool v) => update(
                               (AppSettings s) =>
@@ -126,47 +138,45 @@ final class SettingsPage extends ConsumerWidget {
                             ),
                           ),
                           SettingSwitch(
-                            label: '显示法定节假日',
+                            label: l10n.settingsHolidays,
                             value: settings.showHoliday,
                             onChanged: (bool v) => update(
                               (AppSettings s) => s.copyWith(showHoliday: v),
                             ),
                           ),
                           SettingSwitch(
-                            label: '显示节日 / 农历 / 节气',
+                            label: l10n.settingsFestivalInfo,
                             value: settings.showFestival,
                             onChanged: (bool v) => update(
                               (AppSettings s) => s.copyWith(showFestival: v),
                             ),
                           ),
                           SettingSwitch(
-                            label: '显示农历',
+                            label: l10n.settingsLunar,
                             value: settings.showLunar,
                             onChanged: (bool v) => update(
                               (AppSettings s) => s.copyWith(showLunar: v),
                             ),
                           ),
                           SettingSwitch(
-                            label: '显示节气',
+                            label: l10n.settingsSolarTerms,
                             value: settings.showSolarTerms,
                             onChanged: (bool v) => update(
-                              (AppSettings s) =>
-                                  s.copyWith(showSolarTerms: v),
+                              (AppSettings s) => s.copyWith(showSolarTerms: v),
                             ),
                           ),
                           SettingSwitch(
-                            label: '显示黄历宜忌',
+                            label: l10n.settingsJiyi,
                             value: settings.showJiYi,
                             onChanged: (bool v) => update(
                               (AppSettings s) => s.copyWith(showJiYi: v),
                             ),
                           ),
                           SettingSwitch(
-                            label: '显示周序号',
+                            label: l10n.settingsWeekNumbers,
                             value: settings.showWeekNumber,
                             onChanged: (bool v) => update(
-                              (AppSettings s) =>
-                                  s.copyWith(showWeekNumber: v),
+                              (AppSettings s) => s.copyWith(showWeekNumber: v),
                             ),
                           ),
                         ],
@@ -175,29 +185,28 @@ final class SettingsPage extends ConsumerWidget {
                   ]),
                   _scroll(<Widget>[
                     AppSectionCard(
-                      title: '单元格',
+                      title: l10n.settingsCellSection,
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: <Widget>[
                           SettingDropdown<BulletStyle>(
-                            label: '项目符号',
+                            label: l10n.settingsBulletStyle,
                             value: settings.bulletStyle,
                             items: BulletStyle.values
                                 .map(
                                   (BulletStyle b) =>
                                       DropdownMenuItem<BulletStyle>(
-                                    value: b,
-                                    child: Text(b.label),
-                                  ),
+                                        value: b,
+                                        child: Text(b.localizedLabel(l10n)),
+                                      ),
                                 )
                                 .toList(),
                             onChanged: (BulletStyle? value) => update(
-                              (AppSettings s) =>
-                                  s.copyWith(bulletStyle: value),
+                              (AppSettings s) => s.copyWith(bulletStyle: value),
                             ),
                           ),
                           SettingSlider(
-                            label: '单元格间距',
+                            label: l10n.settingsCellGap,
                             value: settings.cellGap,
                             min: 0,
                             max: 12,
@@ -207,7 +216,7 @@ final class SettingsPage extends ConsumerWidget {
                             ),
                           ),
                           SettingSlider(
-                            label: '行间距',
+                            label: l10n.settingsLineSpacing,
                             value: settings.lineSpacing,
                             min: 0,
                             max: 16,
@@ -217,21 +226,21 @@ final class SettingsPage extends ConsumerWidget {
                             ),
                           ),
                           SettingSwitch(
-                            label: '完成项目排到最后',
+                            label: l10n.settingsCompletedLast,
                             value: settings.completeSort,
                             onChanged: (bool v) => update(
                               (AppSettings s) => s.copyWith(completeSort: v),
                             ),
                           ),
                           SettingSwitch(
-                            label: '显示已完成项目',
+                            label: l10n.settingsShowCompleted,
                             value: settings.showCompleted,
                             onChanged: (bool v) => update(
                               (AppSettings s) => s.copyWith(showCompleted: v),
                             ),
                           ),
                           SettingSwitch(
-                            label: '显示提醒时间',
+                            label: l10n.settingsShowReminderTime,
                             value: settings.showReminderDate,
                             onChanged: (bool v) => update(
                               (AppSettings s) =>
@@ -239,21 +248,20 @@ final class SettingsPage extends ConsumerWidget {
                             ),
                           ),
                           SettingSwitch(
-                            label: '未完成任务 30 天内自动顺延',
+                            label: l10n.settingsAutoDelay,
                             value: settings.autoDelay,
                             onChanged: (bool v) => update(
                               (AppSettings s) => s.copyWith(autoDelay: v),
                             ),
                           ),
                           SettingDropdown<SoundTone>(
-                            label: '完成提示音',
+                            label: l10n.settingsTaskCompleteTone,
                             value: settings.taskCompleteTone,
                             items: SoundTone.values
                                 .map(
-                                  (SoundTone t) =>
-                                      DropdownMenuItem<SoundTone>(
+                                  (SoundTone t) => DropdownMenuItem<SoundTone>(
                                     value: t,
-                                    child: Text(t.label),
+                                    child: Text(t.localizedLabel(l10n)),
                                   ),
                                 )
                                 .toList(),
@@ -263,14 +271,13 @@ final class SettingsPage extends ConsumerWidget {
                             ),
                           ),
                           SettingDropdown<SoundTone>(
-                            label: '提醒提示音',
+                            label: l10n.settingsReminderTone,
                             value: settings.reminderTone,
                             items: SoundTone.values
                                 .map(
-                                  (SoundTone t) =>
-                                      DropdownMenuItem<SoundTone>(
+                                  (SoundTone t) => DropdownMenuItem<SoundTone>(
                                     value: t,
-                                    child: Text(t.label),
+                                    child: Text(t.localizedLabel(l10n)),
                                   ),
                                 )
                                 .toList(),
@@ -285,12 +292,12 @@ final class SettingsPage extends ConsumerWidget {
                   ]),
                   _scroll(<Widget>[
                     AppSectionCard(
-                      title: '字体和颜色',
+                      title: l10n.settingsFontColors,
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: <Widget>[
                           SettingSlider(
-                            label: '日历字号',
+                            label: l10n.settingsCalendarFontSize,
                             value: settings.calendarFontSize,
                             min: 10,
                             max: 28,
@@ -301,18 +308,17 @@ final class SettingsPage extends ConsumerWidget {
                             ),
                           ),
                           SettingSlider(
-                            label: '内容字号',
+                            label: l10n.settingsContentFontSize,
                             value: settings.contentFontSize,
                             min: 10,
                             max: 24,
                             divisions: 14,
                             onChanged: (double v) => update(
-                              (AppSettings s) =>
-                                  s.copyWith(contentFontSize: v),
+                              (AppSettings s) => s.copyWith(contentFontSize: v),
                             ),
                           ),
                           SettingSlider(
-                            label: '日历透明度',
+                            label: l10n.settingsCalendarOpacity,
                             value: settings.calendarTransparency,
                             min: 0.1,
                             max: 1,
@@ -323,7 +329,7 @@ final class SettingsPage extends ConsumerWidget {
                             ),
                           ),
                           SettingSlider(
-                            label: '倒数日透明度',
+                            label: l10n.settingsCountdownOpacity,
                             value: settings.countdownTransparency,
                             min: 0.1,
                             max: 1,
@@ -334,7 +340,7 @@ final class SettingsPage extends ConsumerWidget {
                             ),
                           ),
                           SettingSlider(
-                            label: '便签透明度',
+                            label: l10n.settingsNotesOpacity,
                             value: settings.noteTransparency,
                             min: 0.1,
                             max: 1,
@@ -348,15 +354,18 @@ final class SettingsPage extends ConsumerWidget {
                             padding: const EdgeInsets.symmetric(
                               vertical: AppSpacing.sm,
                             ),
-                            child: ColorSwatchPicker(
-                              selected: EventColor(
-                                settings.calendarBackgroundColor,
-                              ),
-                              onSelected: (EventColor color) => update(
-                                (AppSettings s) => s.copyWith(
-                                  calendarBackgroundColor: color.argb,
-                                  calendarFontColor: color.argb,
-                                  todayBorderColor: color.argb,
+                            child: Semantics(
+                              label: l10n.settingsCalendarColors,
+                              child: ColorSwatchPicker(
+                                selected: EventColor(
+                                  settings.calendarBackgroundColor,
+                                ),
+                                onSelected: (EventColor color) => update(
+                                  (AppSettings s) => s.copyWith(
+                                    calendarBackgroundColor: color.argb,
+                                    calendarFontColor: color.argb,
+                                    todayBorderColor: color.argb,
+                                  ),
                                 ),
                               ),
                             ),
@@ -367,20 +376,20 @@ final class SettingsPage extends ConsumerWidget {
                   ]),
                   _scroll(<Widget>[
                     AppSectionCard(
-                      title: '高级设置',
+                      title: l10n.settingsAdvanced,
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: <Widget>[
                           SettingDropdown<AppThemeMode>(
-                            label: '主题',
+                            label: l10n.settingsTheme,
                             value: settings.themeMode,
                             items: AppThemeMode.values
                                 .map(
                                   (AppThemeMode m) =>
                                       DropdownMenuItem<AppThemeMode>(
-                                    value: m,
-                                    child: Text(m.label),
-                                  ),
+                                        value: m,
+                                        child: Text(m.localizedLabel(l10n)),
+                                      ),
                                 )
                                 .toList(),
                             onChanged: (AppThemeMode? value) => update(
@@ -388,30 +397,40 @@ final class SettingsPage extends ConsumerWidget {
                             ),
                           ),
                           SettingDropdown<String>(
-                            label: '语言',
-                            value: settings.language,
-                            items: const <DropdownMenuItem<String>>[
+                            label: l10n.settingsLanguage,
+                            value: localeForLanguage(
+                              settings.language,
+                            ).toLanguageTag(),
+                            items: <DropdownMenuItem<String>>[
                               DropdownMenuItem<String>(
-                                  value: 'zh_CN', child: Text('简体中文')),
+                                value: 'zh',
+                                child: Text(l10n.languageChinese),
+                              ),
                               DropdownMenuItem<String>(
-                                  value: 'zh_TW', child: Text('繁體中文')),
-                              DropdownMenuItem<String>(
-                                  value: 'en', child: Text('English')),
+                                value: 'en',
+                                child: Text(l10n.languageEnglish),
+                              ),
                             ],
                             onChanged: (String? value) => update(
                               (AppSettings s) => s.copyWith(language: value),
                             ),
                           ),
                           SettingDropdown<String>(
-                            label: '搜索引擎',
+                            label: l10n.settingsSearchEngine,
                             value: settings.searchEngine,
-                            items: const <DropdownMenuItem<String>>[
+                            items: <DropdownMenuItem<String>>[
                               DropdownMenuItem<String>(
-                                  value: 'bing', child: Text('必应')),
+                                value: 'bing',
+                                child: Text(l10n.settingsSearchEngineBing),
+                              ),
                               DropdownMenuItem<String>(
-                                  value: 'baidu', child: Text('百度')),
-                              DropdownMenuItem<String>(
-                                  value: 'google', child: Text('Google')),
+                                value: 'baidu',
+                                child: Text(l10n.settingsSearchEngineBaidu),
+                              ),
+                              const DropdownMenuItem<String>(
+                                value: 'google',
+                                child: Text('Google'),
+                              ),
                             ],
                             onChanged: (String? value) => update(
                               (AppSettings s) =>
@@ -419,30 +438,28 @@ final class SettingsPage extends ConsumerWidget {
                             ),
                           ),
                           SettingSwitch(
-                            label: '开机自启（随 Windows 启动）',
+                            label: l10n.settingsStartWithWindows,
                             value: settings.startWithWindow,
                             onChanged: (bool v) => update(
-                              (AppSettings s) =>
-                                  s.copyWith(startWithWindow: v),
+                              (AppSettings s) => s.copyWith(startWithWindow: v),
                             ),
                           ),
                           SettingSwitch(
-                            label: '自动检查更新',
+                            label: l10n.settingsAutoCheckUpdates,
                             value: settings.autoCheckUpdate,
                             onChanged: (bool v) => update(
-                              (AppSettings s) =>
-                                  s.copyWith(autoCheckUpdate: v),
+                              (AppSettings s) => s.copyWith(autoCheckUpdate: v),
                             ),
                           ),
                           SettingSwitch(
-                            label: '使用 IE 代理设置',
+                            label: l10n.settingsIeProxy,
                             value: settings.useProxy,
                             onChanged: (bool v) => update(
                               (AppSettings s) => s.copyWith(useProxy: v),
                             ),
                           ),
                           SettingSwitch(
-                            label: '显示热搜 / 浮动按钮',
+                            label: l10n.settingsHotSearchFloating,
                             value: settings.showHotSearch,
                             onChanged: (bool v) => update(
                               (AppSettings s) => s.copyWith(
@@ -452,7 +469,7 @@ final class SettingsPage extends ConsumerWidget {
                             ),
                           ),
                           SettingSwitch(
-                            label: 'Crtl+H 显示隐藏 / 快捷键开关',
+                            label: l10n.settingsHideHotkey,
                             value: settings.showHideHotKey,
                             onChanged: (bool v) => update(
                               (AppSettings s) => s.copyWith(
@@ -469,13 +486,13 @@ final class SettingsPage extends ConsumerWidget {
                   ]),
                   _scroll(<Widget>[
                     AppSectionCard(
-                      title: '桌面',
-                      subtitle: '可编辑月历组件常驻桌面层；静态壁纸快照仅作可选备份',
+                      title: l10n.settingsDesktop,
+                      subtitle: l10n.settingsDesktopDescription,
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: <Widget>[
                           SettingSwitch(
-                            label: '在桌面上显示可编辑月历（真·桌面层）',
+                            label: l10n.settingsEditableDesktopCalendar,
                             value: settings.desktopWidgetEnabled,
                             onChanged: (bool v) => update(
                               (AppSettings s) =>
@@ -487,8 +504,7 @@ final class SettingsPage extends ConsumerWidget {
                               bottom: AppSpacing.sm,
                             ),
                             child: Text(
-                              '组件常驻所有窗口下面，卡片内可直接输入/勾选/拖动，'
-                              '卡片外点击穿透到桌面图标。',
+                              l10n.settingsDesktopBehavior,
                               style: TextStyle(
                                 fontSize: AppTypography.caption,
                                 color: context.appColors.textTertiary,
@@ -496,7 +512,7 @@ final class SettingsPage extends ConsumerWidget {
                             ),
                           ),
                           SettingSwitch(
-                            label: '（可选）生成静态壁纸快照',
+                            label: l10n.settingsStaticWallpaperSnapshot,
                             value: settings.wallpaperAutoRender,
                             onChanged: (bool v) => update(
                               (AppSettings s) =>
@@ -504,15 +520,15 @@ final class SettingsPage extends ConsumerWidget {
                             ),
                           ),
                           SettingDropdown<WallpaperMode>(
-                            label: '壁纸底图',
+                            label: l10n.settingsWallpaperImage,
                             value: settings.wallpaperMode,
                             items: WallpaperMode.values
                                 .map(
                                   (WallpaperMode m) =>
                                       DropdownMenuItem<WallpaperMode>(
-                                    value: m,
-                                    child: Text(m.label),
-                                  ),
+                                        value: m,
+                                        child: Text(m.localizedLabel(l10n)),
+                                      ),
                                 )
                                 .toList(),
                             onChanged: (WallpaperMode? value) => update(
@@ -521,20 +537,20 @@ final class SettingsPage extends ConsumerWidget {
                             ),
                           ),
                           SettingDropdown<String>(
-                            label: '图片适配',
+                            label: l10n.settingsWallpaperFit,
                             value: settings.wallpaperFit,
-                            items: const <DropdownMenuItem<String>>[
+                            items: <DropdownMenuItem<String>>[
                               DropdownMenuItem<String>(
                                 value: 'fill',
-                                child: Text('填充（裁切铺满）'),
+                                child: Text(l10n.settingsWallpaperFitFill),
                               ),
                               DropdownMenuItem<String>(
                                 value: 'fit',
-                                child: Text('适应（完整显示）'),
+                                child: Text(l10n.settingsWallpaperFitFit),
                               ),
                               DropdownMenuItem<String>(
                                 value: 'stretch',
-                                child: Text('拉伸'),
+                                child: Text(l10n.settingsWallpaperFitStretch),
                               ),
                             ],
                             onChanged: (String? value) => update(
@@ -543,14 +559,14 @@ final class SettingsPage extends ConsumerWidget {
                             ),
                           ),
                           SettingSlider(
-                            label: '切换间隔（分钟）',
-                            value: settings.wallpaperIntervalMinutes
-                                .toDouble(),
+                            label: l10n.settingsWallpaperIntervalLabel,
+                            value: settings.wallpaperIntervalMinutes.toDouble(),
                             min: 5,
                             max: 120,
                             divisions: 23,
-                            display:
-                                '${settings.wallpaperIntervalMinutes} 分钟',
+                            display: l10n.settingsWallpaperIntervalMinutes(
+                              settings.wallpaperIntervalMinutes,
+                            ),
                             onChanged: (double v) => update(
                               (AppSettings s) => s.copyWith(
                                 wallpaperIntervalMinutes: v.round(),
@@ -558,7 +574,7 @@ final class SettingsPage extends ConsumerWidget {
                             ),
                           ),
                           SettingSwitch(
-                            label: '循环目录下全部图片',
+                            label: l10n.settingsWallpaperShowAll,
                             value: settings.wallpaperShowAll,
                             onChanged: (bool v) => update(
                               (AppSettings s) =>
@@ -571,7 +587,7 @@ final class SettingsPage extends ConsumerWidget {
                               Expanded(
                                 child: Text(
                                   settings.wallpaperImageDirectory.isEmpty
-                                      ? '未选择图片目录'
+                                      ? l10n.settingsNoImageDirectory
                                       : settings.wallpaperImageDirectory,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
@@ -590,21 +606,19 @@ final class SettingsPage extends ConsumerWidget {
                                   await update(
                                     (AppSettings s) => s.copyWith(
                                       wallpaperImageDirectory: directory,
-                                      wallpaperMode:
-                                          WallpaperMode.rotation,
+                                      wallpaperMode: WallpaperMode.rotation,
                                     ),
                                   );
                                 },
-                                child: const Text('选择图片目录'),
+                                child: Text(l10n.settingsChooseImageDirectory),
                               ),
                               const SizedBox(width: AppSpacing.xs),
                               IconButton(
-                                tooltip: '清除图片目录',
+                                tooltip: l10n.settingsClearImageDirectory,
                                 icon: const Icon(LucideIcons.x, size: 16),
                                 onPressed: () => update(
-                                  (AppSettings s) => s.copyWith(
-                                    wallpaperImageDirectory: '',
-                                  ),
+                                  (AppSettings s) =>
+                                      s.copyWith(wallpaperImageDirectory: ''),
                                 ),
                               ),
                             ],
@@ -618,20 +632,22 @@ final class SettingsPage extends ConsumerWidget {
                                     .read(desktopControllerProvider.notifier)
                                     .refreshWallpaper(),
                                 icon: const Icon(LucideIcons.image, size: 16),
-                                label: const Text('立即应用到桌面'),
+                                label: Text(l10n.settingsApplyToDesktop),
                               ),
                               OutlinedButton.icon(
                                 onPressed: () => ref
                                     .read(desktopControllerProvider.notifier)
                                     .restoreSystemWallpaper(),
                                 icon: const Icon(LucideIcons.undo2, size: 16),
-                                label: const Text('恢复系统原壁纸'),
+                                label: Text(
+                                  l10n.settingsRestoreSystemWallpaper,
+                                ),
                               ),
                             ],
                           ),
                           const SizedBox(height: AppSpacing.xs),
                           Text(
-                            _wallpaperStatus(ref),
+                            _wallpaperStatus(context, ref),
                             style: TextStyle(
                               fontSize: AppTypography.caption,
                               color: context.appColors.textTertiary,
@@ -643,27 +659,25 @@ final class SettingsPage extends ConsumerWidget {
                   ]),
                   _scroll(<Widget>[
                     AppSectionCard(
-                      title: '便签',
+                      title: l10n.settingsNotesSection,
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: <Widget>[
                           SettingSlider(
-                            label: '行间距',
+                            label: l10n.settingsNotesLineSpacing,
                             value: settings.noteLineSpacing,
                             min: 0,
                             max: 16,
                             divisions: 16,
                             onChanged: (double v) => update(
-                              (AppSettings s) =>
-                                  s.copyWith(noteLineSpacing: v),
+                              (AppSettings s) => s.copyWith(noteLineSpacing: v),
                             ),
                           ),
                           SettingSwitch(
-                            label: '显示所有便签',
+                            label: l10n.settingsShowAllNotes,
                             value: settings.showAllNotes,
                             onChanged: (bool v) => update(
-                              (AppSettings s) =>
-                                  s.copyWith(showAllNotes: v),
+                              (AppSettings s) => s.copyWith(showAllNotes: v),
                             ),
                           ),
                         ],
@@ -672,47 +686,61 @@ final class SettingsPage extends ConsumerWidget {
                   ]),
                   _scroll(<Widget>[
                     AppSectionCard(
-                      title: '关于 / 数据',
+                      title: l10n.settingsAboutData,
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: <Widget>[
                           ListTile(
                             leading: const Icon(LucideIcons.info),
-                            title: const Text('企划星 · 桌面日历清单 1.0.0'),
+                            title: Text(
+                              l10n.settingsAboutAppVersion(
+                                l10n.appTitle,
+                                '1.0.0',
+                              ),
+                            ),
                             subtitle: Text(
-                              'Clean DDD + Riverpod · 本地存储：${ref.watch(appConfigProvider).getString('appName') ?? '默认'}',
+                              l10n.settingsStorageName(
+                                _localizedStorageName(
+                                  context,
+                                  ref
+                                      .read(appConfigProvider)
+                                      .getString('appName'),
+                                ),
+                              ),
                             ),
                           ),
                           ListTile(
                             leading: const Icon(LucideIcons.bell),
                             title: Text(
-                              '已排程提醒 ${ref.watch(reminderControllerProvider).scheduled} 条',
+                              l10n.settingsScheduledReminders(
+                                ref.watch(reminderControllerProvider).scheduled,
+                              ),
                             ),
                             trailing: OutlinedButton(
                               onPressed: () => ref
                                   .read(reminderControllerProvider.notifier)
                                   .rescheduleAll(),
-                              child: const Text('重排提醒'),
+                              child: Text(l10n.settingsRescheduleReminders),
                             ),
                           ),
                           ListTile(
                             leading: const Icon(LucideIcons.cloudSync),
-                            title: const Text('云同步'),
+                            title: Text(l10n.settingsCloudSync),
                             trailing: OutlinedButton(
                               onPressed: () => ref
                                   .read(syncControllerProvider.notifier)
                                   .syncNow(),
-                              child: const Text('立即同步'),
+                              child: Text(l10n.settingsSyncNow),
                             ),
                           ),
                           ListTile(
                             leading: const Icon(LucideIcons.refreshCw),
-                            title: const Text('检查更新'),
+                            title: Text(l10n.settingsCheckUpdates),
                             trailing: OutlinedButton(
                               onPressed: () => ref
                                   .read(appUpdaterGatewayProvider)
                                   .checkForUpdates(),
-                              child: const Text('立即检查'),
+                              child: Text(l10n.settingsCheckNow),
                             ),
                           ),
                           const SizedBox(height: AppSpacing.sm),
@@ -720,7 +748,7 @@ final class SettingsPage extends ConsumerWidget {
                             onPressed: () => ref
                                 .read(settingsControllerProvider.notifier)
                                 .restoreDefaults(),
-                            child: const Text('恢复默认设置'),
+                            child: Text(l10n.settingsRestoreDefaults),
                           ),
                         ],
                       ),
@@ -735,28 +763,23 @@ final class SettingsPage extends ConsumerWidget {
     );
   }
 
-  String _wallpaperStatus(WidgetRef ref) {
+  String _wallpaperStatus(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
     final state = ref.watch(desktopControllerProvider);
     final parts = <String>[
-      state.widgetActive ? '桌面组件：已显示（可编辑）' : '桌面组件：已隐藏',
-      state.wallpaperApplied ? '静态壁纸：已生成' : '静态壁纸：未启用',
+      state.widgetActive
+          ? l10n.settingsDesktopWidgetVisible
+          : l10n.settingsDesktopWidgetHidden,
+      state.wallpaperApplied
+          ? l10n.settingsStaticWallpaperGenerated
+          : l10n.settingsStaticWallpaperNotEnabled,
     ];
     if (state.wallpaperPath.isNotEmpty) parts.add(state.wallpaperPath);
     return parts.join(' · ');
   }
 
   Widget _scroll(List<Widget> children) => ListView(
-        padding: const EdgeInsets.only(bottom: AppSpacing.huge),
-        children: children,
-      );
-
-  String _weekLabel(int day) => const <String>[
-        '一',
-        '二',
-        '三',
-        '四',
-        '五',
-        '六',
-        '日',
-      ][day - 1];
+    padding: const EdgeInsets.only(bottom: AppSpacing.huge),
+    children: children,
+  );
 }

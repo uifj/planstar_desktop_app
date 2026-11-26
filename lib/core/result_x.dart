@@ -13,7 +13,7 @@ Future<Result<T>> guardAsync<T>(Future<T> Function() body) async {
     return Fail<T>(
       Failure(
         code: 'LOCAL_IO_ERROR',
-        message: '本地操作失败：$error',
+        message: 'LOCAL_IO_ERROR',
         type: FailureType.data,
         cause: error,
       ),

@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../bootstrap/core_providers.dart';
 import '../../../core/value_objects.dart';
+import '../../../l10n/l10n.dart';
 import '../../../shared/widgets/common.dart';
 import '../../calendar/presentation/dialogs/context_dialogs.dart';
 import '../application/notes_controller.dart';
@@ -45,28 +46,30 @@ final class _NoteEditorDialogState extends ConsumerState<NoteEditorDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     final state = ref.watch(notesControllerProvider);
     Note? note;
     for (final item in state.items) {
       if (item.id == widget.noteId) note = item;
     }
     if (note == null) {
-      return const AppDialogFrame(
-        title: '便签',
-        child: Text('便签不存在或已被删除'),
+      return AppDialogFrame(
+        title: l10n.notesEditorTitle,
+        child: Text(l10n.notesEditorMissing),
       );
     }
-    if (_titleController.text != note.title) {
-      _titleController.text = note.title;
+    final displayTitle = note.localizedTitle(l10n);
+    if (_titleController.text != displayTitle) {
+      _titleController.text = displayTitle;
     }
     final controller = ref.read(notesControllerProvider.notifier);
     return AppDialogFrame(
-      title: '编辑便签',
+      title: l10n.notesEditNote,
       width: 560,
       actions: <Widget>[
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('关闭'),
+          child: Text(l10n.commonClose),
         ),
       ],
       child: Column(
@@ -75,46 +78,51 @@ final class _NoteEditorDialogState extends ConsumerState<NoteEditorDialog> {
         children: <Widget>[
           TextField(
             controller: _titleController,
-            decoration: const InputDecoration(
-              labelText: '标题',
-              border: OutlineInputBorder(),
+            decoration: InputDecoration(
+              labelText: l10n.notesTitleField,
+              border: const OutlineInputBorder(),
             ),
             onChanged: (String value) => controller.rename(note!.id, value),
           ),
           const SizedBox(height: AppSpacing.md),
           Text(
-            '背景颜色',
+            l10n.notesBackgroundColor,
             style: TextStyle(
               fontSize: AppTypography.caption,
               color: context.appColors.textTertiary,
             ),
           ),
           const SizedBox(height: AppSpacing.xs),
-          ColorSwatchPicker(
-            selected: note.backgroundColor,
-            onSelected: (EventColor color) => controller.setBackground(
-              note!.id,
-              EventColor.palette.indexOf(color).clamp(
-                    0,
-                    EventColor.palette.length - 1,
-                  ),
+          Semantics(
+            label: l10n.notesBackgroundColor,
+            child: ColorSwatchPicker(
+              selected: note.backgroundColor,
+              onSelected: (EventColor color) => controller.setBackground(
+                note!.id,
+                EventColor.palette
+                    .indexOf(color)
+                    .clamp(0, EventColor.palette.length - 1),
+              ),
             ),
           ),
           const SizedBox(height: AppSpacing.md),
           for (final line in note.lines)
             Row(
               children: <Widget>[
-                Checkbox(
-                  value: line.completed,
-                  onChanged: (_) => controller.saveLines(
-                    note!.id,
-                    note.lines
-                        .map(
-                          (RichLine l) => l.id == line.id
-                              ? l.copyWith(completed: !l.completed)
-                              : l,
-                        )
-                        .toList(),
+                Semantics(
+                  label: l10n.notesMarkLineComplete,
+                  child: Checkbox(
+                    value: line.completed,
+                    onChanged: (_) => controller.saveLines(
+                      note!.id,
+                      note.lines
+                          .map(
+                            (RichLine l) => l.id == line.id
+                                ? l.copyWith(completed: !l.completed)
+                                : l,
+                          )
+                          .toList(),
+                    ),
                   ),
                 ),
                 Expanded(
@@ -129,15 +137,15 @@ final class _NoteEditorDialogState extends ConsumerState<NoteEditorDialog> {
                       note!.id,
                       note.lines
                           .map(
-                            (RichLine l) => l.id == line.id
-                                ? l.copyWith(text: value)
-                                : l,
+                            (RichLine l) =>
+                                l.id == line.id ? l.copyWith(text: value) : l,
                           )
                           .toList(),
                     ),
                   ),
                 ),
                 IconButton(
+                  tooltip: l10n.notesLineColor,
                   icon: const Icon(LucideIcons.palette, size: 16),
                   onPressed: () async {
                     final color = await showColorPickerDialog(
@@ -149,21 +157,19 @@ final class _NoteEditorDialogState extends ConsumerState<NoteEditorDialog> {
                       note!.id,
                       note.lines
                           .map(
-                            (RichLine l) => l.id == line.id
-                                ? l.copyWith(color: color)
-                                : l,
+                            (RichLine l) =>
+                                l.id == line.id ? l.copyWith(color: color) : l,
                           )
                           .toList(),
                     );
                   },
                 ),
                 IconButton(
+                  tooltip: l10n.notesDeleteLine,
                   icon: const Icon(LucideIcons.x, size: 16),
                   onPressed: () => controller.saveLines(
                     note!.id,
-                    note.lines
-                        .where((RichLine l) => l.id != line.id)
-                        .toList(),
+                    note.lines.where((RichLine l) => l.id != line.id).toList(),
                   ),
                 ),
               ],
@@ -173,23 +179,17 @@ final class _NoteEditorDialogState extends ConsumerState<NoteEditorDialog> {
             spacing: AppSpacing.xs,
             children: <Widget>[
               OutlinedButton.icon(
-                onPressed: () => controller.saveLines(
-                  note!.id,
-                  <RichLine>[
-                    ...note.lines,
-                    RichLine(
-                      id: ref.read(idGeneratorProvider).next(),
-                      text: '',
-                    ),
-                  ],
-                ),
+                onPressed: () => controller.saveLines(note!.id, <RichLine>[
+                  ...note.lines,
+                  RichLine(id: ref.read(idGeneratorProvider).next(), text: ''),
+                ]),
                 icon: const Icon(LucideIcons.plus, size: 16),
-                label: const Text('添加一行'),
+                label: Text(l10n.notesAddLine),
               ),
               OutlinedButton.icon(
                 onPressed: () => controller.openDesktopWindow(note!.id),
                 icon: const Icon(LucideIcons.externalLink, size: 16),
-                label: const Text('独立窗口'),
+                label: Text(l10n.notesStandaloneWindow),
               ),
             ],
           ),

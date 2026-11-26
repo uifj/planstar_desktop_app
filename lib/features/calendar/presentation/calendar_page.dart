@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../bootstrap/core_providers.dart';
 import '../../../core/value_objects.dart';
+import '../../../l10n/l10n.dart';
 import '../../countdown/application/countdown_controller.dart';
 import '../../countdown/domain/countdown.dart';
 import '../../desktop/application/desktop_controller.dart';
@@ -65,27 +66,23 @@ final class CalendarPage extends ConsumerWidget {
                             onDoubleTap: (CalendarDayModel day) => ref
                                 .read(selectedDateProvider.notifier)
                                 .select(day.date),
-                            onSecondaryTap: (
-                              CalendarDayModel day,
-                              Offset position,
-                            ) =>
-                                _contextMenu(context, ref, day, position),
-                            onToggleLine: (
-                              CalendarDayModel day,
-                              String lineId,
-                            ) =>
-                                controller.toggleLineCompleted(
-                              day.date,
-                              lineId,
-                            ),
-                            onToggleEvent: (
-                              CalendarDayModel day,
-                              EventOccurrence occurrence,
-                            ) =>
-                                controller.toggleEventCompleted(
-                              occurrence.event,
-                              day.date,
-                            ),
+                            onSecondaryTap:
+                                (CalendarDayModel day, Offset position) =>
+                                    _contextMenu(context, ref, day, position),
+                            onToggleLine:
+                                (CalendarDayModel day, String lineId) =>
+                                    controller.toggleLineCompleted(
+                                      day.date,
+                                      lineId,
+                                    ),
+                            onToggleEvent:
+                                (
+                                  CalendarDayModel day,
+                                  EventOccurrence occurrence,
+                                ) => controller.toggleEventCompleted(
+                                  occurrence.event,
+                                  day.date,
+                                ),
                           ),
                         ),
                 ),
@@ -106,11 +103,12 @@ final class CalendarPage extends ConsumerWidget {
   ) async {
     final result = await showEventEditorDialog(
       context,
-      initialDate:
-          date ?? DateKey.today(ref.read(clockProvider).now()),
+      initialDate: date ?? DateKey.today(ref.read(clockProvider).now()),
     );
     if (result == null) return;
-    await ref.read(calendarControllerProvider.notifier).createEvent(
+    await ref
+        .read(calendarControllerProvider.notifier)
+        .createEvent(
           content: result.content,
           startDate: result.startDate,
           type: result.type,
@@ -127,6 +125,7 @@ final class CalendarPage extends ConsumerWidget {
     CalendarDayModel day,
     Offset position,
   ) async {
+    final l10n = context.l10n;
     final action = await showMenu<String>(
       context: context,
       position: RelativeRect.fromLTRB(
@@ -135,18 +134,45 @@ final class CalendarPage extends ConsumerWidget {
         position.dx + 1,
         position.dy + 1,
       ),
-      items: const <PopupMenuEntry<String>>[
-        PopupMenuItem<String>(value: 'edit', child: Text('编辑本日内容')),
-        PopupMenuItem<String>(value: 'new_event', child: Text('新建重复任务 / 提醒')),
-        PopupMenuItem<String>(value: 'copy', child: Text('复制本日内容')),
-        PopupMenuItem<String>(value: 'paste', child: Text('粘贴到本日')),
-        PopupMenuDivider(),
-        PopupMenuItem<String>(value: 'cell_color', child: Text('设置单元格颜色')),
-        PopupMenuItem<String>(value: 'clear', child: Text('清空本日内容')),
-        PopupMenuItem<String>(value: 'delete_event', child: Text('删除重复任务…')),
-        PopupMenuDivider(),
-        PopupMenuItem<String>(value: 'countdown', child: Text('添加倒数日')),
-        PopupMenuItem<String>(value: 'note', child: Text('打开桌面便签')),
+      items: <PopupMenuEntry<String>>[
+        PopupMenuItem<String>(
+          value: 'edit',
+          child: Text(l10n.calendarEditDayContent),
+        ),
+        PopupMenuItem<String>(
+          value: 'new_event',
+          child: Text(l10n.calendarNewTaskOrReminder),
+        ),
+        PopupMenuItem<String>(
+          value: 'copy',
+          child: Text(l10n.calendarCopyDayContent),
+        ),
+        PopupMenuItem<String>(
+          value: 'paste',
+          child: Text(l10n.calendarPasteToDay),
+        ),
+        const PopupMenuDivider(),
+        PopupMenuItem<String>(
+          value: 'cell_color',
+          child: Text(l10n.calendarSetCellColor),
+        ),
+        PopupMenuItem<String>(
+          value: 'clear',
+          child: Text(l10n.calendarClearDayContent),
+        ),
+        PopupMenuItem<String>(
+          value: 'delete_event',
+          child: Text(l10n.calendarDeleteRecurringEvent),
+        ),
+        const PopupMenuDivider(),
+        PopupMenuItem<String>(
+          value: 'countdown',
+          child: Text(l10n.calendarAddCountdown),
+        ),
+        PopupMenuItem<String>(
+          value: 'note',
+          child: Text(l10n.calendarOpenDesktopNote),
+        ),
       ],
     );
     if (action == null || !context.mounted) return;
@@ -157,10 +183,8 @@ final class CalendarPage extends ConsumerWidget {
       case 'new_event':
         await _newEvent(context, ref, day.date);
       case 'copy':
-        await Clipboard.setData(
-          ClipboardData(text: day.cell?.snapshot ?? ''),
-        );
-        _toast(ref, '已复制本日内容');
+        await Clipboard.setData(ClipboardData(text: day.cell?.snapshot ?? ''));
+        _toast(ref, l10n.calendarDayContentCopied);
       case 'paste':
         final clipboard = await Clipboard.getData('text/plain');
         final text = clipboard?.text ?? '';
@@ -178,7 +202,10 @@ final class CalendarPage extends ConsumerWidget {
         }
       case 'clear':
         if (!context.mounted) break;
-        final confirmed = await showClearConfirmDialog(context, '本日内容');
+        final confirmed = await showClearConfirmDialog(
+          context,
+          l10n.calendarDayContent,
+        );
         if (confirmed) {
           await controller.saveCellLines(day.date, const <RichLine>[]);
         }
@@ -186,16 +213,18 @@ final class CalendarPage extends ConsumerWidget {
         if (!context.mounted) break;
         await _deleteEvent(context, ref, day);
       case 'countdown':
-        await ref.read(countdownControllerProvider.notifier).create(
-              title: '${day.date.month}月${day.date.day}日',
+        await ref
+            .read(countdownControllerProvider.notifier)
+            .create(
+              title: day.date.shortDate(l10n),
               targetDate: day.date,
               type: CountdownType.custom,
             );
-        _toast(ref, '已添加倒数日');
+        _toast(ref, l10n.calendarCountdownAdded);
       case 'note':
         final note = await ref
             .read(notesControllerProvider.notifier)
-            .create(title: day.date.cnFull);
+            .create(title: day.date.fullDate(l10n));
         if (note != null) {
           await ref
               .read(notesControllerProvider.notifier)
@@ -210,17 +239,15 @@ final class CalendarPage extends ConsumerWidget {
     CalendarDayModel day,
   ) async {
     if (day.events.isEmpty) {
-      _toast(ref, '本日没有任务');
+      _toast(ref, context.l10n.calendarNoTasksOnDay);
       return;
     }
     final scope = await showDeleteScopeDialog(context);
     if (scope == null) return;
     final occurrence = day.events.first;
-    await ref.read(calendarControllerProvider.notifier).deleteEvent(
-          occurrence.event,
-          onDate: day.date,
-          scope: scope,
-        );
+    await ref
+        .read(calendarControllerProvider.notifier)
+        .deleteEvent(occurrence.event, onDate: day.date, scope: scope);
   }
 
   void _toast(WidgetRef ref, String message) {

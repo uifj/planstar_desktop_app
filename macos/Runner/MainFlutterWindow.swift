@@ -12,6 +12,7 @@ class MainFlutterWindow: NSWindow {
     self.setFrame(windowFrame, display: true)
 
     registerPlatformPlugins(for: flutterViewController)
+    // 登录项只属于主应用，子 engine 不注册。
     launchAtStartupPlugin = MacLaunchAtStartupPlugin(
       messenger: flutterViewController.registrar(forPlugin: "LaunchAtStartup").messenger
     )

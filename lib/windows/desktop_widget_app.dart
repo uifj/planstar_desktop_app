@@ -17,7 +17,9 @@ import 'dart:async';
 import 'package:core/storage.dart';
 import 'package:core_design_system/core_design_system.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../bootstrap/core_providers.dart';
@@ -30,6 +32,8 @@ import '../features/history/application/history_controller.dart';
 import '../features/settings/application/settings_controller.dart';
 import '../features/settings/domain/app_settings.dart';
 import '../features/subscription/domain/subscription.dart';
+import '../l10n/calendar_terms.dart';
+import '../l10n/l10n.dart';
 import '../shared/widgets/common.dart';
 import 'popup_layout.dart';
 
@@ -56,6 +60,8 @@ final class DesktopWidgetApp extends ConsumerStatefulWidget {
 
 final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
     with WidgetsBindingObserver {
+  AppLocalizations get _l10n =>
+      ref.read(appLocalizationScopeProvider).localizations;
   static const double _defaultCardWidth = 1008;
   static const double _defaultCardHeight = 820;
   static const double _minCardWidth = 560;
@@ -114,8 +120,9 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
 
   // 窗口创建/激活时 Windows 会投递一次孤立 pointer 事件，落在角手柄上会
   // 被误判成 resize；启动后短暂冷却，用户无感但能挡掉这类伪拖拽。
-  final DateTime _resizeEnabledAt =
-      DateTime.now().add(const Duration(milliseconds: 1500));
+  final DateTime _resizeEnabledAt = DateTime.now().add(
+    const Duration(milliseconds: 1500),
+  );
   bool _resizing = false;
   bool _resizeActivated = false;
   _ResizeEdge? _resizeEdge;
@@ -264,15 +271,12 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
   /// DataHub 的写入是进程级串行 + 原子替换，拖拽/调整结束时各写一次即可。
   Future<void> _persistPosition() async {
     if (!_positionLoaded) return;
-    await _store.writeJson(
-      _positionKey,
-      <String, Object?>{
-        'x': _x,
-        'y': _y,
-        'width': _cardWidth,
-        'height': _cardHeight,
-      },
-    );
+    await _store.writeJson(_positionKey, <String, Object?>{
+      'x': _x,
+      'y': _y,
+      'width': _cardWidth,
+      'height': _cardHeight,
+    });
   }
 
   /// 把卡片矩形（以及浮层编辑器矩形）推给原生层。
@@ -302,8 +306,10 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
           ),
       ];
       final signature = rects
-          .map((DesktopCardRect r) =>
-              '${r.x},${r.y},${r.width},${r.height},${r.radius}')
+          .map(
+            (DesktopCardRect r) =>
+                '${r.x},${r.y},${r.width},${r.height},${r.radius}',
+          )
           .join('|');
       if (signature == _regionSignature) return;
       _regionSignature = signature;
@@ -346,36 +352,28 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
   }
 
   bool _edgeHasLeft(_ResizeEdge edge) => switch (edge) {
-        _ResizeEdge.left ||
-        _ResizeEdge.topLeft ||
-        _ResizeEdge.bottomLeft =>
-          true,
-        _ => false,
-      };
+    _ResizeEdge.left || _ResizeEdge.topLeft || _ResizeEdge.bottomLeft => true,
+    _ => false,
+  };
 
   bool _edgeHasRight(_ResizeEdge edge) => switch (edge) {
-        _ResizeEdge.right ||
-        _ResizeEdge.topRight ||
-        _ResizeEdge.bottomRight =>
-          true,
-        _ => false,
-      };
+    _ResizeEdge.right ||
+    _ResizeEdge.topRight ||
+    _ResizeEdge.bottomRight => true,
+    _ => false,
+  };
 
   bool _edgeHasTop(_ResizeEdge edge) => switch (edge) {
-        _ResizeEdge.top ||
-        _ResizeEdge.topLeft ||
-        _ResizeEdge.topRight =>
-          true,
-        _ => false,
-      };
+    _ResizeEdge.top || _ResizeEdge.topLeft || _ResizeEdge.topRight => true,
+    _ => false,
+  };
 
   bool _edgeHasBottom(_ResizeEdge edge) => switch (edge) {
-        _ResizeEdge.bottom ||
-        _ResizeEdge.bottomLeft ||
-        _ResizeEdge.bottomRight =>
-          true,
-        _ => false,
-      };
+    _ResizeEdge.bottom ||
+    _ResizeEdge.bottomLeft ||
+    _ResizeEdge.bottomRight => true,
+    _ => false,
+  };
 
   void _beginResize(_ResizeEdge edge, Offset globalPosition) {
     if (DateTime.now().isBefore(_resizeEnabledAt)) return;
@@ -454,7 +452,9 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
       h = screen.height - y;
     }
     final maxW = screen.width > _minCardWidth ? screen.width : _minCardWidth;
-    final maxH = screen.height > _minCardHeight ? screen.height : _minCardHeight;
+    final maxH = screen.height > _minCardHeight
+        ? screen.height
+        : _minCardHeight;
     w = w.clamp(_minCardWidth, maxW).toDouble();
     h = h.clamp(_minCardHeight, maxH).toDouble();
 
@@ -489,6 +489,35 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
     _pushRegion();
     unawaited(_persistPosition());
   }
+
+  void _resizeBySemantics(_ResizeEdge edge, {required bool increase}) {
+    const step = 16.0;
+    final direction = increase ? 1.0 : -1.0;
+    final double dx = _edgeHasLeft(edge)
+        ? -step
+        : _edgeHasRight(edge)
+        ? step
+        : 0.0;
+    final double dy = _edgeHasTop(edge)
+        ? -step
+        : _edgeHasBottom(edge)
+        ? step
+        : 0.0;
+    _beginResize(edge, _resizeOrigin);
+    _updateResize(_resizeOrigin + Offset(dx * direction, dy * direction));
+    _endResize();
+  }
+
+  String _resizeLabel(_ResizeEdge edge) => switch (edge) {
+    _ResizeEdge.left => _l10n.widgetResizeLeft,
+    _ResizeEdge.right => _l10n.widgetResizeRight,
+    _ResizeEdge.top => _l10n.widgetResizeTop,
+    _ResizeEdge.bottom => _l10n.widgetResizeBottom,
+    _ResizeEdge.topLeft => _l10n.widgetResizeTopLeft,
+    _ResizeEdge.topRight => _l10n.widgetResizeTopRight,
+    _ResizeEdge.bottomLeft => _l10n.widgetResizeBottomLeft,
+    _ResizeEdge.bottomRight => _l10n.widgetResizeBottomRight,
+  };
 
   /// 单击只选中；同一格 350ms 内第二次单击视为双击，打开浮层编辑器。
   /// 不依赖 GestureDetector.onDoubleTap —— 桌面鼠标下它常被 onTap 抢先。
@@ -552,11 +581,11 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
 
   /// 底部「浮层编辑」按钮 / 右键等没有格子 RenderBox 的入口使用。
   Rect _fallbackCell() => Rect.fromLTWH(
-        _x + _cardWidth * 0.35,
-        _y + _cardHeight * 0.3,
-        _cardWidth / 7,
-        100,
-      );
+    _x + _cardWidth * 0.35,
+    _y + _cardHeight * 0.3,
+    _cardWidth / 7,
+    100,
+  );
 
   void _openPopupFromToolbar() => _showPopup(_targetDate, _fallbackCell());
 
@@ -645,15 +674,12 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
     if (text.trim().isEmpty) return;
     final lines = _linesOf(date);
     await ref.read(calendarControllerProvider.notifier).saveCellLines(
-          date,
-          <RichLine>[
-            ...lines,
-            RichLine(
-              id: ref.read(idGeneratorProvider).next(),
-              text: text.trim(),
-            ),
-          ],
-        );
+      date,
+      <RichLine>[
+        ...lines,
+        RichLine(id: ref.read(idGeneratorProvider).next(), text: text.trim()),
+      ],
+    );
   }
 
   Future<void> _addFromQuickInput() async {
@@ -699,7 +725,9 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
     _pendingLineId = null;
     _pendingLineText = null;
     if (!mounted || date == null || id == null || text == null) return;
-    await ref.read(calendarControllerProvider.notifier).saveCellLines(
+    await ref
+        .read(calendarControllerProvider.notifier)
+        .saveCellLines(
           date,
           _linesOf(date)
               .map(
@@ -726,7 +754,8 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
       return;
     }
     final lines = _linesOf(date);
-    final allDone = lines.isNotEmpty && lines.every((RichLine l) => l.completed);
+    final allDone =
+        lines.isNotEmpty && lines.every((RichLine l) => l.completed);
     await controller.saveCellLines(
       date,
       lines
@@ -780,7 +809,9 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
     setState(() {
       _recentColors.removeWhere((EventColor c) => c.argb == color.argb);
       _recentColors.insert(0, color);
-      if (_recentColors.length > 8) _recentColors.removeRange(8, _recentColors.length);
+      if (_recentColors.length > 8) {
+        _recentColors.removeRange(8, _recentColors.length);
+      }
     });
   }
 
@@ -811,9 +842,7 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
     if (day.isToday) return BasePalette.themeDark3;
     final inMonth = day.isCurrentMonth;
     if (weekend) {
-      return BasePalette.orangeLight3.withValues(
-        alpha: inMonth ? 0.16 : 0.06,
-      );
+      return BasePalette.orangeLight3.withValues(alpha: inMonth ? 0.16 : 0.06);
     }
     return BasePalette.white1.withValues(alpha: inMonth ? 0.20 : 0.06);
   }
@@ -830,10 +859,19 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
   Widget build(BuildContext context) {
     final month = ref.watch(monthDataProvider);
     final settings = ref.watch(settingsControllerProvider);
+    final locale = ref.watch(appLocalizationScopeProvider);
     // overlay 窗口覆盖整个虚拟屏，view 的逻辑尺寸就是可用的屏幕范围。
     _screen = MediaQuery.sizeOf(context);
     return MaterialApp(
-      title: '桌面日历',
+      onGenerateTitle: (BuildContext context) => _l10n.desktopWidgetTitle,
+      locale: locale.value,
+      localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: supportedLocales,
       debugShowCheckedModeBanner: false,
       color: Colors.transparent,
       theme: AppTheme.light(),
@@ -865,12 +903,12 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
                 child: _card(context, month, settings),
                 builder: (BuildContext context, int tick, Widget? child) =>
                     Positioned(
-                  left: _x,
-                  top: _y,
-                  width: _cardWidth,
-                  height: _cardHeight,
-                  child: child!,
-                ),
+                      left: _x,
+                      top: _y,
+                      width: _cardWidth,
+                      height: _cardHeight,
+                      child: child!,
+                    ),
               ),
               // 放在最外层 Stack 而非 _card 的 ClipRRect 内，
               // 否则最底行格子的弹窗会被卡片圆角裁掉。
@@ -936,96 +974,106 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
   }
 
   Widget _popupHeader(DateKey date) => Container(
-        height: 40,
-        padding: const EdgeInsets.only(
-          left: AppSpacing.sm,
-          right: AppSpacing.xxs,
+    height: 40,
+    padding: const EdgeInsets.only(left: AppSpacing.sm, right: AppSpacing.xxs),
+    decoration: const BoxDecoration(
+      border: Border(bottom: BorderSide(color: BasePalette.grayLight3)),
+    ),
+    child: Row(
+      children: <Widget>[
+        Container(
+          width: 3,
+          height: 16,
+          decoration: BoxDecoration(
+            color: BasePalette.themeLight6,
+            borderRadius: BorderRadius.circular(2),
+          ),
         ),
-        decoration: const BoxDecoration(
-          border: Border(bottom: BorderSide(color: BasePalette.grayLight3)),
-        ),
-        child: Row(
-          children: <Widget>[
-            Container(
-              width: 3,
-              height: 16,
-              decoration: BoxDecoration(
-                color: BasePalette.themeLight6,
-                borderRadius: BorderRadius.circular(2),
-              ),
+        const SizedBox(width: AppSpacing.xs),
+        Expanded(
+          child: Text(
+            DateFormat.yMMMMd(
+              _l10n.localeName,
+            ).format(DateTime(date.year, date.month, date.day)),
+            style: const TextStyle(
+              fontSize: AppTypography.body,
+              color: BasePalette.grayDark1,
             ),
-            const SizedBox(width: AppSpacing.xs),
-            Expanded(
-              child: Text(
-                '${date.year}年${date.month}月${date.day}日',
-                style: const TextStyle(
-                  fontSize: AppTypography.body,
-                  color: BasePalette.grayDark1,
-                ),
-              ),
-            ),
-            _popupTool(LucideIcons.check, '完成编辑', _closePopup,
-                light: true),
-          ],
+          ),
         ),
-      );
+        _popupTool(
+          LucideIcons.check,
+          _l10n.widgetFinishEditing,
+          _closePopup,
+          light: true,
+        ),
+      ],
+    ),
+  );
 
   Widget _popupTools() => Container(
-        height: 40,
-        decoration: const BoxDecoration(
-          border: Border(top: BorderSide(color: BasePalette.grayLight3)),
+    height: 40,
+    decoration: const BoxDecoration(
+      border: Border(top: BorderSide(color: BasePalette.grayLight3)),
+    ),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: <Widget>[
+        _popupTool(
+          LucideIcons.plus,
+          _l10n.widgetAddLine,
+          _focusNewLine,
+          light: true,
         ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: <Widget>[
-            _popupTool(LucideIcons.plus, '添加一行', _focusNewLine,
-                light: true),
-            _popupTool(
-              LucideIcons.type,
-              '文字颜色',
-              () => _openPalette(_ColorTarget.text),
-              light: true,
-            ),
-            _popupTool(
-              LucideIcons.paintBucket,
-              '单元格颜色',
-              () => _openPalette(_ColorTarget.cell),
-              light: true,
-            ),
-            _popupTool(LucideIcons.checkCheck, '标记完成', _toggleComplete,
-                light: true),
-            _popupTool(LucideIcons.eraser, '清空本日', _clearCell,
-                light: true),
-          ],
+        _popupTool(
+          LucideIcons.type,
+          _l10n.widgetTextColor,
+          () => _openPalette(_ColorTarget.text),
+          light: true,
         ),
-      );
+        _popupTool(
+          LucideIcons.paintBucket,
+          _l10n.widgetCellColor,
+          () => _openPalette(_ColorTarget.cell),
+          light: true,
+        ),
+        _popupTool(
+          LucideIcons.checkCheck,
+          _l10n.widgetMarkComplete,
+          _toggleComplete,
+          light: true,
+        ),
+        _popupTool(
+          LucideIcons.eraser,
+          _l10n.widgetClearDay,
+          _clearCell,
+          light: true,
+        ),
+      ],
+    ),
+  );
 
   Widget _popupTool(
     IconData icon,
     String tooltip,
     VoidCallback onPressed, {
     bool light = false,
-  }) =>
-      Tooltip(
-        message: tooltip,
-        child: IconButton(
-          onPressed: onPressed,
-          icon: Icon(
-            icon,
-            size: 15,
-            color: light ? BasePalette.grayDark4 : BasePalette.grayLight4,
-          ),
-          visualDensity: VisualDensity.compact,
-          padding: EdgeInsets.zero,
-          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-        ),
-      );
+  }) => Tooltip(
+    message: tooltip,
+    child: IconButton(
+      onPressed: onPressed,
+      icon: Icon(
+        icon,
+        size: 15,
+        color: light ? BasePalette.grayDark4 : BasePalette.grayLight4,
+      ),
+      visualDensity: VisualDensity.compact,
+      padding: EdgeInsets.zero,
+      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+    ),
+  );
 
-  Widget _card(
-    BuildContext context,
-    MonthData month,
-    AppSettings settings,
-  ) =>
+  Widget _card(BuildContext context, MonthData month, AppSettings settings) =>
       ClipRRect(
         borderRadius: BorderRadius.circular(_cardRadius),
         child: Container(
@@ -1060,64 +1108,64 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
   /// 四条边 + 四个角的透明热区；右下角显示可见握柄作为操作提示。
   /// 热区都在卡片矩形内，不会被 `SetWindowRgn` 裁掉。
   List<Widget> _resizeHandles() => <Widget>[
-        _resizeHandle(
-          _ResizeEdge.left,
-          left: 0,
-          top: _resizeCorner,
-          bottom: _resizeCorner,
-          width: _resizeHit,
-        ),
-        _resizeHandle(
-          _ResizeEdge.right,
-          right: 0,
-          top: _resizeCorner,
-          bottom: _resizeCorner,
-          width: _resizeHit,
-        ),
-        _resizeHandle(
-          _ResizeEdge.top,
-          top: 0,
-          left: _resizeCorner,
-          right: _resizeCorner,
-          height: _resizeHit,
-        ),
-        _resizeHandle(
-          _ResizeEdge.bottom,
-          bottom: 0,
-          left: _resizeCorner,
-          right: _resizeCorner,
-          height: _resizeHit,
-        ),
-        _resizeHandle(
-          _ResizeEdge.topLeft,
-          left: 0,
-          top: 0,
-          width: _resizeCorner,
-          height: _resizeCorner,
-        ),
-        _resizeHandle(
-          _ResizeEdge.topRight,
-          right: 0,
-          top: 0,
-          width: _resizeCorner,
-          height: _resizeCorner,
-        ),
-        _resizeHandle(
-          _ResizeEdge.bottomLeft,
-          left: 0,
-          bottom: 0,
-          width: _resizeCorner,
-          height: _resizeCorner,
-        ),
-        _resizeHandle(
-          _ResizeEdge.bottomRight,
-          right: 0,
-          bottom: 0,
-          width: _resizeCorner,
-          height: _resizeCorner,
-          showGrip: true,
-        ),
-      ];
+    _resizeHandle(
+      _ResizeEdge.left,
+      left: 0,
+      top: _resizeCorner,
+      bottom: _resizeCorner,
+      width: _resizeHit,
+    ),
+    _resizeHandle(
+      _ResizeEdge.right,
+      right: 0,
+      top: _resizeCorner,
+      bottom: _resizeCorner,
+      width: _resizeHit,
+    ),
+    _resizeHandle(
+      _ResizeEdge.top,
+      top: 0,
+      left: _resizeCorner,
+      right: _resizeCorner,
+      height: _resizeHit,
+    ),
+    _resizeHandle(
+      _ResizeEdge.bottom,
+      bottom: 0,
+      left: _resizeCorner,
+      right: _resizeCorner,
+      height: _resizeHit,
+    ),
+    _resizeHandle(
+      _ResizeEdge.topLeft,
+      left: 0,
+      top: 0,
+      width: _resizeCorner,
+      height: _resizeCorner,
+    ),
+    _resizeHandle(
+      _ResizeEdge.topRight,
+      right: 0,
+      top: 0,
+      width: _resizeCorner,
+      height: _resizeCorner,
+    ),
+    _resizeHandle(
+      _ResizeEdge.bottomLeft,
+      left: 0,
+      bottom: 0,
+      width: _resizeCorner,
+      height: _resizeCorner,
+    ),
+    _resizeHandle(
+      _ResizeEdge.bottomRight,
+      right: 0,
+      bottom: 0,
+      width: _resizeCorner,
+      height: _resizeCorner,
+      showGrip: true,
+    ),
+  ];
 
   Widget _resizeHandle(
     _ResizeEdge edge, {
@@ -1128,54 +1176,62 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
     double? width,
     double? height,
     bool showGrip = false,
-  }) =>
-      Positioned(
-        left: left,
-        top: top,
-        right: right,
-        bottom: bottom,
-        width: width,
-        height: height,
-        child: MouseRegion(
-          cursor: _resizeCursor(edge),
-          child: Listener(
-            behavior: HitTestBehavior.opaque,
-            onPointerDown: (PointerDownEvent e) =>
-                _beginResize(edge, e.position),
-            onPointerMove: (PointerMoveEvent e) =>
-                _updateResize(e.position),
-            onPointerUp: (_) => _endResize(),
-            onPointerCancel: (_) => _endResize(),
-            child: showGrip
-                ? Container(
-                    alignment: Alignment.center,
-                    decoration: const BoxDecoration(
-                      color: BasePalette.white6,
-                      borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(AppRadius.xs),
+  }) {
+    final label = _resizeLabel(edge);
+    return Positioned(
+      left: left,
+      top: top,
+      right: right,
+      bottom: bottom,
+      width: width,
+      height: height,
+      child: Tooltip(
+        message: label,
+        excludeFromSemantics: true,
+        child: Semantics(
+          label: label,
+          onIncrease: () => _resizeBySemantics(edge, increase: true),
+          onDecrease: () => _resizeBySemantics(edge, increase: false),
+          child: MouseRegion(
+            cursor: _resizeCursor(edge),
+            child: Listener(
+              behavior: HitTestBehavior.opaque,
+              onPointerDown: (PointerDownEvent e) =>
+                  _beginResize(edge, e.position),
+              onPointerMove: (PointerMoveEvent e) => _updateResize(e.position),
+              onPointerUp: (_) => _endResize(),
+              onPointerCancel: (_) => _endResize(),
+              child: showGrip
+                  ? Container(
+                      alignment: Alignment.center,
+                      decoration: const BoxDecoration(
+                        color: BasePalette.white6,
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(AppRadius.xs),
+                        ),
                       ),
-                    ),
-                    child: const Icon(
-                      LucideIcons.grip,
-                      size: 11,
-                      color: BasePalette.grayLight4,
-                    ),
-                  )
-                : const SizedBox.expand(),
+                      child: const Icon(
+                        LucideIcons.grip,
+                        size: 11,
+                        color: BasePalette.grayLight4,
+                      ),
+                    )
+                  : const SizedBox.expand(),
+            ),
           ),
         ),
-      );
+      ),
+    );
+  }
 
   MouseCursor _resizeCursor(_ResizeEdge edge) => switch (edge) {
-        _ResizeEdge.left || _ResizeEdge.right =>
-          SystemMouseCursors.resizeLeftRight,
-        _ResizeEdge.top || _ResizeEdge.bottom =>
-          SystemMouseCursors.resizeUpDown,
-        _ResizeEdge.topLeft || _ResizeEdge.bottomRight =>
-          SystemMouseCursors.resizeUpLeftDownRight,
-        _ResizeEdge.topRight || _ResizeEdge.bottomLeft =>
-          SystemMouseCursors.resizeUpRightDownLeft,
-      };
+    _ResizeEdge.left || _ResizeEdge.right => SystemMouseCursors.resizeLeftRight,
+    _ResizeEdge.top || _ResizeEdge.bottom => SystemMouseCursors.resizeUpDown,
+    _ResizeEdge.topLeft ||
+    _ResizeEdge.bottomRight => SystemMouseCursors.resizeUpLeftDownRight,
+    _ResizeEdge.topRight ||
+    _ResizeEdge.bottomLeft => SystemMouseCursors.resizeUpRightDownLeft,
+  };
 
   /// 收起桌面组件：不能只调本地 hide，否则子窗口隐藏了但共享设置里
   /// `desktopWidgetEnabled` 仍是 true，托盘「显示桌面日历窗口」改写设置时
@@ -1183,63 +1239,68 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
   /// 这里改为写共享设置（经 DataHub 广播让主窗口同步状态并复用同一 engine）；
   /// 本地 hide 只作为即时反馈，主窗口随后再 hide 是幂等的。
   Future<void> _collapseDesktopWidget() async {
-    await ref.read(settingsControllerProvider.notifier).update(
-          (AppSettings s) => s.copyWith(desktopWidgetEnabled: false),
-        );
+    await ref
+        .read(settingsControllerProvider.notifier)
+        .update((AppSettings s) => s.copyWith(desktopWidgetEnabled: false));
     await ref.read(multiWindowGatewayProvider).hideCurrentWindow();
   }
 
-  Widget _header(BuildContext context, MonthData month) => Listener(
-        onPointerDown: (PointerDownEvent e) => _beginDrag(e.position),
-        onPointerMove: (PointerMoveEvent e) => _updateDrag(e.position),
-        onPointerUp: (_) => _endDrag(),
-        onPointerCancel: (_) => _endDrag(),
-        behavior: HitTestBehavior.opaque,
-        child: Container(
-          height: _headerHeight,
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
-          decoration: const BoxDecoration(
-            border: Border(bottom: BorderSide(color: BasePalette.white6)),
-          ),
-          child: Row(
-            children: <Widget>[
-              const Icon(LucideIcons.grip,
-                  size: 16, color: BasePalette.grayLight5),
-              const SizedBox(width: AppSpacing.xxs),
-              Text(
-                '${month.anchor.year}年${month.anchor.month}月',
-                style: const TextStyle(
-                  fontSize: AppTypography.subtitle,
-                  fontWeight: AppTypography.bold,
-                  color: BasePalette.grayLight1,
-                ),
-              ),
-              const Spacer(),
-              _iconButton(
-                LucideIcons.chevronLeft,
-                '上一月',
-                () =>
-                    ref.read(monthNavigationProvider.notifier).previous(),
-              ),
-              _iconButton(
-                LucideIcons.calendarCheck2,
-                '回到今天',
-                () => ref.read(monthNavigationProvider.notifier).today(),
-              ),
-              _iconButton(
-                LucideIcons.chevronRight,
-                '下一月',
-                () => ref.read(monthNavigationProvider.notifier).next(),
-              ),
-              _iconButton(
-                LucideIcons.x,
-                '收起桌面组件',
-                _collapseDesktopWidget,
-              ),
-            ],
-          ),
+  Widget _header(BuildContext context, MonthData month) => Semantics(
+    label: _l10n.widgetMoveHint,
+    child: Listener(
+      onPointerDown: (PointerDownEvent e) => _beginDrag(e.position),
+      onPointerMove: (PointerMoveEvent e) => _updateDrag(e.position),
+      onPointerUp: (_) => _endDrag(),
+      onPointerCancel: (_) => _endDrag(),
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        height: _headerHeight,
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+        decoration: const BoxDecoration(
+          border: Border(bottom: BorderSide(color: BasePalette.white6)),
         ),
-      );
+        child: Row(
+          children: <Widget>[
+            const Icon(
+              LucideIcons.grip,
+              size: 16,
+              color: BasePalette.grayLight5,
+            ),
+            const SizedBox(width: AppSpacing.xxs),
+            Text(
+              DateFormat.yMMMM(_l10n.localeName).format(month.anchor),
+              style: const TextStyle(
+                fontSize: AppTypography.subtitle,
+                fontWeight: AppTypography.bold,
+                color: BasePalette.grayLight1,
+              ),
+            ),
+            const Spacer(),
+            _iconButton(
+              LucideIcons.chevronLeft,
+              _l10n.calendarPreviousMonth,
+              () => ref.read(monthNavigationProvider.notifier).previous(),
+            ),
+            _iconButton(
+              LucideIcons.calendarCheck2,
+              _l10n.calendarToday,
+              () => ref.read(monthNavigationProvider.notifier).today(),
+            ),
+            _iconButton(
+              LucideIcons.chevronRight,
+              _l10n.calendarNextMonth,
+              () => ref.read(monthNavigationProvider.notifier).next(),
+            ),
+            _iconButton(
+              LucideIcons.x,
+              _l10n.widgetCollapse,
+              _collapseDesktopWidget,
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
 
   Widget _iconButton(IconData icon, String tooltip, VoidCallback onPressed) =>
       IconButton(
@@ -1255,45 +1316,38 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
     BuildContext context,
     MonthData month,
     AppSettings settings,
-  ) =>
-      SizedBox(
-        height: _weekdayHeight,
-        child: Row(
-          children: <Widget>[
-            for (int i = 0; i < month.weekdayHeaders.length; i++)
-              Expanded(
-                child: Center(
-                  child: Text(
-                    month.weekdayHeaders[i],
-                    style: TextStyle(
-                      fontSize: AppTypography.caption,
-                      color: _isWeekendColumn(i, settings)
-                          ? BasePalette.orangeLight3
-                          : BasePalette.grayLight5,
-                      fontWeight: _isWeekendColumn(i, settings)
-                          ? AppTypography.medium
-                          : AppTypography.regular,
-                    ),
-                  ),
+  ) => SizedBox(
+    height: _weekdayHeight,
+    child: Row(
+      children: <Widget>[
+        for (int i = 0; i < month.weekdayHeaders.length; i++)
+          Expanded(
+            child: Center(
+              child: Text(
+                month.weekdayHeaders[i],
+                style: TextStyle(
+                  fontSize: AppTypography.caption,
+                  color: _isWeekendColumn(i, settings)
+                      ? BasePalette.orangeLight3
+                      : BasePalette.grayLight5,
+                  fontWeight: _isWeekendColumn(i, settings)
+                      ? AppTypography.medium
+                      : AppTypography.regular,
                 ),
               ),
-          ],
-        ),
-      );
+            ),
+          ),
+      ],
+    ),
+  );
 
   /// 第 [index] 列表头对应的 weekday（1=周一…7=周日），按用户设置的
   /// 每周起始日旋转；不要在渲染里硬编码「第 6、7 列」。
   bool _isWeekendColumn(int index, AppSettings settings) =>
       settings.showRestDays &&
-      settings.restDays.contains(
-        ((settings.startOfWeek - 1 + index) % 7) + 1,
-      );
+      settings.restDays.contains(((settings.startOfWeek - 1 + index) % 7) + 1);
 
-  Widget _grid(
-    BuildContext context,
-    MonthData month,
-    AppSettings settings,
-  ) {
+  Widget _grid(BuildContext context, MonthData month, AppSettings settings) {
     final days = month.columns.isEmpty
         ? const <CalendarDayModel>[]
         : month.columns.first;
@@ -1305,8 +1359,10 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
         final cellWidth =
             (constraints.maxWidth - 2 * _gridPadding - 6 * _gridSpacing) / 7;
         final cellHeight =
-            (constraints.maxHeight - 2 * _gridPadding - (rows - 1) * _gridSpacing) /
-                rows;
+            (constraints.maxHeight -
+                2 * _gridPadding -
+                (rows - 1) * _gridSpacing) /
+            rows;
         return GridView.builder(
           physics: const NeverScrollableScrollPhysics(),
           padding: const EdgeInsets.all(_gridPadding),
@@ -1317,13 +1373,8 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
             mainAxisSpacing: _gridSpacing,
           ),
           itemCount: count,
-          itemBuilder: (BuildContext context, int index) => _dayCell(
-            context,
-            days[index],
-            settings,
-            cellWidth,
-            cellHeight,
-          ),
+          itemBuilder: (BuildContext context, int index) =>
+              _dayCell(context, days[index], settings, cellWidth, cellHeight),
         );
       },
     );
@@ -1338,8 +1389,7 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
   ) {
     // 卡片被拉大/缩小时，格子本身由 LayoutBuilder 重算；字号同步等比缩放，
     // 同时限制上下限避免过窄卡片里文字挤爆或过宽卡片里文字过大。
-    final scale =
-        (cellWidth / _referenceCellWidth).clamp(0.85, 1.5).toDouble();
+    final scale = (cellWidth / _referenceCellWidth).clamp(0.85, 1.5).toDouble();
     // 单击只高亮选中；编辑态只存在于浮层里，格子内始终只读展示。
     final selected = _selectedDate == day.date || _editingDate == day.date;
     // MonthData 已把 DayCell 聚合进每个 CalendarDayModel，直接用它，
@@ -1347,15 +1397,18 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
     final cell = day.cell;
     final customColor = cell?.backgroundColor;
     final inMonth = day.isCurrentMonth;
-    final weekend = settings.showRestDays &&
-        settings.restDays.contains(day.date.weekday);
+    final weekend =
+        settings.showRestDays && settings.restDays.contains(day.date.weekday);
     final background = _cellBackground(day, customColor, weekend);
     final defaultText = _defaultTextOn(background);
     final dimText = defaultText.withValues(alpha: 0.42);
     final subText = defaultText.withValues(alpha: inMonth ? 0.72 : 0.42);
     final lineText = defaultText.withValues(alpha: inMonth ? 1.0 : 0.62);
-    final weekendText =
-        Color.lerp(defaultText, BasePalette.orangeLight3, 0.55)!;
+    final weekendText = Color.lerp(
+      defaultText,
+      BasePalette.orangeLight3,
+      0.55,
+    )!;
     final visibleLines = (cell?.lines ?? const <RichLine>[])
         .where((RichLine l) => settings.showCompleted || !l.completed)
         .where((RichLine l) => l.text.trim().isNotEmpty)
@@ -1368,102 +1421,106 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
           .map((SubscriptionEvent e) => e.title.trim())
           .where((String t) => t.isNotEmpty),
     ];
-    return GestureDetector(
-      onTap: () => _onCellTap(day.date, context),
-      // 长按 / 右键也打开浮层；双击由 _onCellTap 自己判定，
-      // 不用 onDoubleTap，避免桌面鼠标下与 onTap 竞争失败。
-      onLongPress: () => _openPopup(day.date, context),
-      // 桌面端右键最稳定，作为长按/双击之外的第三条触发路径。
-      onSecondaryTapDown: (TapDownDetails _) =>
-          _openPopup(day.date, context),
-      child: Container(
-        decoration: BoxDecoration(
-          color: background,
-          borderRadius: BorderRadius.circular(AppRadius.xs),
-          border: Border.all(
-            color: selected
-                ? BasePalette.themeDark6
-                : day.isToday
-                    ? BasePalette.themeDark6
-                    : weekend
-                        ? BasePalette.orangeLight3.withValues(alpha: 0.42)
-                        : BasePalette.white6,
-            width: selected ? 2 : 1,
+    return Semantics(
+      button: true,
+      selected: selected,
+      child: GestureDetector(
+        onTap: () => _onCellTap(day.date, context),
+        // 长按 / 右键也打开浮层；双击由 _onCellTap 自己判定，
+        // 不用 onDoubleTap，避免桌面鼠标下与 onTap 竞争失败。
+        onLongPress: () => _openPopup(day.date, context),
+        // 桌面端右键最稳定，作为长按/双击之外的第三条触发路径。
+        onSecondaryTapDown: (TapDownDetails _) => _openPopup(day.date, context),
+        child: Container(
+          decoration: BoxDecoration(
+            color: background,
+            borderRadius: BorderRadius.circular(AppRadius.xs),
+            border: Border.all(
+              color: selected
+                  ? BasePalette.themeDark6
+                  : day.isToday
+                  ? BasePalette.themeDark6
+                  : weekend
+                  ? BasePalette.orangeLight3.withValues(alpha: 0.42)
+                  : BasePalette.white6,
+              width: selected ? 2 : 1,
+            ),
           ),
-        ),
-        padding: EdgeInsets.all(
-          AppSpacing.xxs * (cellHeight / 100).clamp(0.8, 1.4).toDouble(),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Row(
-              children: <Widget>[
-                Text(
-                  '${day.date.day}',
-                  style: TextStyle(
-                    fontSize: AppTypography.body * scale,
-                    fontWeight: AppTypography.bold,
-                    color: !inMonth
-                        ? dimText
-                        : weekend
-                            ? weekendText
-                            : defaultText,
+          padding: EdgeInsets.all(
+            AppSpacing.xxs * (cellHeight / 100).clamp(0.8, 1.4).toDouble(),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Row(
+                children: <Widget>[
+                  Text(
+                    '${day.date.day}',
+                    style: TextStyle(
+                      fontSize: AppTypography.body * scale,
+                      fontWeight: AppTypography.bold,
+                      color: !inMonth
+                          ? dimText
+                          : weekend
+                          ? weekendText
+                          : defaultText,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.xxs),
+                  if (settings.showLunar)
+                    Expanded(
+                      child: Text(
+                        day.meta.localizedSubtitle(
+                          context.l10n,
+                          showLunar: settings.showLunar,
+                          showSolarTerms: settings.showSolarTerms,
+                          showFestival: settings.showFestival,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: AppTypography.label * scale,
+                          color: subText,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              Expanded(
+                child: SingleChildScrollView(
+                  physics: const NeverScrollableScrollPhysics(),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      for (int i = 0; i < visibleLines.length; i++)
+                        Text(
+                          '${i + 1}. ${visibleLines[i].text.trim()}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: AppTypography.label * scale,
+                            color: _lineColor(visibleLines[i], lineText),
+                            decoration: visibleLines[i].completed
+                                ? TextDecoration.lineThrough
+                                : null,
+                          ),
+                        ),
+                      for (final extra in extras)
+                        Text(
+                          '· $extra',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: AppTypography.label * scale,
+                            color: subText,
+                          ),
+                        ),
+                    ],
                   ),
                 ),
-                const SizedBox(width: AppSpacing.xxs),
-                if (settings.showLunar)
-                  Expanded(
-                    child: Text(
-                      day.meta.subtitle(
-                        showLunar: settings.showLunar,
-                        showSolarTerms: settings.showSolarTerms,
-                        showFestival: settings.showFestival,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: AppTypography.label * scale,
-                        color: subText,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            Expanded(
-              child: SingleChildScrollView(
-                      physics: const NeverScrollableScrollPhysics(),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: <Widget>[
-                          for (int i = 0; i < visibleLines.length; i++)
-                            Text(
-                              '${i + 1}. ${visibleLines[i].text.trim()}',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: AppTypography.label * scale,
-                                color: _lineColor(visibleLines[i], lineText),
-                                decoration: visibleLines[i].completed
-                                    ? TextDecoration.lineThrough
-                                    : null,
-                              ),
-                            ),
-                          for (final extra in extras)
-                            Text(
-                              '· $extra',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: AppTypography.label * scale,
-                                color: subText,
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-            ),
-          ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -1499,7 +1556,7 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
             ),
             decoration: InputDecoration(
               isDense: true,
-              hintText: '回车新增一行…',
+              hintText: _l10n.widgetNewLineHint,
               hintStyle: TextStyle(
                 fontSize: AppTypography.label * scale,
                 color: defaultText.withValues(alpha: 0.45),
@@ -1519,57 +1576,73 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
     RichLine line,
     Color defaultText,
     double scale,
-  ) =>
-      SizedBox(
-        key: ValueKey<String>(line.id),
-        height: 26 * scale,
-        child: Row(
-          children: <Widget>[
-            InkWell(
-              onTap: () => _toggleLine(date, line.id),
-              child: Icon(
-                line.completed ? LucideIcons.squareCheck : LucideIcons.square,
-                size: 14 * scale,
-                color: line.completed
-                    ? BasePalette.themeDark6
-                    : defaultText.withValues(alpha: 0.7),
-              ),
+  ) => SizedBox(
+    key: ValueKey<String>(line.id),
+    height: 26 * scale,
+    child: Row(
+      children: <Widget>[
+        InkWell(
+          onTap: () => _toggleLine(date, line.id),
+          child: Semantics(
+            button: true,
+            label: line.completed
+                ? _l10n.calendarMarkLineIncomplete
+                : _l10n.calendarMarkLineComplete,
+            excludeSemantics: true,
+            child: Icon(
+              line.completed ? LucideIcons.squareCheck : LucideIcons.square,
+              size: 14 * scale,
+              color: line.completed
+                  ? BasePalette.themeDark6
+                  : defaultText.withValues(alpha: 0.7),
             ),
-            SizedBox(width: 3 * scale),
-            Expanded(
-              child: Focus(
-                onFocusChange: (bool focused) {
-                  if (focused) _activeLineId = line.id;
-                },
-                child: TextFormField(
-                  key: ValueKey<String>(line.id),
-                  initialValue: line.text,
-                  maxLines: 1,
-                  style: TextStyle(
-                    fontSize: AppTypography.label * scale,
-                    color: _lineTextColor(line, defaultText),
-                    decoration: line.completed
-                        ? TextDecoration.lineThrough
-                        : null,
-                  ),
-                  decoration: const InputDecoration(
-                    isDense: true,
-                    border: InputBorder.none,
-                    contentPadding: EdgeInsets.zero,
-                  ),
-                  onChanged: (String value) =>
-                      _scheduleLineText(date, line.id, value),
-                ),
-              ),
-            ),
-            InkWell(
-              onTap: () => _removeLine(date, line.id),
-              child: Icon(LucideIcons.x,
-                  size: 12 * scale, color: BasePalette.redLight4),
-            ),
-          ],
+          ),
         ),
-      );
+        SizedBox(width: 3 * scale),
+        Expanded(
+          child: Focus(
+            onFocusChange: (bool focused) {
+              if (focused) _activeLineId = line.id;
+            },
+            child: TextFormField(
+              key: ValueKey<String>(line.id),
+              initialValue: line.text,
+              maxLines: 1,
+              style: TextStyle(
+                fontSize: AppTypography.label * scale,
+                color: _lineTextColor(line, defaultText),
+                decoration: line.completed ? TextDecoration.lineThrough : null,
+              ),
+              decoration: const InputDecoration(
+                isDense: true,
+                border: InputBorder.none,
+                contentPadding: EdgeInsets.zero,
+              ),
+              onChanged: (String value) =>
+                  _scheduleLineText(date, line.id, value),
+            ),
+          ),
+        ),
+        Tooltip(
+          message: _l10n.commonDelete,
+          excludeFromSemantics: true,
+          child: InkWell(
+            onTap: () => _removeLine(date, line.id),
+            child: Semantics(
+              button: true,
+              label: _l10n.commonDelete,
+              excludeSemantics: true,
+              child: Icon(
+                LucideIcons.x,
+                size: 12 * scale,
+                color: BasePalette.redLight4,
+              ),
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
 
   Color _lineTextColor(RichLine line, Color defaultText) {
     if (line.color.isTransparent ||
@@ -1580,132 +1653,136 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
   }
 
   Widget _quickInput(BuildContext context) => Container(
-        height: _quickInputHeight,
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.sm,
-          vertical: AppSpacing.xxs,
+    height: _quickInputHeight,
+    padding: const EdgeInsets.symmetric(
+      horizontal: AppSpacing.sm,
+      vertical: AppSpacing.xxs,
+    ),
+    decoration: const BoxDecoration(
+      border: Border(top: BorderSide(color: BasePalette.white6)),
+    ),
+    child: Row(
+      children: <Widget>[
+        Text(
+          DateFormat.MMMd(_l10n.localeName).format(_targetDate.date),
+          style: const TextStyle(
+            fontSize: AppTypography.caption,
+            color: BasePalette.grayLight5,
+          ),
         ),
-        decoration: const BoxDecoration(
-          border: Border(top: BorderSide(color: BasePalette.white6)),
-        ),
-        child: Row(
-          children: <Widget>[
-            Text(
-              '${_targetDate.month}/${_targetDate.day}',
-              style: const TextStyle(
+        const SizedBox(width: AppSpacing.xs),
+        Expanded(
+          child: TextField(
+            controller: _input,
+            style: const TextStyle(
+              fontSize: AppTypography.caption,
+              color: BasePalette.grayLight1,
+            ),
+            decoration: InputDecoration(
+              isDense: true,
+              hintText: _l10n.widgetQuickInputHint,
+              hintStyle: TextStyle(
                 fontSize: AppTypography.caption,
-                color: BasePalette.grayLight5,
+                color: BasePalette.grayLight7,
               ),
+              border: InputBorder.none,
             ),
-            const SizedBox(width: AppSpacing.xs),
-            Expanded(
-              child: TextField(
-                controller: _input,
-                style: const TextStyle(
-                  fontSize: AppTypography.caption,
-                  color: BasePalette.grayLight1,
-                ),
-                decoration: const InputDecoration(
-                  isDense: true,
-                  hintText: '直接在桌面输入待办，回车添加…',
-                  hintStyle: TextStyle(
-                    fontSize: AppTypography.caption,
-                    color: BasePalette.grayLight7,
-                  ),
-                  border: InputBorder.none,
-                ),
-                onSubmitted: (_) => _addFromQuickInput(),
-              ),
-            ),
-            IconButton(
-              tooltip: '添加到选中日期',
-              iconSize: 18,
-              color: BasePalette.themeDark6,
-              icon: const Icon(LucideIcons.circlePlus),
-              onPressed: _addFromQuickInput,
-            ),
-          ],
+            onSubmitted: (_) => _addFromQuickInput(),
+          ),
         ),
-      );
+        IconButton(
+          tooltip: _l10n.widgetAddToDate(
+            DateFormat.MMMd(_l10n.localeName).format(_targetDate.date),
+          ),
+          iconSize: 18,
+          color: BasePalette.themeDark6,
+          icon: const Icon(LucideIcons.circlePlus),
+          onPressed: _addFromQuickInput,
+        ),
+      ],
+    ),
+  );
 
   /// 底部常驻编辑栏：对齐旧版「文字颜色 / 单元格颜色」等一排按钮。
   Widget _toolbar(BuildContext context) => Container(
-        height: _toolbarHeight,
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
-        decoration: const BoxDecoration(
-          border: Border(top: BorderSide(color: BasePalette.white6)),
+    height: _toolbarHeight,
+    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+    decoration: const BoxDecoration(
+      border: Border(top: BorderSide(color: BasePalette.white6)),
+    ),
+    child: Row(
+      children: <Widget>[
+        Text(
+          _l10n.widgetEditingDate(
+            DateFormat.MMMd(_l10n.localeName).format(_targetDate.date),
+          ),
+          style: const TextStyle(
+            fontSize: AppTypography.caption,
+            color: BasePalette.grayLight5,
+          ),
         ),
-        child: Row(
-          children: <Widget>[
-            Text(
-              '编辑 ${_targetDate.month}/${_targetDate.day}',
-              style: const TextStyle(
-                fontSize: AppTypography.caption,
-                color: BasePalette.grayLight5,
-              ),
-            ),
-            const SizedBox(width: AppSpacing.xs),
-            _toolButton(
-              icon: LucideIcons.plus,
-              label: '添加一行',
-              tooltip: '在当前日期的格子内新增一行',
-              onPressed: _focusNewLine,
-            ),
-            _toolButton(
-              icon: LucideIcons.type,
-              label: '文字颜色',
-              tooltip: '选中行则改该行，否则改整格文字',
-              active: _paletteTarget == _ColorTarget.text,
-              onPressed: () => _openPalette(_ColorTarget.text),
-            ),
-            _toolButton(
-              icon: LucideIcons.paintBucket,
-              label: '单元格颜色',
-              tooltip: '设置当前日期的单元格背景色',
-              active: _paletteTarget == _ColorTarget.cell,
-              onPressed: () => _openPalette(_ColorTarget.cell),
-            ),
-            _toolButton(
-              icon: LucideIcons.checkCheck,
-              label: '标记完成',
-              tooltip: '切换选中行或整格的完成状态',
-              onPressed: _toggleComplete,
-            ),
-            _toolButton(
-              icon: LucideIcons.repeat,
-              label: '提升为任务',
-              tooltip: '把选中的一行提升为日历任务',
-              onPressed: _promoteActiveLine,
-            ),
-            _toolButton(
-              icon: LucideIcons.eraser,
-              label: _confirmClear ? '确认清空' : '清空本日',
-              tooltip: '清空当前日期的全部行（需二次确认）',
-              color: _confirmClear
-                  ? BasePalette.redLight4
-                  : BasePalette.grayLight4,
-              onPressed: _clearCell,
-            ),
-            _toolButton(
-              icon: LucideIcons.maximize2,
-              label: '浮层编辑',
-              tooltip: '在格子旁弹出完整编辑器（也可长按 / 双击 / 右键格子）',
-              active: _popupDate != null,
-              onPressed: _openPopupFromToolbar,
-            ),
-            _toolButton(
-              icon: LucideIcons.check,
-              label: '完成编辑',
-              tooltip: '退出当前格子的编辑态',
-              active: _editingDate != null,
-              onPressed: () {
-                _closePopup();
-                _closeEditor();
-              },
-            ),
-          ],
+        const SizedBox(width: AppSpacing.xs),
+        _toolButton(
+          icon: LucideIcons.plus,
+          label: _l10n.widgetAddLine,
+          tooltip: _l10n.widgetAddLineTooltip,
+          onPressed: _focusNewLine,
         ),
-      );
+        _toolButton(
+          icon: LucideIcons.type,
+          label: _l10n.widgetTextColor,
+          tooltip: _l10n.widgetTextColorTooltip,
+          active: _paletteTarget == _ColorTarget.text,
+          onPressed: () => _openPalette(_ColorTarget.text),
+        ),
+        _toolButton(
+          icon: LucideIcons.paintBucket,
+          label: _l10n.widgetCellColor,
+          tooltip: _l10n.widgetCellColorTooltip,
+          active: _paletteTarget == _ColorTarget.cell,
+          onPressed: () => _openPalette(_ColorTarget.cell),
+        ),
+        _toolButton(
+          icon: LucideIcons.checkCheck,
+          label: _l10n.widgetMarkComplete,
+          tooltip: _l10n.widgetCompleteTooltip,
+          onPressed: _toggleComplete,
+        ),
+        _toolButton(
+          icon: LucideIcons.repeat,
+          label: _l10n.widgetPromote,
+          tooltip: _l10n.widgetPromoteTooltip,
+          onPressed: _promoteActiveLine,
+        ),
+        _toolButton(
+          icon: LucideIcons.eraser,
+          label: _confirmClear
+              ? _l10n.widgetConfirmClear
+              : _l10n.widgetClearDay,
+          tooltip: _l10n.widgetClearTooltip,
+          color: _confirmClear ? BasePalette.redLight4 : BasePalette.grayLight4,
+          onPressed: _clearCell,
+        ),
+        _toolButton(
+          icon: LucideIcons.maximize2,
+          label: _l10n.widgetPopupEditor,
+          tooltip: _l10n.widgetPopupEditorTooltip,
+          active: _popupDate != null,
+          onPressed: _openPopupFromToolbar,
+        ),
+        _toolButton(
+          icon: LucideIcons.check,
+          label: _l10n.widgetFinishEditing,
+          tooltip: _l10n.widgetFinishEditingTooltip,
+          active: _editingDate != null,
+          onPressed: () {
+            _closePopup();
+            _closeEditor();
+          },
+        ),
+      ],
+    ),
+  );
 
   Widget _toolButton({
     required IconData icon,
@@ -1714,42 +1791,50 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
     required VoidCallback onPressed,
     Color color = BasePalette.grayLight4,
     bool active = false,
-  }) =>
-      Expanded(
-        child: Tooltip(
-          message: tooltip,
-          child: InkWell(
-            onTap: onPressed,
-            borderRadius: BorderRadius.circular(AppRadius.xs),
-            child: Container(
-              height: 44,
-              decoration: BoxDecoration(
-                color: active
-                    ? BasePalette.themeDark6.withValues(alpha: 0.25)
-                    : Colors.transparent,
-                borderRadius: BorderRadius.circular(AppRadius.xs),
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  Icon(icon,
-                      size: 16,
-                      color: active ? BasePalette.themeDark8 : color),
-                  const SizedBox(height: 2),
-                  Text(
-                    label,
-                    maxLines: 1,
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: active ? BasePalette.themeDark8 : color,
-                    ),
+  }) => Expanded(
+    child: Tooltip(
+      message: tooltip,
+      excludeFromSemantics: true,
+      child: Semantics(
+        button: true,
+        selected: active,
+        label: tooltip,
+        excludeSemantics: true,
+        child: InkWell(
+          onTap: onPressed,
+          borderRadius: BorderRadius.circular(AppRadius.xs),
+          child: Container(
+            height: 44,
+            decoration: BoxDecoration(
+              color: active
+                  ? BasePalette.themeDark6.withValues(alpha: 0.25)
+                  : Colors.transparent,
+              borderRadius: BorderRadius.circular(AppRadius.xs),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                Icon(
+                  icon,
+                  size: 16,
+                  color: active ? BasePalette.themeDark8 : color,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  label,
+                  maxLines: 1,
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: active ? BasePalette.themeDark8 : color,
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),
-      );
+      ),
+    ),
+  );
 
   /// 调色板内嵌在卡片底部，避免 showDialog 被 SetWindowRgn 裁掉。
   Widget _paletteStrip({bool light = false}) {
@@ -1762,8 +1847,8 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
     ];
     EventColor selected = EventColor.transparent;
     if (_paletteTarget == _ColorTarget.cell) {
-      selected = _cellOf(_targetDate)?.backgroundColor ??
-          EventColor.transparent;
+      selected =
+          _cellOf(_targetDate)?.backgroundColor ?? EventColor.transparent;
     } else if (_activeLineId != null) {
       for (final line in _linesOf(_targetDate)) {
         if (line.id == _activeLineId) selected = line.color;
@@ -1782,7 +1867,9 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
       child: Row(
         children: <Widget>[
           Text(
-            _paletteTarget == _ColorTarget.cell ? '单元格颜色' : '文字颜色',
+            _paletteTarget == _ColorTarget.cell
+                ? _l10n.widgetCellColor
+                : _l10n.widgetTextColor,
             style: TextStyle(
               fontSize: AppTypography.caption,
               color: light ? BasePalette.grayDark4 : BasePalette.grayLight5,
@@ -1804,7 +1891,7 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
           ),
           _popupTool(
             LucideIcons.x,
-            '关闭调色板',
+            _l10n.widgetClosePalette,
             () => setState(() => _paletteTarget = _ColorTarget.none),
             light: light,
           ),
@@ -1813,43 +1900,60 @@ final class _DesktopWidgetAppState extends ConsumerState<DesktopWidgetApp>
     );
   }
 
-  Widget _swatch(EventColor color, bool selected, {bool light = false}) =>
-      Padding(
-        padding: const EdgeInsets.only(right: AppSpacing.xxs),
-        child: InkWell(
-          onTap: () => _applyColor(color),
-          borderRadius: BorderRadius.circular(AppRadius.xs),
-          child: Container(
-            width: 28,
-            height: 28,
-            decoration: BoxDecoration(
-              color: color.isTransparent
-                  ? (light ? BasePalette.grayLight3 : BasePalette.white7)
-                  : color.toColor(),
-              borderRadius: BorderRadius.circular(AppRadius.xs),
-              border: Border.all(
-                color: selected
-                    ? (light ? BasePalette.themeLight6 : BasePalette.themeDark6)
-                    : (light ? BasePalette.grayLight3 : BasePalette.white6),
-                width: selected ? 2 : 1,
+  Widget _swatch(EventColor color, bool selected, {bool light = false}) {
+    final purpose = _paletteTarget == _ColorTarget.cell
+        ? _l10n.widgetCellColor
+        : _l10n.widgetTextColor;
+    final label = color.localizedLabel(_l10n, purpose: purpose);
+    return Padding(
+      padding: const EdgeInsets.only(right: AppSpacing.xxs),
+      child: Tooltip(
+        message: label,
+        excludeFromSemantics: true,
+        child: Semantics(
+          button: true,
+          selected: selected,
+          label: label,
+          excludeSemantics: true,
+          child: InkWell(
+            onTap: () => _applyColor(color),
+            borderRadius: BorderRadius.circular(AppRadius.xs),
+            child: Container(
+              width: 28,
+              height: 28,
+              decoration: BoxDecoration(
+                color: color.isTransparent
+                    ? (light ? BasePalette.grayLight3 : BasePalette.white7)
+                    : color.toColor(),
+                borderRadius: BorderRadius.circular(AppRadius.xs),
+                border: Border.all(
+                  color: selected
+                      ? (light
+                            ? BasePalette.themeLight6
+                            : BasePalette.themeDark6)
+                      : (light ? BasePalette.grayLight3 : BasePalette.white6),
+                  width: selected ? 2 : 1,
+                ),
               ),
+              child: color.isTransparent
+                  ? Icon(
+                      LucideIcons.ban,
+                      size: 14,
+                      color: light
+                          ? BasePalette.grayDark4
+                          : BasePalette.grayLight4,
+                    )
+                  : null,
             ),
-            child: color.isTransparent
-                ? Icon(
-                    LucideIcons.ban,
-                    size: 14,
-                    color: light
-                        ? BasePalette.grayDark4
-                        : BasePalette.grayLight4,
-                  )
-                : null,
           ),
         ),
-      );
+      ),
+    );
+  }
 
   ThemeMode _toMaterialThemeMode(AppThemeMode mode) => switch (mode) {
-        AppThemeMode.light => ThemeMode.light,
-        AppThemeMode.dark => ThemeMode.dark,
-        AppThemeMode.system => ThemeMode.system,
-      };
+    AppThemeMode.light => ThemeMode.light,
+    AppThemeMode.dark => ThemeMode.dark,
+    AppThemeMode.system => ThemeMode.system,
+  };
 }

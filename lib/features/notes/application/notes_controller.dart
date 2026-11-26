@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../bootstrap/core_providers.dart';
 import '../../../core/list_state.dart';
 import '../../../core/value_objects.dart';
+import '../../../l10n/l10n.dart';
 import '../domain/note.dart';
 import '../infrastructure/local_note_repository.dart';
 
@@ -20,14 +21,21 @@ final noteRepositoryProvider = Provider<NoteRepository>(
 
 final notesControllerProvider =
     NotifierProvider<NotesController, AsyncListState<Note>>(
-  NotesController.new,
-);
+      NotesController.new,
+    );
 
 final class NotesController extends Notifier<AsyncListState<Note>> {
   @override
   AsyncListState<Note> build() {
+    final scope = ref.read(appLocalizationScopeProvider);
+    scope.addListener(_onLocaleChanged);
+    ref.onDispose(() => scope.removeListener(_onLocaleChanged));
     Future.microtask(load);
     return AsyncListState<Note>();
+  }
+
+  void _onLocaleChanged() {
+    if (state.error != null) state = state.copyWith(clearError: true);
   }
 
   NoteRepository get _repository => ref.read(noteRepositoryProvider);
@@ -36,22 +44,24 @@ final class NotesController extends Notifier<AsyncListState<Note>> {
     final result = await _repository.all();
     switch (result) {
       case Success<List<Note>>(:final List<Note> data):
-        state = state.copyWith(
-          items: data,
-          loading: false,
-          clearError: true,
-        );
+        state = state.copyWith(items: data, loading: false, clearError: true);
       case Fail<List<Note>>(:final Failure failure):
-        state = state.copyWith(loading: false, error: failure.message);
+        state = state.copyWith(
+          loading: false,
+          error: failureLabel(
+            failure,
+            ref.read(appLocalizationScopeProvider).localizations,
+          ),
+        );
     }
   }
 
-  Future<Note?> create({String title = '新建便签'}) async {
+  Future<Note?> create({String? title}) async {
     final now = ref.read(clockProvider).now();
     final note = Note.create(
       id: ref.read(idGeneratorProvider).next(),
       occurredAt: now,
-      title: title,
+      title: title ?? '',
     );
     final result = await _repository.save(note);
     await load();
@@ -117,9 +127,7 @@ final class NotesController extends Notifier<AsyncListState<Note>> {
       topMost: !note.topMost,
     );
     await save(next);
-    await ref
-        .read(windowGatewayProvider)
-        .setAlwaysOnTop(next.topMost);
+    await ref.read(windowGatewayProvider).setAlwaysOnTop(next.topMost);
   }
 
   Future<void> remove(String id) async {

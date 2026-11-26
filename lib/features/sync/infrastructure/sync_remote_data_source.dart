@@ -19,11 +19,9 @@ final class SyncSummary {
 }
 
 final class SyncRemoteDataSource {
-  const SyncRemoteDataSource({
-    required ApiClient api,
-    required String endpoint,
-  })  : _api = api,
-        _endpoint = endpoint;
+  const SyncRemoteDataSource({required ApiClient api, required String endpoint})
+    : _api = api,
+      _endpoint = endpoint;
 
   final ApiClient _api;
   final String _endpoint;
@@ -44,15 +42,14 @@ final class SyncRemoteDataSource {
           return SyncSummary(
             uploaded: (map['uploaded'] as num?)?.toInt() ?? 0,
             downloaded: (map['downloaded'] as num?)?.toInt() ?? 0,
-            syncedAt: DateTime.tryParse(map['syncedAt'] as String? ?? '') ??
+            syncedAt:
+                DateTime.tryParse(map['syncedAt'] as String? ?? '') ??
                 DateTime.now(),
           );
         },
       );
 
   static Map<String, Object?> _asMap(Object? data) => data is Map
-      ? data.map(
-          (Object? k, Object? v) => MapEntry<String, Object?>('$k', v),
-        )
+      ? data.map((Object? k, Object? v) => MapEntry<String, Object?>('$k', v))
       : <String, Object?>{};
 }

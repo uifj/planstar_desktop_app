@@ -8,11 +8,18 @@ import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../core/ports.dart';
+import '../l10n/l10n.dart';
 
 final class DesktopFileGateway implements FileGateway {
+  DesktopFileGateway({required this.localizationScope});
+
+  final AppLocalizationScope localizationScope;
+
+  AppLocalizations get _l10n => localizationScope.localizations;
   @override
   Future<String?> pickOpenPath() async {
     final result = await FilePicker.pickFiles(
+      dialogTitle: _l10n.transferImportTitle,
       type: FileType.custom,
       allowedExtensions: const <String>['json', 'txt', 'csv'],
     );
@@ -20,19 +27,21 @@ final class DesktopFileGateway implements FileGateway {
   }
 
   @override
-  Future<String?> pickSavePath(String suggestedName) =>
-      FilePicker.saveFile(fileName: suggestedName);
+  Future<String?> pickSavePath(String suggestedName) => FilePicker.saveFile(
+    dialogTitle: _l10n.transferExportTitle,
+    fileName: suggestedName,
+  );
 
   @override
-  Future<String?> pickDirectory() => FilePicker.getDirectoryPath(
-        dialogTitle: '选择壁纸图片目录',
-      );
+  Future<String?> pickDirectory() =>
+      FilePicker.getDirectoryPath(dialogTitle: _l10n.wallpaperSelectDirectory);
 
   /// 读取时兼容 UTF-8 BOM，避免 Windows 记事本导出的文件多出 `\uFEFF`。
   @override
   Future<String> readText(String path) async {
     final bytes = await File(path).readAsBytes();
-    final start = (bytes.length >= 3 &&
+    final start =
+        (bytes.length >= 3 &&
             bytes[0] == 0xEF &&
             bytes[1] == 0xBB &&
             bytes[2] == 0xBF)

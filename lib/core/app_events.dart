@@ -11,10 +11,7 @@ import 'value_objects.dart';
 
 /// 事件基类：统一带上聚合 id 与发生时刻。
 abstract base class AppDomainEvent extends DomainEvent {
-  const AppDomainEvent({
-    required this.aggregateId,
-    required super.occurredAt,
-  });
+  const AppDomainEvent({required this.aggregateId, required super.occurredAt});
 
   final String aggregateId;
 }

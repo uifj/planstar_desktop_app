@@ -15,6 +15,8 @@ workspace:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
 
   # ── 图标：全项目统一使用 Lucide（lucide_icons_flutter）────────────────────
   # 4.0.3 对应 Lucide 官方图标集，SDK 约束 ^3.0.0，兼容当前 Dart 3.11.5。
@@ -62,7 +64,7 @@ dependencies:
   flutter_secure_storage: ^10.3.4
 
   # ── 领域工具 ────────────────────────────────────────────────────────────
-  intl: ^0.20.3
+  intl: 0.20.2
   lunar: ^1.7.9
   auto_updater: ^1.0.0
   flutter_app_packager: ^0.3.1
@@ -71,6 +73,7 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  dio: ^5.11.1
   # 官方跨端通信代码生成器：类型安全的 HostApi / FlutterApi，
   # 取代手写 MethodChannel/EventChannel 的字符串方法与动态 Map。
   # 27.x 起依赖 analyzer >=10（要求 meta 1.18，与当前 Flutter SDK 固定的
@@ -78,6 +81,7 @@ dev_dependencies:
   pigeon: 26.1.2
 
 flutter:
+  generate: true
   uses-material-design: true
   config:
     enable-swift-package-manager: false

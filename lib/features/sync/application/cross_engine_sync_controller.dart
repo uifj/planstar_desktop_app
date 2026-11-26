@@ -24,8 +24,8 @@ import '../../timetable/application/timetable_controller.dart';
 
 final crossEngineSyncControllerProvider =
     NotifierProvider<CrossEngineSyncController, int>(
-  CrossEngineSyncController.new,
-);
+      CrossEngineSyncController.new,
+    );
 
 final class CrossEngineSyncController extends Notifier<int> {
   bool _applying = false;
@@ -39,9 +39,10 @@ final class CrossEngineSyncController extends Notifier<int> {
     // 只在入口 initState 里被 ref.read，没有 widget watch 它；Riverpod 3
     // 会在无人监听时 dispose 此 controller 并取消订阅，必须显式保活。
     ref.keepAlive();
-    final subscription = ref.watch(crossEngineSyncProvider).changes.listen(
-          (DataChange change) => _apply(change),
-        );
+    final subscription = ref
+        .watch(crossEngineSyncProvider)
+        .changes
+        .listen((DataChange change) => _apply(change));
     ref.onDispose(subscription.cancel);
     return 0;
   }
@@ -126,12 +127,12 @@ final class CrossEngineSyncController extends Notifier<int> {
   }
 
   Future<void> _reloadAll() => Future.wait(<Future<void>>[
-        ref.read(calendarControllerProvider.notifier).load(),
-        ref.read(settingsControllerProvider.notifier).load(),
-        ref.read(notesControllerProvider.notifier).load(),
-        ref.read(countdownControllerProvider.notifier).load(),
-        ref.read(subscriptionControllerProvider.notifier).load(),
-        ref.read(timetableControllerProvider.notifier).load(),
-        ref.read(historyControllerProvider.notifier).load(),
-      ]);
+    ref.read(calendarControllerProvider.notifier).load(),
+    ref.read(settingsControllerProvider.notifier).load(),
+    ref.read(notesControllerProvider.notifier).load(),
+    ref.read(countdownControllerProvider.notifier).load(),
+    ref.read(subscriptionControllerProvider.notifier).load(),
+    ref.read(timetableControllerProvider.notifier).load(),
+    ref.read(historyControllerProvider.notifier).load(),
+  ]);
 }

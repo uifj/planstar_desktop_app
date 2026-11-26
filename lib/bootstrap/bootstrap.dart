@@ -13,10 +13,12 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:intl/date_symbol_data_local.dart';
 
 import '../app/planstar_app.dart';
 import '../core/ports.dart';
 import '../features/reminder/infrastructure/local_notification_gateway.dart';
+import '../features/settings/infrastructure/settings_repository.dart';
 import '../infrastructure/app_updater_gateway.dart';
 import '../infrastructure/data_hub.dart';
 import '../infrastructure/desktop_adapters.dart';
@@ -25,6 +27,8 @@ import '../infrastructure/desktop_wallpaper_gateway.dart';
 import '../infrastructure/file_gateway.dart';
 import '../infrastructure/storage_adapters.dart';
 import '../infrastructure/wallpaper_image_gateway.dart';
+import '../l10n/l10n.dart';
+import '../features/settings/domain/app_settings.dart';
 import '../windows/sub_window_app.dart';
 import 'core_providers.dart';
 
@@ -33,8 +37,13 @@ final class AppBootstrap {
 
   /// 统一入口。`desktop_multi_window` 的子窗口会以
   /// `['multi_window', windowId, argumentsJson]` 调用同一个 `main`。
-  static Future<void> run(List<String> args) async {
+  static Future<void> initializeRuntime() async {
     WidgetsFlutterBinding.ensureInitialized();
+    await initializeDateFormatting();
+  }
+
+  static Future<void> run(List<String> args) async {
+    await initializeRuntime();
 
     final logger = AppLogger(
       sinks: <LogSink>[ConsoleLogSink()],
@@ -84,9 +93,22 @@ final class AppBootstrap {
       },
     );
 
+    final localizationScope = AppLocalizationScope();
+    try {
+      final rawSettings = await dataHub.read(LocalSettingsRepository.key);
+      if (rawSettings != null) {
+        final storedSettings = jsonDecode(rawSettings) as Map<String, Object?>;
+        localizationScope.setLanguage(
+          AppSettings.fromJson(storedSettings).language,
+        );
+      }
+    } catch (error) {
+      logger.warn('读取已保存的语言设置失败', error: error);
+    }
     final notificationGateway = FlutterLocalNotificationsGateway(
       logger: logger.child('notify'),
       clock: clock,
+      localizationScope: localizationScope,
       locationName:
           config.section('calendar').getString('timezone') ?? 'Asia/Shanghai',
     );
@@ -96,8 +118,14 @@ final class AppBootstrap {
         ? Future<void>.value()
         : notificationGateway.initialize();
 
-    final windowGateway = WindowManagerGateway(logger: logger.child('window'));
-    final trayGateway = TrayManagerGateway(logger: logger.child('tray'));
+    final windowGateway = WindowManagerGateway(
+      logger: logger.child('window'),
+      localizationScope: localizationScope,
+    );
+    final trayGateway = TrayManagerGateway(
+      logger: logger.child('tray'),
+      localizationScope: localizationScope,
+    );
     final multiWindowGateway = DesktopMultiWindowGateway(
       logger: logger.child('multiwindow'),
     );
@@ -106,7 +134,9 @@ final class AppBootstrap {
     final soundGateway = AudioPlayersSoundGateway(
       logger: logger.child('sound'),
     );
-    final fileGateway = DesktopFileGateway();
+    final fileGateway = DesktopFileGateway(
+      localizationScope: localizationScope,
+    );
     final desktopWallpaperGateway = PigeonDesktopWallpaperGateway(
       logger: logger.child('wallpaper'),
     );
@@ -141,8 +171,14 @@ final class AppBootstrap {
             ),
           );
           await windowGateway.initializeSubWindow(
-            subWindowArguments['kind'] == 'note' ? '便签' : '倒数日',
+            subWindowArguments['kind'] == 'note'
+                ? localizationScope.localizations.noteTitle
+                : localizationScope.localizations.countdownWindowTitle,
             rect,
+            titleBuilder: (AppLocalizations l10n) =>
+                subWindowArguments['kind'] == 'note'
+                ? l10n.noteTitle
+                : l10n.countdownWindowTitle,
           );
         }
       } else {
@@ -163,6 +199,7 @@ final class AppBootstrap {
     }
 
     final overrides = [
+      appLocalizationScopeProvider.overrideWithValue(localizationScope),
       clockProvider.overrideWithValue(clock),
       keyValueStoreProvider.overrideWithValue(dataHub),
       storageReloaderProvider.overrideWithValue(dataHub),

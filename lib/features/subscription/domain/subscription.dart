@@ -38,11 +38,11 @@ final class SubscriptionEvent extends ValueObject {
   final String description;
 
   Map<String, Object?> toJson() => <String, Object?>{
-        'id': id,
-        'date': date.key,
-        'title': title,
-        'description': description,
-      };
+    'id': id,
+    'date': date.key,
+    'title': title,
+    'description': description,
+  };
 
   factory SubscriptionEvent.fromJson(Map<String, Object?> json) =>
       SubscriptionEvent(
@@ -76,17 +76,16 @@ final class Subscription extends AggregateRoot<String> {
     EventColor color = EventColor.defaultText,
     bool enabled = true,
     DateTime? lastSyncAt,
-  }) =>
-      Subscription._(
-        id: id,
-        name: name,
-        source: source,
-        shareLink: shareLink,
-        enabled: enabled,
-        color: color,
-        lastSyncAt: lastSyncAt,
-        events: const <SubscriptionEvent>[],
-      );
+  }) => Subscription._(
+    id: id,
+    name: name,
+    source: source,
+    shareLink: shareLink,
+    enabled: enabled,
+    color: color,
+    lastSyncAt: lastSyncAt,
+    events: const <SubscriptionEvent>[],
+  );
 
   final String name;
   final SubscriptionSource source;
@@ -114,48 +113,45 @@ final class Subscription extends AggregateRoot<String> {
     SubscriptionSource? source,
     bool? enabled,
     EventColor? color,
-  }) =>
-      Subscription._(
-        id: id,
-        name: name ?? this.name,
-        source: source ?? this.source,
-        shareLink: shareLink ?? this.shareLink,
-        enabled: enabled ?? this.enabled,
-        color: color ?? this.color,
-        lastSyncAt: lastSyncAt,
-        events: events,
-      );
+  }) => Subscription._(
+    id: id,
+    name: name ?? this.name,
+    source: source ?? this.source,
+    shareLink: shareLink ?? this.shareLink,
+    enabled: enabled ?? this.enabled,
+    color: color ?? this.color,
+    lastSyncAt: lastSyncAt,
+    events: events,
+  );
 
   Map<String, Object?> toJson() => <String, Object?>{
-        'id': id,
-        'name': name,
-        'source': source.name,
-        'shareLink': shareLink,
-        'enabled': enabled,
-        'color': color.argb,
-        'lastSyncAt': lastSyncAt?.toIso8601String(),
-        'events': events.map((SubscriptionEvent e) => e.toJson()).toList(),
-      };
+    'id': id,
+    'name': name,
+    'source': source.name,
+    'shareLink': shareLink,
+    'enabled': enabled,
+    'color': color.argb,
+    'lastSyncAt': lastSyncAt?.toIso8601String(),
+    'events': events.map((SubscriptionEvent e) => e.toJson()).toList(),
+  };
 
-  factory Subscription.fromJson(Map<String, Object?> json) =>
-      Subscription._(
-        id: json['id'] as String,
-        name: json['name'] as String? ?? '',
-        source: SubscriptionSource.fromName(json['source'] as String?),
-        shareLink: json['shareLink'] as String? ?? '',
-        enabled: json['enabled'] as bool? ?? true,
-        color: EventColor(json['color'] as int? ?? 0xFF1F2024),
-        lastSyncAt: json['lastSyncAt'] == null
-            ? null
-            : DateTime.tryParse(json['lastSyncAt']! as String),
-        events: (json['events'] as List? ?? const <Object?>[])
-            .map(
-              (Object? e) => SubscriptionEvent.fromJson(
-                Map<String, Object?>.from(e! as Map),
-              ),
-            )
-            .toList(),
-      );
+  factory Subscription.fromJson(Map<String, Object?> json) => Subscription._(
+    id: json['id'] as String,
+    name: json['name'] as String? ?? '',
+    source: SubscriptionSource.fromName(json['source'] as String?),
+    shareLink: json['shareLink'] as String? ?? '',
+    enabled: json['enabled'] as bool? ?? true,
+    color: EventColor(json['color'] as int? ?? 0xFF1F2024),
+    lastSyncAt: json['lastSyncAt'] == null
+        ? null
+        : DateTime.tryParse(json['lastSyncAt']! as String),
+    events: (json['events'] as List? ?? const <Object?>[])
+        .map(
+          (Object? e) =>
+              SubscriptionEvent.fromJson(Map<String, Object?>.from(e! as Map)),
+        )
+        .toList(),
+  );
 }
 
 abstract interface class SubscriptionRepository {

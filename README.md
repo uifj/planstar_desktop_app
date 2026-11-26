@@ -8,7 +8,7 @@
 
 技术栈：Clean DDD + 六边形架构 + Riverpod 3 + go_router 17 +
 `flutter_local_notifications` / `window_manager` / `desktop_multi_window` /
-`tray_manager` / `launch_at_startup` / `audioplayers` / `file_picker` /
+`tray_manager` / `launch_at_startup`（Windows / Linux）/ `audioplayers` / `file_picker` /
 `shared_preferences` / `flutter_secure_storage` / `path_provider` / `lunar` /
 `lucide_icons_flutter`（全项目图标统一使用 Lucide，不再使用 Material Icons）；
 DataHub、桌面覆盖层与 macOS 登录项使用 Pigeon 类型化原生桥；
@@ -100,13 +100,18 @@ lib/
 │   ├── calendar_math.dart                     # 网格计算 + 农历/节气/节日/法定假日
 │   ├── result_x.dart                          # guardAsync（异常边界收敛为 Result）
 │   └── list_state.dart                        # AsyncListState<T> 列表页状态壳
+├── l10n/
+│   ├── arb/                                   # app_zh.arb / app_en.arb 文案唯一来源
+│   ├── generated/                             # flutter gen-l10n 生成，不手改
+│   ├── domain_labels.dart                     # 枚举 / 日期 / 倒数日展示文案
+│   └── l10n.dart                              # locale scope + context.l10n
 ├── infrastructure/
 │   ├── storage_adapters.dart                  # SharedPreferences / SecureStorage → core 端口 + 跨 engine reload
 │   ├── desktop_adapters.dart                  # window_manager / tray / multi_window / 自启 / 音效
 │   ├── desktop_wallpaper_gateway.dart         # 桌面 overlay 通道适配器
 │   ├── wallpaper_image_gateway.dart           # 壁纸 PNG 落盘 / 底图读取
-│   ├── data_hub.dart                          # 跨 engine 单一真相源（MethodChannel/EventChannel + 降级）
-│   └── cross_engine_sync.dart                 # 旧文件标记实现（仅作非 Windows 参考）
+│   ├── data_hub.dart                          # 跨 engine 单一真相源（Pigeon HostApi / FlutterApi + 降级）
+│   └── cross_engine_sync.dart                 # 旧文件标记实现（当前未接入）
 │   ├── file_gateway.dart                      # file_picker + dart:io + path_provider
 │   └── json_entity_store.dart                 # 通用 JSON 聚合仓储骨架
 ├── shared/widgets/common.dart                 # AppSectionCard / Setting* / 调色板 / 弹窗骨架
@@ -284,11 +289,11 @@ test/widget_test.dart                          # 重复规则 / 提醒 / 设置�
 | 层 | 文件 | 职责 |
 |---|---|---|
 | 原生 | `windows/runner/desktop_wallpaper_plugin.cpp` | `configureOverlay` / `setRegion` / 强制最底 WndProc 子类化 / `WM_DISPLAYCHANGE` 重铺虚拟屏 / 可选 `SPI_SETDESKWALLPAPER` |
-| 通道注册 | `windows/runner/flutter_window.cpp` | 每个 engine 注册一份通道（主窗口 + 每个 `desktop_multi_window` 子窗口，HWND 取 `GetAncestor(view, GA_ROOT)`） |
+| 通道注册 | `windows/runner/flutter_window.cpp` + `macos/Runner/MainFlutterWindow.swift` | 每个 engine 注册一份 Pigeon API（主窗口 + 每个 `desktop_multi_window` 子窗口），Windows 取 root HWND，macOS 使用对应 `FlutterViewController` |
 | 端口 | `lib/core/ports.dart` | `DesktopWallpaperGateway.setRegion(DesktopCardRect)`、`MultiWindowGateway.openDesktopWidget()`、`CrossEngineSync` / `StorageReloader` |
 | 应用 | `lib/features/desktop/application/desktop_controller.dart` | 设置 → 打开/关闭组件窗口；启动时恢复上一版设置过的系统原壁纸 |
 | 表现 | `lib/windows/desktop_widget_app.dart` | 透明全屏 `Stack` + `Listener(HitTestBehavior.translucent)`；可拖动/可缩放的月历卡片（默认 1008×820，单击选中 + 双击/长按/右键弹出白底浮层编辑器 + 底部工具栏 + 内嵌调色板 + 8 方向 resize 热区） |
-| 同步 | `lib/infrastructure/data_hub.dart` + `windows/runner/data_hub_plugin.cpp` + `lib/features/sync/application/cross_engine_sync_controller.dart` | 所有 engine 经 MethodChannel 把写操作汇聚到同进程的原生 DataHub 单例（mutex 串行 + 原子落盘 + 单调 revision），成功后用 EventChannel 广播增量；各 engine 按 key 精准重载读模型并幂等重放本地副作用 |
+| 同步 | `lib/infrastructure/data_hub.dart` + `windows/runner/data_hub_plugin.cpp` + `macos/Runner/DataHubPlugin.swift` + `lib/features/sync/application/cross_engine_sync_controller.dart` | 所有 engine 经 Pigeon 把写操作汇聚到同进程的原生 DataHub 单例（串行 + 原子落盘 + 单调 revision），成功后用 FlutterApi 广播增量；各 engine 按 key 精准重载读模型并幂等重放本地副作用 |
 
 **桌面编辑能力（对齐旧版企划星）**：卡片默认 1008×820，格子按可用高度
 自适应铺满（约 140×105，比旧版大近一倍）。**单击**任意日期只**选中并高亮**
@@ -352,16 +357,16 @@ test/widget_test.dart                          # 重复规则 / 提醒 / 设置�
 ```
 桌面点击 → 格子内 TextField / Lucide 勾选框 / 底部颜色工具条
    → CalendarController（用例）→ CalendarRepository → 聚合 + 领域事件
-   → DataHubStore.write → MethodChannel('planstar/data_hub')
+   → DataHubStore.write → Pigeon DataHubHostApi.write
    → 原生 DataHub 单例：串行化 → 原子落盘 → revision++
-   → EventChannel('planstar/data_hub_events') 广播给所有 engine
+   → Pigeon DataHubEventsFlutterApi.onDataChanged 广播给所有 engine
    → 主窗口按 key 只重载 calendar 读模型 → 月历刷新
 ```
 
 > Windows 上**不能**用 `SharedPreferences.reload()` 做跨 engine 同步：
 > legacy `reload()` 只是重新调用 `getAll()`，而 `shared_preferences_windows`
 > 的 `getAll()` 返回每个 isolate 自己的 `_cachedPreferences`，从不重读磁盘。
-> 非 Windows / 原生通道不可用时，`DataHubStore` 自动降级为原子写 + 300ms
+> 非 Windows / macOS 或原生通道不可用时，`DataHubStore` 自动降级为原子写 + 300ms
 > 文件轮询（`_LocalBackend`），行为一致但延迟略高。冷启动会把旧的
 > `shared_preferences.json`（去掉 `flutter.` 前缀）一次性迁移到
 > `planstar_data_hub.json`，原文件保留作为回滚备份。
@@ -443,3 +448,30 @@ Z 序   : 23 / 25 可见窗口（仅 Progman 与系统状态窗在其下）
 > 云端同步 / 订阅的默认地址是占位符，修改 `assets/config/default_config.json`
 > 中的 `apiBaseUrl` 即可接入真实服务；`ApiClient` 永不抛异常，离线时
 > 全部功能降级为本地存储，不影响主流程。
+
+---
+
+## 8. 国际化（简体中文 / English）
+
+文案唯一来源是 `lib/l10n/arb/app_zh.arb` 与 `app_en.arb`；生成目录
+`lib/l10n/generated/` 不手改。设置中的语言会写入 `AppSettings.language`，
+启动时恢复，并同步到主窗口、便签 / 倒数日子窗口、桌面组件、原生窗口标题、
+托盘菜单、通知和导出文件。
+
+```bash
+flutter gen-l10n                 # 按 l10n.yaml 生成 AppLocalizations
+dart run tool/check_l10n.dart    # 校验键、占位符、元数据、源码引用和未使用项
+flutter test --no-pub            # 含 locale 切换与 ICU 复数回归测试
+```
+
+`lib/l10n/domain_labels.dart` 只负责展示层映射，不改变枚举名、JSON 字段或
+持久化格式。新增界面文案时同时补齐 zh/en、`@key` 描述和占位符定义，再运行
+生成器与检查工具。
+
+macOS 标准应用菜单与 `Info.plist` 使用 `en.lproj` / `zh-Hans.lproj`，跟随系统语言；
+Windows 版本元数据同时包含英文与简体中文资源。自动更新器及部分系统通知插件
+没有运行时切换语言的 API，其界面使用系统语言；通知正文与渠道名仍由应用语言控制。
+Windows 通知归属名固定为 Planstar，避免切换应用语言后出现重复或失效的归属。
+提醒重排串行执行，语言切换后旧任务不会覆盖新语言通知；事件缺失时的兜底标题按当前语言展示。
+历史记录正文是用户内容快照，按原语言保留；只有已知的“本机”作者标签随界面语言切换，
+避免在缺少来源标记的旧数据上误改用户标题或摘要。

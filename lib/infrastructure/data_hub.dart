@@ -1,4 +1,4 @@
-/// 跨 engine 的单一真相源（方案 A 的 Dart 侧）。
+/// 跨 engine 的单一真相源（Dart 侧）。
 ///
 /// 背景：`shared_preferences_windows` 的 `getAll()` 返回每个 isolate 自己
 /// 的 `_cachedPreferences`，而 legacy `SharedPreferences.reload()` 并不通知
@@ -106,11 +106,10 @@ final class DataHubStore
   @override
   Stream<DataChange> get changes => _backend.changes;
 
-  /// 应用退出时释放事件订阅与轮询定时器。
   void dispose() => _backend.dispose();
 }
 
-/// Windows：原生进程级 DataHub（Pigeon HostApi + FlutterApi）。
+/// Windows / macOS：原生进程级 DataHub（Pigeon HostApi + FlutterApi）。
 final class _NativeBackend implements _Backend, DataHubEventsFlutterApi {
   _NativeBackend({this.supportDirectory});
 
@@ -155,7 +154,7 @@ final class _NativeBackend implements _Backend, DataHubEventsFlutterApi {
     }
   }
 
-  /// Pigeon 生成的类型化回调（原 EventChannel 的动态 Map 解码已移除）。
+  /// Pigeon 生成的类型化回调。
   @override
   void onDataChanged(DataChangeDto change) {
     _onChange(
@@ -244,7 +243,7 @@ final class _NativeBackend implements _Backend, DataHubEventsFlutterApi {
   }
 
   /// 原生写入失败会抛 `PlatformException`，这里统一转换为领域层使用的
-  /// `StateError`，语义与改造前的动态 Map 结果完全一致。
+  /// `StateError`，避免通道错误细节泄漏到上层。
   Future<T> _guard<T>(Future<T> Function() action, String label) async {
     try {
       return await action();
@@ -278,7 +277,7 @@ final class _NativeBackend implements _Backend, DataHubEventsFlutterApi {
   }
 }
 
-/// 非 Windows / 原生通道缺失：跨进程文件锁 + 原子写 + revision 轮询降级。
+/// 非 Windows / macOS 或原生通道缺失：跨进程文件锁 + 原子写 + revision 轮询降级。
 final class _LocalBackend implements _Backend {
   _LocalBackend({this.supportDirectory});
 

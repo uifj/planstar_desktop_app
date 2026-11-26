@@ -7,21 +7,28 @@ import 'dart:async';
 import 'package:core/logger.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter/widgets.dart';
 import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 
 import '../../../core/ports.dart';
+import '../../../l10n/l10n.dart';
 
 final class FlutterLocalNotificationsGateway implements NotificationGateway {
   FlutterLocalNotificationsGateway({
     required this.logger,
     required this.clock,
     this.locationName = 'Asia/Shanghai',
-  });
+    AppLocalizationScope? localizationScope,
+  }) : _localizationScope = localizationScope;
 
   final AppLogger logger;
   final Clock clock;
   final String locationName;
+  final AppLocalizationScope? _localizationScope;
+  AppLocalizations get _l10n =>
+      _localizationScope?.localizations ??
+      lookupAppLocalizations(const Locale('zh'));
 
   final FlutterLocalNotificationsPlugin _plugin =
       FlutterLocalNotificationsPlugin();
@@ -41,13 +48,17 @@ final class FlutterLocalNotificationsGateway implements NotificationGateway {
       tz_data.initializeTimeZones();
       tz.setLocalLocation(tz.getLocation(locationName));
       await _plugin.initialize(
-        settings: const InitializationSettings(
+        settings: InitializationSettings(
           android: AndroidInitializationSettings('@mipmap/ic_launcher'),
           iOS: DarwinInitializationSettings(),
           macOS: DarwinInitializationSettings(),
-          linux: LinuxInitializationSettings(defaultActionName: '打开日历'),
+          linux: LinuxInitializationSettings(
+            defaultActionName: _l10n.notificationOpenCalendar,
+          ),
           windows: WindowsInitializationSettings(
-            appName: '企划星桌面日历',
+            // Windows binds attribution at initialization; keep the brand stable
+            // while notification titles and bodies are localized when scheduled.
+            appName: 'Planstar',
             appUserModelId: 'Planstar.DesktopCalendar.App',
             guid: '6B8F1C42-9C34-4D2B-A2E7-9F1A0D5C7E31',
           ),
@@ -55,11 +66,14 @@ final class FlutterLocalNotificationsGateway implements NotificationGateway {
         onDidReceiveNotificationResponse: _onResponse,
       );
       _initialized = true;
-      logger.info('本地通知插件初始化完成');
+      logger.info(_l10n.reminderLogInitialized);
     } catch (error, stackTrace) {
       // 桌面通知不可用时不能让应用起不来：应用内提醒弹窗仍可用。
-      logger.warn('本地通知初始化失败，改用应用内提醒',
-          error: error, stackTrace: stackTrace);
+      logger.warn(
+        _l10n.reminderLogInitializeFailed,
+        error: error,
+        stackTrace: stackTrace,
+      );
     }
   }
 
@@ -83,11 +97,11 @@ final class FlutterLocalNotificationsGateway implements NotificationGateway {
         title: reminder.title,
         body: reminder.body,
         scheduledDate: tz.TZDateTime.from(reminder.fireAt, tz.local),
-        notificationDetails: const NotificationDetails(
+        notificationDetails: NotificationDetails(
           android: AndroidNotificationDetails(
             'planstar_reminder',
-            '任务提醒',
-            channelDescription: '日历清单任务提醒',
+            _l10n.notificationChannel,
+            channelDescription: _l10n.notificationChannelDescription,
             importance: Importance.max,
             priority: Priority.high,
           ),
@@ -99,10 +113,15 @@ final class FlutterLocalNotificationsGateway implements NotificationGateway {
         androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
         payload: reminder.payload,
       );
-      (_idsByEvent.putIfAbsent(reminder.eventId, () => <int>{}))
-          .add(reminder.notificationId);
+      (_idsByEvent.putIfAbsent(
+        reminder.eventId,
+        () => <int>{},
+      )).add(reminder.notificationId);
     } catch (error) {
-      logger.warn('提醒调度失败：${reminder.eventId}', error: error);
+      logger.warn(
+        _l10n.reminderLogScheduleFailed(reminder.eventId),
+        error: error,
+      );
     }
   }
 
@@ -115,7 +134,7 @@ final class FlutterLocalNotificationsGateway implements NotificationGateway {
       try {
         await _plugin.cancel(id: id);
       } catch (error) {
-        logger.warn('取消提醒失败：$id', error: error);
+        logger.warn(_l10n.reminderLogCancelFailed(id.toString()), error: error);
       }
     }
   }
@@ -127,7 +146,7 @@ final class FlutterLocalNotificationsGateway implements NotificationGateway {
       await _plugin.cancelAll();
       _idsByEvent.clear();
     } catch (error) {
-      logger.warn('清空提醒失败', error: error);
+      logger.warn(_l10n.reminderLogClearFailed, error: error);
     }
   }
 }

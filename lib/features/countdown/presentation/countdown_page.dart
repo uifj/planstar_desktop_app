@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../bootstrap/core_providers.dart';
 import '../../../core/value_objects.dart';
+import '../../../l10n/l10n.dart';
 import '../../../shared/widgets/common.dart';
 import '../application/countdown_controller.dart';
 import '../domain/countdown.dart';
@@ -18,6 +19,7 @@ final class CountdownPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(countdownControllerProvider);
+    final l10n = context.l10n;
     final today = DateKey.today(ref.watch(clockProvider).now());
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -27,7 +29,7 @@ final class CountdownPage extends ConsumerWidget {
           child: Row(
             children: <Widget>[
               Text(
-                '倒数日（${state.items.length}）',
+                l10n.countdownTitle(state.items.length),
                 style: TextStyle(
                   fontSize: AppTypography.title,
                   fontWeight: AppTypography.bold,
@@ -40,28 +42,27 @@ final class CountdownPage extends ConsumerWidget {
                     .read(countdownControllerProvider.notifier)
                     .openDesktopCard(),
                 icon: const Icon(LucideIcons.externalLink, size: 16),
-                label: const Text('打开桌面卡片'),
+                label: Text(l10n.countdownOpenDesktopCard),
               ),
               const SizedBox(width: AppSpacing.sm),
               FilledButton.icon(
                 onPressed: () => _create(context, ref),
                 icon: const Icon(LucideIcons.plus, size: 16),
-                label: const Text('新建倒数日'),
+                label: Text(l10n.countdownCreate),
               ),
             ],
           ),
         ),
         Expanded(
           child: state.items.isEmpty
-              ? const EmptyState(
+              ? EmptyState(
                   icon: LucideIcons.hourglass,
-                  title: '暂无倒数日',
-                  hint: '支持倒计时、累计日、生日、纪念日',
+                  title: l10n.countdownEmptyTitle,
+                  hint: l10n.countdownEmptyHint,
                 )
               : GridView.builder(
                   padding: const EdgeInsets.all(AppSpacing.md),
-                  gridDelegate:
-                      const SliverGridDelegateWithMaxCrossAxisExtent(
+                  gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
                     maxCrossAxisExtent: 300,
                     mainAxisExtent: 150,
                     crossAxisSpacing: AppSpacing.sm,
@@ -70,11 +71,13 @@ final class CountdownPage extends ConsumerWidget {
                   itemCount: state.items.length,
                   itemBuilder: (BuildContext context, int index) {
                     final item = state.items[index];
+                    final ageText = item.localizedAgeText(l10n, today);
                     return AppSectionCard(
                       title: item.title,
                       subtitle:
-                          '${item.targetDate.cnFull} · ${item.type.label}',
+                          '${item.targetDate.fullDate(l10n)} · ${item.type.localizedLabel(l10n)}',
                       trailing: IconButton(
+                        tooltip: l10n.countdownDeleteTooltip(item.title),
                         icon: Icon(
                           LucideIcons.trash2,
                           size: 16,
@@ -88,23 +91,26 @@ final class CountdownPage extends ConsumerWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
                           Text(
-                            item.displayText(today),
+                            item.localizedDisplayText(l10n, today),
                             style: TextStyle(
                               fontSize: AppTypography.title,
                               fontWeight: AppTypography.bold,
                               color: item.color.toColor(),
                             ),
                           ),
-                          if (item.ageText(today).isNotEmpty)
+                          if (ageText.isNotEmpty)
                             Text(
-                              item.ageText(today),
+                              ageText,
                               style: TextStyle(
                                 fontSize: AppTypography.caption,
                                 color: context.appColors.textTertiary,
                               ),
                             ),
                           const SizedBox(height: AppSpacing.xs),
-                          AppChip(label: item.showType.label, dense: true),
+                          AppChip(
+                            label: item.showType.localizedLabel(l10n),
+                            dense: true,
+                          ),
                         ],
                       ),
                     );
@@ -116,6 +122,7 @@ final class CountdownPage extends ConsumerWidget {
   }
 
   Future<void> _create(BuildContext context, WidgetRef ref) async {
+    final l10n = context.l10n;
     final titleController = TextEditingController();
     var date = DateKey.today(ref.read(clockProvider).now()).addDays(30);
     var type = CountdownType.custom;
@@ -123,17 +130,16 @@ final class CountdownPage extends ConsumerWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (BuildContext context) => StatefulBuilder(
-        builder: (BuildContext context, StateSetter setState) =>
-            AppDialogFrame(
-          title: '新建倒数日',
+        builder: (BuildContext context, StateSetter setState) => AppDialogFrame(
+          title: l10n.countdownCreate,
           actions: <Widget>[
             TextButton(
               onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('取消'),
+              child: Text(l10n.commonCancel),
             ),
             FilledButton(
               onPressed: () => Navigator.of(context).pop(true),
-              child: const Text('创建'),
+              child: Text(l10n.countdownCreated),
             ),
           ],
           child: Column(
@@ -141,46 +147,62 @@ final class CountdownPage extends ConsumerWidget {
             children: <Widget>[
               TextField(
                 controller: titleController,
-                decoration: const InputDecoration(labelText: '名称'),
+                decoration: InputDecoration(labelText: l10n.countdownNameField),
               ),
               const SizedBox(height: AppSpacing.sm),
               Row(
                 children: <Widget>[
                   Expanded(
-                    child: DropdownButton<CountdownType>(
-                      value: type,
-                      icon: const Icon(LucideIcons.chevronDown, size: 16),
-                      isExpanded: true,
-                      items: CountdownType.values
-                          .map(
-                            (CountdownType t) =>
-                                DropdownMenuItem<CountdownType>(
-                              value: t,
-                              child: Text(t.label),
-                            ),
-                          )
-                          .toList(),
-                      onChanged: (CountdownType? value) =>
-                          setState(() => type = value ?? type),
+                    child: InputDecorator(
+                      decoration: InputDecoration(
+                        labelText: l10n.countdownTypeField,
+                        isDense: true,
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<CountdownType>(
+                          value: type,
+                          icon: const Icon(LucideIcons.chevronDown, size: 16),
+                          isExpanded: true,
+                          items: CountdownType.values
+                              .map(
+                                (CountdownType t) =>
+                                    DropdownMenuItem<CountdownType>(
+                                      value: t,
+                                      child: Text(t.localizedLabel(l10n)),
+                                    ),
+                              )
+                              .toList(),
+                          onChanged: (CountdownType? value) =>
+                              setState(() => type = value ?? type),
+                        ),
+                      ),
                     ),
                   ),
                   const SizedBox(width: AppSpacing.sm),
                   Expanded(
-                    child: DropdownButton<CountdownShowType>(
-                      value: showType,
-                      icon: const Icon(LucideIcons.chevronDown, size: 16),
-                      isExpanded: true,
-                      items: CountdownShowType.values
-                          .map(
-                            (CountdownShowType t) =>
-                                DropdownMenuItem<CountdownShowType>(
-                              value: t,
-                              child: Text(t.label),
-                            ),
-                          )
-                          .toList(),
-                      onChanged: (CountdownShowType? value) =>
-                          setState(() => showType = value ?? showType),
+                    child: InputDecorator(
+                      decoration: InputDecoration(
+                        labelText: l10n.countdownShowTypeField,
+                        isDense: true,
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<CountdownShowType>(
+                          value: showType,
+                          icon: const Icon(LucideIcons.chevronDown, size: 16),
+                          isExpanded: true,
+                          items: CountdownShowType.values
+                              .map(
+                                (CountdownShowType t) =>
+                                    DropdownMenuItem<CountdownShowType>(
+                                      value: t,
+                                      child: Text(t.localizedLabel(l10n)),
+                                    ),
+                              )
+                              .toList(),
+                          onChanged: (CountdownShowType? value) =>
+                              setState(() => showType = value ?? showType),
+                        ),
+                      ),
                     ),
                   ),
                 ],
@@ -197,7 +219,7 @@ final class CountdownPage extends ConsumerWidget {
                   if (picked != null) setState(() => date = DateKey(picked));
                 },
                 icon: const Icon(LucideIcons.calendarClock, size: 16),
-                label: Text(date.cnFull),
+                label: Text(l10n.countdownTargetDateValue(date.fullDate(l10n))),
               ),
             ],
           ),
@@ -205,13 +227,14 @@ final class CountdownPage extends ConsumerWidget {
       ),
     );
     if (confirmed != true || titleController.text.trim().isEmpty) return;
-    await ref.read(countdownControllerProvider.notifier).create(
+    await ref
+        .read(countdownControllerProvider.notifier)
+        .create(
           title: titleController.text.trim(),
           targetDate: date,
           type: type,
           showType: showType,
-          birthYear:
-              type == CountdownType.birthday ? date.year - 1 : null,
+          birthYear: type == CountdownType.birthday ? date.year - 1 : null,
         );
     titleController.dispose();
   }

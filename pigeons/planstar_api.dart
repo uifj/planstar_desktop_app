@@ -1,8 +1,7 @@
 /// Planstar cross-engine communication contract (Pigeon).
 ///
-/// This file replaces the hand-written MethodChannel/EventChannel layer. Every
-/// method, argument and return value is type-checked at compile time, removing
-/// string method names, dynamic Map decoding and null-cast risks.
+/// HostApi and FlutterApi methods expose typed DataHub, desktop overlay and
+/// macOS login-item operations without runtime method-name or Map decoding.
 ///
 /// IMPORTANT: keep this file ASCII-only. Pigeon copies doc comments verbatim
 /// into the generated C++ header, and MSVC's default code page cannot parse
@@ -135,7 +134,7 @@ abstract class DataHubHostApi {
   DataHubSnapshotDto clear();
 }
 
-/// Native -> Dart change feed (replaces the old EventChannel).
+/// Native -> Dart change feed emitted after successful mutations.
 ///
 /// The native side calls onDataChanged after a successful write; the Dart
 /// implementation forwards it to the CrossEngineSync stream.
@@ -146,13 +145,13 @@ abstract class DataHubEventsFlutterApi {
 
 // -- Desktop layer ---------------------------------------------------------
 
-/// Windows desktop-layer capability (Dart -> native).
+/// Desktop overlay capability (Dart -> native).
 ///
 /// Registered per engine: the main window and every desktop_multi_window child
 /// have their own native window, so the widget configures its own window only.
 @HostApi()
 abstract class DesktopWallpaperHostApi {
-  /// Turn this window into a transparent, bottom-most overlay covering the
+  /// Turn this window into a transparent desktop-layer overlay covering the
   /// entire virtual screen.
   bool configureOverlay(bool enable);
 

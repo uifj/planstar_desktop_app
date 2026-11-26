@@ -5,21 +5,21 @@ import 'package:core_design_system/core_design_system.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
+import '../../../../l10n/l10n.dart';
 import '../../../settings/application/settings_controller.dart';
 import '../../../settings/domain/app_settings.dart';
 import '../../application/calendar_controllers.dart';
 
 final class CalendarTitleBar extends ConsumerWidget {
-  const CalendarTitleBar({
-    super.key,
-    required this.onNewEvent,
-  });
+  const CalendarTitleBar({super.key, required this.onNewEvent});
 
   final VoidCallback onNewEvent;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
     final colors = context.appColors;
     final anchor = ref.watch(monthNavigationProvider);
     final settings = ref.watch(settingsControllerProvider);
@@ -36,7 +36,7 @@ final class CalendarTitleBar extends ConsumerWidget {
       child: Row(
         children: <Widget>[
           Text(
-            '${anchor.year} 年 ${anchor.month} 月',
+            DateFormat.yMMMM(l10n.localeName).format(anchor),
             style: TextStyle(
               fontSize: AppTypography.title,
               fontWeight: AppTypography.bold,
@@ -45,16 +45,16 @@ final class CalendarTitleBar extends ConsumerWidget {
           ),
           const SizedBox(width: AppSpacing.md),
           IconButton(
-            tooltip: '上一页',
+            tooltip: l10n.calendarPreviousMonth,
             icon: const Icon(LucideIcons.chevronLeft),
             onPressed: navigation.previous,
           ),
           OutlinedButton(
             onPressed: navigation.today,
-            child: const Text('今天'),
+            child: Text(l10n.commonToday),
           ),
           IconButton(
-            tooltip: '下一页',
+            tooltip: l10n.calendarNextMonth,
             icon: const Icon(LucideIcons.chevronRight),
             onPressed: navigation.next,
           ),
@@ -68,18 +68,18 @@ final class CalendarTitleBar extends ConsumerWidget {
               underline: const SizedBox.shrink(),
               items: CalendarDisplayMode.values
                   .map(
-                    (CalendarDisplayMode mode) => DropdownMenuItem<
-                        CalendarDisplayMode>(
-                      value: mode,
-                      child: Text(mode.label),
-                    ),
+                    (CalendarDisplayMode mode) =>
+                        DropdownMenuItem<CalendarDisplayMode>(
+                          value: mode,
+                          child: Text(mode.localizedLabel(l10n)),
+                        ),
                   )
                   .toList(),
               onChanged: (CalendarDisplayMode? value) {
                 if (value == null) return;
-                ref.read(settingsControllerProvider.notifier).update(
-                      (AppSettings s) => s.copyWith(displayMode: value),
-                    );
+                ref
+                    .read(settingsControllerProvider.notifier)
+                    .update((AppSettings s) => s.copyWith(displayMode: value));
               },
             ),
           ),
@@ -87,7 +87,7 @@ final class CalendarTitleBar extends ConsumerWidget {
           FilledButton.icon(
             onPressed: onNewEvent,
             icon: const Icon(LucideIcons.plus, size: 16),
-            label: const Text('新建任务'),
+            label: Text(l10n.calendarNewTask),
           ),
         ],
       ),

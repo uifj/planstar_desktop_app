@@ -30,36 +30,35 @@ final class Account extends Entity<String> {
     bool? autoLogin,
     bool? readOnly,
     bool? teamAccount,
-  }) =>
-      Account(
-        id: id,
-        email: email ?? this.email,
-        displayName: displayName ?? this.displayName,
-        isVip: isVip ?? this.isVip,
-        autoLogin: autoLogin ?? this.autoLogin,
-        readOnly: readOnly ?? this.readOnly,
-        teamAccount: teamAccount ?? this.teamAccount,
-      );
+  }) => Account(
+    id: id,
+    email: email ?? this.email,
+    displayName: displayName ?? this.displayName,
+    isVip: isVip ?? this.isVip,
+    autoLogin: autoLogin ?? this.autoLogin,
+    readOnly: readOnly ?? this.readOnly,
+    teamAccount: teamAccount ?? this.teamAccount,
+  );
 
   Map<String, Object?> toJson() => <String, Object?>{
-        'id': id,
-        'email': email,
-        'displayName': displayName,
-        'isVip': isVip,
-        'autoLogin': autoLogin,
-        'readOnly': readOnly,
-        'teamAccount': teamAccount,
-      };
+    'id': id,
+    'email': email,
+    'displayName': displayName,
+    'isVip': isVip,
+    'autoLogin': autoLogin,
+    'readOnly': readOnly,
+    'teamAccount': teamAccount,
+  };
 
   factory Account.fromJson(Map<String, Object?> json) => Account(
-        id: json['id'] as String? ?? '',
-        email: json['email'] as String? ?? '',
-        displayName: json['displayName'] as String? ?? '',
-        isVip: json['isVip'] as bool? ?? false,
-        autoLogin: json['autoLogin'] as bool? ?? false,
-        readOnly: json['readOnly'] as bool? ?? false,
-        teamAccount: json['teamAccount'] as bool? ?? false,
-      );
+    id: json['id'] as String? ?? '',
+    email: json['email'] as String? ?? '',
+    displayName: json['displayName'] as String? ?? '',
+    isVip: json['isVip'] as bool? ?? false,
+    autoLogin: json['autoLogin'] as bool? ?? false,
+    readOnly: json['readOnly'] as bool? ?? false,
+    teamAccount: json['teamAccount'] as bool? ?? false,
+  );
 
   static const Account anonymous = Account(
     id: '',
@@ -101,17 +100,16 @@ final class SyncState {
     bool? autoSync,
     String? message,
     bool clearMessage = false,
-  }) =>
-      SyncState(
-        account: account ?? this.account,
-        status: status ?? this.status,
-        lastSyncAt: lastSyncAt ?? this.lastSyncAt,
-        uploaded: uploaded ?? this.uploaded,
-        downloaded: downloaded ?? this.downloaded,
-        dirtyCount: dirtyCount ?? this.dirtyCount,
-        autoSync: autoSync ?? this.autoSync,
-        message: clearMessage ? null : (message ?? this.message),
-      );
+  }) => SyncState(
+    account: account ?? this.account,
+    status: status ?? this.status,
+    lastSyncAt: lastSyncAt ?? this.lastSyncAt,
+    uploaded: uploaded ?? this.uploaded,
+    downloaded: downloaded ?? this.downloaded,
+    dirtyCount: dirtyCount ?? this.dirtyCount,
+    autoSync: autoSync ?? this.autoSync,
+    message: clearMessage ? null : (message ?? this.message),
+  );
 
   static const SyncState initial = SyncState(account: Account.anonymous);
 }

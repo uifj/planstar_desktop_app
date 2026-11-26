@@ -4,8 +4,10 @@ library;
 import 'package:core_design_system/core_design_system.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 import '../../../../core/value_objects.dart';
+import '../../../../l10n/l10n.dart';
 import '../../../../shared/widgets/common.dart';
 import '../../domain/calendar_event.dart';
 import '../../domain/recurrence.dart';
@@ -38,15 +40,14 @@ Future<EventEditorResult?> showEventEditorDialog(
   CalendarEvent? event,
   DateKey? initialDate,
   String initialContent = '',
-}) async =>
-    showDialog<EventEditorResult>(
-      context: context,
-      builder: (BuildContext context) => EventEditorDialog(
-        event: event,
-        initialDate: initialDate,
-        initialContent: initialContent,
-      ),
-    );
+}) async => showDialog<EventEditorResult>(
+  context: context,
+  builder: (BuildContext context) => EventEditorDialog(
+    event: event,
+    initialDate: initialDate,
+    initialContent: initialContent,
+  ),
+);
 
 final class EventEditorDialog extends StatefulWidget {
   const EventEditorDialog({
@@ -82,9 +83,8 @@ final class _EventEditorDialogState extends State<EventEditorDialog> {
     _contentController = TextEditingController(
       text: event?.content ?? widget.initialContent,
     );
-    _startDate = event?.startDate ??
-        widget.initialDate ??
-        DateKey.today(DateTime.now());
+    _startDate =
+        event?.startDate ?? widget.initialDate ?? DateKey.today(DateTime.now());
     _type = event?.type ?? CalendarEventType.task;
     _color = event?.color ?? EventColor.defaultText;
     _backgroundColor = event?.backgroundColor ?? EventColor.transparent;
@@ -105,18 +105,18 @@ final class _EventEditorDialogState extends State<EventEditorDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return AppDialogFrame(
-      title: widget.event == null ? '新建任务 / 提醒' : '编辑任务 / 提醒',
+      title: widget.event == null
+          ? l10n.calendarNewTaskOrReminder
+          : l10n.calendarEditTaskOrReminder,
       width: 620,
       actions: <Widget>[
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
-          child: const Text('取消'),
+          child: Text(l10n.commonCancel),
         ),
-        FilledButton(
-          onPressed: _submit,
-          child: const Text('保存'),
-        ),
+        FilledButton(onPressed: _submit, child: Text(l10n.commonSave)),
       ],
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -125,10 +125,10 @@ final class _EventEditorDialogState extends State<EventEditorDialog> {
           TextField(
             controller: _contentController,
             autofocus: true,
-            decoration: const InputDecoration(
-              labelText: '内容',
-              hintText: '输入任务或提醒内容',
-              border: OutlineInputBorder(),
+            decoration: InputDecoration(
+              labelText: l10n.calendarContentLabel,
+              hintText: l10n.calendarContentHint,
+              border: const OutlineInputBorder(),
             ),
           ),
           const SizedBox(height: AppSpacing.md),
@@ -138,14 +138,16 @@ final class _EventEditorDialogState extends State<EventEditorDialog> {
                 child: DropdownButtonFormField<CalendarEventType>(
                   initialValue: _type,
                   icon: const Icon(LucideIcons.chevronDown, size: 16),
-                  decoration: const InputDecoration(labelText: '类型'),
+                  decoration: InputDecoration(
+                    labelText: l10n.calendarTypeLabel,
+                  ),
                   items: CalendarEventType.values
                       .map(
-                        (CalendarEventType t) => DropdownMenuItem<
-                            CalendarEventType>(
-                          value: t,
-                          child: Text(t.label),
-                        ),
+                        (CalendarEventType t) =>
+                            DropdownMenuItem<CalendarEventType>(
+                              value: t,
+                              child: Text(t.localizedLabel(l10n)),
+                            ),
                       )
                       .toList(),
                   onChanged: (CalendarEventType? value) =>
@@ -157,13 +159,13 @@ final class _EventEditorDialogState extends State<EventEditorDialog> {
                 child: OutlinedButton.icon(
                   onPressed: _pickDate,
                   icon: const Icon(LucideIcons.calendarClock, size: 16),
-                  label: Text(_startDate.cnFull),
+                  label: Text(_startDate.fullDate(l10n)),
                 ),
               ),
             ],
           ),
           const SizedBox(height: AppSpacing.md),
-          Text('重复规则', style: _label(context)),
+          Text(l10n.calendarRecurrenceRule, style: _label(context)),
           Wrap(
             spacing: AppSpacing.xs,
             children: <Widget>[
@@ -178,7 +180,7 @@ final class _EventEditorDialogState extends State<EventEditorDialog> {
                       .map(
                         (RecurrenceKind k) => DropdownMenuItem<RecurrenceKind>(
                           value: k,
-                          child: Text(k.label),
+                          child: Text(k.localizedLabel(l10n)),
                         ),
                       )
                       .toList(),
@@ -191,7 +193,9 @@ final class _EventEditorDialogState extends State<EventEditorDialog> {
                 width: 120,
                 child: TextFormField(
                   initialValue: _recurrence.interval.toString(),
-                  decoration: const InputDecoration(labelText: '间隔'),
+                  decoration: InputDecoration(
+                    labelText: l10n.calendarIntervalLabel,
+                  ),
                   keyboardType: TextInputType.number,
                   onChanged: (String value) => setState(
                     () => _recurrence = _recurrence.copyWith(
@@ -208,7 +212,7 @@ final class _EventEditorDialogState extends State<EventEditorDialog> {
             children: <Widget>[
               for (var day = 1; day <= 7; day++)
                 FilterChip(
-                  label: Text('周${CalendarMathShort.label(day)}'),
+                  label: Text(weekdayShort(day, l10n)),
                   selected: _recurrence.weekdays.contains(day),
                   onSelected: (bool selected) => setState(() {
                     final days = List<int>.of(_recurrence.weekdays);
@@ -223,18 +227,21 @@ final class _EventEditorDialogState extends State<EventEditorDialog> {
             ],
           ),
           const SizedBox(height: AppSpacing.md),
-          Text('提醒', style: _label(context)),
+          Text(l10n.calendarReminderLabel, style: _label(context)),
           Row(
             children: <Widget>[
               Switch(
                 value: _hasReminder,
-                onChanged: (bool value) =>
-                    setState(() => _hasReminder = value),
+                onChanged: (bool value) => setState(() => _hasReminder = value),
               ),
               const SizedBox(width: AppSpacing.xs),
               OutlinedButton(
                 onPressed: _hasReminder ? _pickTime : null,
-                child: Text(_reminder.timeLabel),
+                child: Text(
+                  DateFormat.Hm(l10n.localeName).format(
+                    DateTime(2020, 1, 1, _reminder.hour, _reminder.minute),
+                  ),
+                ),
               ),
             ],
           ),
@@ -245,8 +252,10 @@ final class _EventEditorDialogState extends State<EventEditorDialog> {
                 FilterChip(
                   label: Text(
                     advance == 0
-                        ? '当天'
-                        : (advance == -1 ? '自定义' : '$advance 天前'),
+                        ? l10n.calendarReminderSameDay
+                        : (advance == -1
+                              ? l10n.calendarReminderCustom
+                              : l10n.calendarReminderDaysBefore(advance)),
                   ),
                   selected: _reminder.advanceDays.contains(advance),
                   onSelected: (bool selected) => setState(() {
@@ -267,40 +276,49 @@ final class _EventEditorDialogState extends State<EventEditorDialog> {
                   ),
                 ),
               ),
-              const Text('微信通知'),
+              Text(l10n.calendarWechatNotification),
             ],
           ),
           const SizedBox(height: AppSpacing.md),
-          Text('颜色', style: _label(context)),
+          Text(l10n.calendarColorLabel, style: _label(context)),
           Row(
             children: <Widget>[
-              const Text('文字颜色'),
+              Text(l10n.calendarTextColor),
               const SizedBox(width: AppSpacing.sm),
-              OutlinedButton(
-                onPressed: () async {
-                  final picked = await showColorPickerDialog(
-                    context,
-                    selected: _color,
-                  );
-                  if (picked != null) setState(() => _color = picked);
-                },
-                child: Icon(LucideIcons.palette,
-                    size: 16, color: _color.toColor()),
+              Tooltip(
+                message: l10n.calendarTextColor,
+                child: OutlinedButton(
+                  onPressed: () async {
+                    final picked = await showColorPickerDialog(
+                      context,
+                      selected: _color,
+                    );
+                    if (picked != null) setState(() => _color = picked);
+                  },
+                  child: Icon(
+                    LucideIcons.palette,
+                    size: 16,
+                    color: _color.toColor(),
+                  ),
+                ),
               ),
               const SizedBox(width: AppSpacing.md),
-              const Text('单元格颜色'),
+              Text(l10n.calendarCellColor),
               const SizedBox(width: AppSpacing.sm),
-              OutlinedButton(
-                onPressed: () async {
-                  final picked = await showColorPickerDialog(
-                    context,
-                    selected: _backgroundColor,
-                  );
-                  if (picked != null) {
-                    setState(() => _backgroundColor = picked);
-                  }
-                },
-                child: const Icon(LucideIcons.paintBucket, size: 16),
+              Tooltip(
+                message: l10n.calendarCellColor,
+                child: OutlinedButton(
+                  onPressed: () async {
+                    final picked = await showColorPickerDialog(
+                      context,
+                      selected: _backgroundColor,
+                    );
+                    if (picked != null) {
+                      setState(() => _backgroundColor = picked);
+                    }
+                  },
+                  child: const Icon(LucideIcons.paintBucket, size: 16),
+                ),
               ),
             ],
           ),
@@ -310,9 +328,9 @@ final class _EventEditorDialogState extends State<EventEditorDialog> {
   }
 
   TextStyle _label(BuildContext context) => TextStyle(
-        fontSize: AppTypography.caption,
-        color: context.appColors.textTertiary,
-      );
+    fontSize: AppTypography.caption,
+    color: context.appColors.textTertiary,
+  );
 
   Future<void> _pickDate() async {
     final picked = await showDatePicker(
@@ -357,17 +375,4 @@ final class _EventEditorDialogState extends State<EventEditorDialog> {
       ),
     );
   }
-}
-
-/// 只用于星期文案的小工具，避免对话框再引入整份日历数学。
-abstract final class CalendarMathShort {
-  static String label(int weekday) => const <String>[
-        '一',
-        '二',
-        '三',
-        '四',
-        '五',
-        '六',
-        '日',
-      ][weekday - 1];
 }
