@@ -968,4 +968,88 @@ EncodableValue DesktopWallpaperHostApi::WrapError(const FlutterError& error) {
   });
 }
 
+/// The codec used by LaunchAtStartupHostApi.
+const flutter::StandardMessageCodec& LaunchAtStartupHostApi::GetCodec() {
+  return flutter::StandardMessageCodec::GetInstance(&PigeonInternalCodecSerializer::GetInstance());
+}
+
+// Sets up an instance of `LaunchAtStartupHostApi` to handle messages through the `binary_messenger`.
+void LaunchAtStartupHostApi::SetUp(
+  flutter::BinaryMessenger* binary_messenger,
+  LaunchAtStartupHostApi* api) {
+  LaunchAtStartupHostApi::SetUp(binary_messenger, api, "");
+}
+
+void LaunchAtStartupHostApi::SetUp(
+  flutter::BinaryMessenger* binary_messenger,
+  LaunchAtStartupHostApi* api,
+  const std::string& message_channel_suffix) {
+  const std::string prepended_suffix = message_channel_suffix.length() > 0 ? std::string(".") + message_channel_suffix : "";
+  {
+    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.planstar_desktop_app.LaunchAtStartupHostApi.isEnabled" + prepended_suffix, &GetCodec());
+    if (api != nullptr) {
+      channel.SetMessageHandler([api](const EncodableValue& message, const flutter::MessageReply<EncodableValue>& reply) {
+        try {
+          ErrorOr<bool> output = api->IsEnabled();
+          if (output.has_error()) {
+            reply(WrapError(output.error()));
+            return;
+          }
+          EncodableList wrapped;
+          wrapped.push_back(EncodableValue(std::move(output).TakeValue()));
+          reply(EncodableValue(std::move(wrapped)));
+        } catch (const std::exception& exception) {
+          reply(WrapError(exception.what()));
+        }
+      });
+    } else {
+      channel.SetMessageHandler(nullptr);
+    }
+  }
+  {
+    BasicMessageChannel<> channel(binary_messenger, "dev.flutter.pigeon.planstar_desktop_app.LaunchAtStartupHostApi.setEnabled" + prepended_suffix, &GetCodec());
+    if (api != nullptr) {
+      channel.SetMessageHandler([api](const EncodableValue& message, const flutter::MessageReply<EncodableValue>& reply) {
+        try {
+          const auto& args = std::get<EncodableList>(message);
+          const auto& encodable_enabled_arg = args.at(0);
+          if (encodable_enabled_arg.IsNull()) {
+            reply(WrapError("enabled_arg unexpectedly null."));
+            return;
+          }
+          const auto& enabled_arg = std::get<bool>(encodable_enabled_arg);
+          std::optional<FlutterError> output = api->SetEnabled(enabled_arg);
+          if (output.has_value()) {
+            reply(WrapError(output.value()));
+            return;
+          }
+          EncodableList wrapped;
+          wrapped.push_back(EncodableValue());
+          reply(EncodableValue(std::move(wrapped)));
+        } catch (const std::exception& exception) {
+          reply(WrapError(exception.what()));
+        }
+      });
+    } else {
+      channel.SetMessageHandler(nullptr);
+    }
+  }
+}
+
+EncodableValue LaunchAtStartupHostApi::WrapError(std::string_view error_message) {
+  return EncodableValue(EncodableList{
+    EncodableValue(std::string(error_message)),
+    EncodableValue("Error"),
+    EncodableValue()
+  });
+}
+
+EncodableValue LaunchAtStartupHostApi::WrapError(const FlutterError& error) {
+  return EncodableValue(EncodableList{
+    EncodableValue(error.code()),
+    EncodableValue(error.message()),
+    error.details()
+  });
+}
+
 }  // namespace planstar::pigeon

@@ -19,6 +19,7 @@ import 'package:window_manager/window_manager.dart';
 
 import '../core/ports.dart';
 import 'desktop_platform_config.dart';
+import 'pigeon/planstar_api.g.dart';
 
 /// [WindowGateway] 的 window_manager 实现。
 final class WindowManagerGateway with WindowListener implements WindowGateway {
@@ -373,25 +374,34 @@ final class DesktopMultiWindowGateway implements MultiWindowGateway {
   }
 }
 
-/// [AutoStartGateway] 的 launch_at_startup 实现。
+/// [AutoStartGateway] 的桌面端实现。
+///
+/// macOS 使用 Pigeon 类型化桥；Windows/Linux 继续使用 launch_at_startup 包。
 final class LaunchAtStartupGateway implements AutoStartGateway {
-  bool _setup = false;
+  LaunchAtStartupGateway({BinaryMessenger? binaryMessenger})
+    : _hostApi = LaunchAtStartupHostApi(binaryMessenger: binaryMessenger);
 
-  void _ensureSetup() {
-    if (_setup || kIsWeb) return;
-    if (!Platform.isWindows && !Platform.isLinux && !Platform.isMacOS) return;
+  final LaunchAtStartupHostApi _hostApi;
+  bool _packageSetup = false;
+
+  bool get _supported =>
+      !kIsWeb && (Platform.isWindows || Platform.isLinux || Platform.isMacOS);
+
+  void _ensurePackageSetup() {
+    if (_packageSetup || !_supported || Platform.isMacOS) return;
     launchAtStartup.setup(
       appName: '企划星桌面日历清单',
       appPath: Platform.resolvedExecutable,
     );
-    _setup = true;
+    _packageSetup = true;
   }
 
   @override
   Future<bool> isEnabled() async {
-    _ensureSetup();
-    if (!_setup) return false;
+    if (!_supported) return false;
     try {
+      if (Platform.isMacOS) return await _hostApi.isEnabled();
+      _ensurePackageSetup();
       return await launchAtStartup.isEnabled();
     } catch (_) {
       return false;
@@ -400,16 +410,20 @@ final class LaunchAtStartupGateway implements AutoStartGateway {
 
   @override
   Future<void> setEnabled(bool enabled) async {
-    _ensureSetup();
-    if (!_setup) return;
+    if (!_supported) return;
     try {
-      if (enabled) {
-        await launchAtStartup.enable();
+      if (Platform.isMacOS) {
+        await _hostApi.setEnabled(enabled);
       } else {
-        await launchAtStartup.disable();
+        _ensurePackageSetup();
+        if (enabled) {
+          await launchAtStartup.enable();
+        } else {
+          await launchAtStartup.disable();
+        }
       }
     } catch (_) {
-      // 注册表被安全软件拦截时保持本地设置，不中断用户操作。
+      // 系统安全策略拦截时保持本地设置，不中断用户操作。
     }
   }
 }

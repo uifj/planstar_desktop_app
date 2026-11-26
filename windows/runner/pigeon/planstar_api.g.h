@@ -51,6 +51,7 @@ template<class T> class ErrorOr {
   friend class DataHubHostApi;
   friend class DataHubEventsFlutterApi;
   friend class DesktopWallpaperHostApi;
+  friend class LaunchAtStartupHostApi;
   ErrorOr() = default;
   T TakeValue() && { return std::get<T>(std::move(v_)); }
 
@@ -96,6 +97,7 @@ class CardRectDto {
   friend class DataHubHostApi;
   friend class DataHubEventsFlutterApi;
   friend class DesktopWallpaperHostApi;
+  friend class LaunchAtStartupHostApi;
   friend class PigeonInternalCodecSerializer;
   double x_;
   double y_;
@@ -135,6 +137,7 @@ class WindowRectDto {
   friend class DataHubHostApi;
   friend class DataHubEventsFlutterApi;
   friend class DesktopWallpaperHostApi;
+  friend class LaunchAtStartupHostApi;
   friend class PigeonInternalCodecSerializer;
   double x_;
   double y_;
@@ -173,6 +176,7 @@ class DesktopMetricsDto {
   friend class DataHubHostApi;
   friend class DataHubEventsFlutterApi;
   friend class DesktopWallpaperHostApi;
+  friend class LaunchAtStartupHostApi;
   friend class PigeonInternalCodecSerializer;
   int64_t x_;
   int64_t y_;
@@ -203,6 +207,7 @@ class DataHubEntryDto {
   friend class DataHubHostApi;
   friend class DataHubEventsFlutterApi;
   friend class DesktopWallpaperHostApi;
+  friend class LaunchAtStartupHostApi;
   friend class PigeonInternalCodecSerializer;
   std::string key_;
   std::string value_;
@@ -231,6 +236,7 @@ class DataHubSnapshotDto {
   friend class DataHubHostApi;
   friend class DataHubEventsFlutterApi;
   friend class DesktopWallpaperHostApi;
+  friend class LaunchAtStartupHostApi;
   friend class PigeonInternalCodecSerializer;
   int64_t revision_;
   flutter::EncodableList entries_;
@@ -279,6 +285,7 @@ class DataChangeDto {
   friend class DataHubHostApi;
   friend class DataHubEventsFlutterApi;
   friend class DesktopWallpaperHostApi;
+  friend class LaunchAtStartupHostApi;
   friend class PigeonInternalCodecSerializer;
   std::string key_;
   int64_t revision_;
@@ -421,6 +428,37 @@ class DesktopWallpaperHostApi {
   static flutter::EncodableValue WrapError(const FlutterError& error);
  protected:
   DesktopWallpaperHostApi() = default;
+};
+// macOS login-item capability (Dart -> native).
+//
+// Windows and Linux keep the launch_at_startup package channel. macOS uses
+// this typed API because the package has no native macOS implementation.
+//
+// Generated interface from Pigeon that represents a handler of messages from Flutter.
+class LaunchAtStartupHostApi {
+ public:
+  LaunchAtStartupHostApi(const LaunchAtStartupHostApi&) = delete;
+  LaunchAtStartupHostApi& operator=(const LaunchAtStartupHostApi&) = delete;
+  virtual ~LaunchAtStartupHostApi() {}
+  // Whether the main app is currently enabled as a login item.
+  virtual ErrorOr<bool> IsEnabled() = 0;
+  // Enable or disable the main app login item.
+  virtual std::optional<FlutterError> SetEnabled(bool enabled) = 0;
+
+  // The codec used by LaunchAtStartupHostApi.
+  static const flutter::StandardMessageCodec& GetCodec();
+  // Sets up an instance of `LaunchAtStartupHostApi` to handle messages through the `binary_messenger`.
+  static void SetUp(
+    flutter::BinaryMessenger* binary_messenger,
+    LaunchAtStartupHostApi* api);
+  static void SetUp(
+    flutter::BinaryMessenger* binary_messenger,
+    LaunchAtStartupHostApi* api,
+    const std::string& message_channel_suffix);
+  static flutter::EncodableValue WrapError(std::string_view error_message);
+  static flutter::EncodableValue WrapError(const FlutterError& error);
+ protected:
+  LaunchAtStartupHostApi() = default;
 };
 }  // namespace planstar::pigeon
 #endif  // PIGEON_PLANSTAR_API_G_H_

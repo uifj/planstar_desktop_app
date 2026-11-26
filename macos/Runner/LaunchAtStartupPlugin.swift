@@ -95,37 +95,28 @@ struct SystemLoginItemService: MacLoginItemService {
   }
 }
 
-final class MacLaunchAtStartupPlugin: NSObject {
-  private let channel: FlutterMethodChannel
+final class MacLaunchAtStartupPlugin: NSObject, LaunchAtStartupHostApi {
   private let service: MacLoginItemService
 
   init(messenger: FlutterBinaryMessenger, service: MacLoginItemService = SystemLoginItemService()) {
-    channel = FlutterMethodChannel(name: "launch_at_startup", binaryMessenger: messenger)
     self.service = service
     super.init()
-    channel.setMethodCallHandler { [weak self] call, result in
-      self?.handle(call, result: result)
-    }
+    LaunchAtStartupHostApiSetup.setUp(binaryMessenger: messenger, api: self)
   }
 
-  private func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
-    switch call.method {
-    case "launchAtStartupIsEnabled":
-      result(service.isEnabled)
-    case "launchAtStartupSetEnabled":
-      guard let arguments = call.arguments as? [String: Any],
-            let enabled = arguments["setEnabledValue"] as? Bool else {
-        result(FlutterError(code: "invalidArguments", message: "setEnabledValue 必须是布尔值", details: nil))
-        return
-      }
-      do {
-        try service.setEnabled(enabled)
-        result(nil)
-      } catch {
-        result(FlutterError(code: "loginItemFailed", message: error.localizedDescription, details: nil))
-      }
-    default:
-      result(FlutterMethodNotImplemented)
+  func isEnabled() throws -> Bool {
+    service.isEnabled
+  }
+
+  func setEnabled(enabled: Bool) throws {
+    do {
+      try service.setEnabled(enabled)
+    } catch {
+      throw PigeonError(
+        code: "loginItemFailed",
+        message: error.localizedDescription,
+        details: nil
+      )
     }
   }
 }

@@ -181,3 +181,18 @@ abstract class DesktopWallpaperHostApi {
   /// Virtual screen pixel metrics.
   DesktopMetricsDto desktopMetrics();
 }
+
+// -- Login item ------------------------------------------------------------
+
+/// macOS login-item capability (Dart -> native).
+///
+/// Windows and Linux keep the launch_at_startup package channel. macOS uses
+/// this typed API because the package has no native macOS implementation.
+@HostApi()
+abstract class LaunchAtStartupHostApi {
+  /// Whether the main app is currently enabled as a login item.
+  bool isEnabled();
+
+  /// Enable or disable the main app login item.
+  void setEnabled(bool enabled);
+}

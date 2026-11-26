@@ -743,3 +743,54 @@ class DesktopWallpaperHostApiSetup {
     }
   }
 }
+/// macOS login-item capability (Dart -> native).
+///
+/// Windows and Linux keep the launch_at_startup package channel. macOS uses
+/// this typed API because the package has no native macOS implementation.
+///
+/// Generated protocol from Pigeon that represents a handler of messages from Flutter.
+protocol LaunchAtStartupHostApi {
+  /// Whether the main app is currently enabled as a login item.
+  func isEnabled() throws -> Bool
+  /// Enable or disable the main app login item.
+  func setEnabled(enabled: Bool) throws
+}
+
+/// Generated setup class from Pigeon to handle messages through the `binaryMessenger`.
+class LaunchAtStartupHostApiSetup {
+  static var codec: FlutterStandardMessageCodec { PlanstarApiPigeonCodec.shared }
+  /// Sets up an instance of `LaunchAtStartupHostApi` to handle messages through the `binaryMessenger`.
+  static func setUp(binaryMessenger: FlutterBinaryMessenger, api: LaunchAtStartupHostApi?, messageChannelSuffix: String = "") {
+    let channelSuffix = messageChannelSuffix.count > 0 ? ".\(messageChannelSuffix)" : ""
+    /// Whether the main app is currently enabled as a login item.
+    let isEnabledChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.planstar_desktop_app.LaunchAtStartupHostApi.isEnabled\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      isEnabledChannel.setMessageHandler { _, reply in
+        do {
+          let result = try api.isEnabled()
+          reply(wrapResult(result))
+        } catch {
+          reply(wrapError(error))
+        }
+      }
+    } else {
+      isEnabledChannel.setMessageHandler(nil)
+    }
+    /// Enable or disable the main app login item.
+    let setEnabledChannel = FlutterBasicMessageChannel(name: "dev.flutter.pigeon.planstar_desktop_app.LaunchAtStartupHostApi.setEnabled\(channelSuffix)", binaryMessenger: binaryMessenger, codec: codec)
+    if let api = api {
+      setEnabledChannel.setMessageHandler { message, reply in
+        let args = message as! [Any?]
+        let enabledArg = args[0] as! Bool
+        do {
+          try api.setEnabled(enabled: enabledArg)
+          reply(wrapResult(nil))
+        } catch {
+          reply(wrapError(error))
+        }
+      }
+    } else {
+      setEnabledChannel.setMessageHandler(nil)
+    }
+  }
+}

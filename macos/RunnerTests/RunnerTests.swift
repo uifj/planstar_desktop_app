@@ -324,6 +324,50 @@ final class RunnerTests: XCTestCase {
     XCTAssertTrue(failingModern.isEnabled)
   }
 
+  func testLaunchAtStartupPigeonPluginRegistersTypedChannels() throws {
+    let messenger = RecordingBinaryMessenger()
+    let service = RecordingLoginItemService()
+    let plugin = MacLaunchAtStartupPlugin(messenger: messenger, service: service)
+    let codec = LaunchAtStartupHostApiSetup.codec
+    let statusName =
+      "dev.flutter.pigeon.planstar_desktop_app.LaunchAtStartupHostApi.isEnabled"
+    let setName =
+      "dev.flutter.pigeon.planstar_desktop_app.LaunchAtStartupHostApi.setEnabled"
+    let statusHandler = try XCTUnwrap(messenger.handlers[statusName])
+    let setHandler = try XCTUnwrap(messenger.handlers[setName])
+
+    try withExtendedLifetime(plugin) {
+      var statusReply: Data?
+      statusHandler(nil) { statusReply = $0 }
+      let statusEnvelope = try XCTUnwrap(
+        codec.decode(try XCTUnwrap(statusReply)) as? [Any?]
+      )
+      XCTAssertEqual(statusEnvelope.count, 1)
+      XCTAssertEqual(statusEnvelope[0] as? Bool, false)
+
+      var successReply: Data?
+      setHandler(try codec.encode([true])) { successReply = $0 }
+      let successEnvelope = try XCTUnwrap(
+        codec.decode(try XCTUnwrap(successReply)) as? [Any?]
+      )
+      XCTAssertEqual(successEnvelope.count, 1)
+      XCTAssertTrue(successEnvelope[0] is NSNull)
+      XCTAssertEqual(service.values, [true])
+      XCTAssertTrue(service.isEnabled)
+
+      service.failure = NSError(domain: "PlanstarLoginItemTest", code: 1)
+      var failureReply: Data?
+      setHandler(try codec.encode([false])) { failureReply = $0 }
+      let failureEnvelope = try XCTUnwrap(
+        codec.decode(try XCTUnwrap(failureReply)) as? [Any?]
+      )
+      XCTAssertEqual(failureEnvelope.count, 3)
+      XCTAssertEqual(failureEnvelope[0] as? String, "loginItemFailed")
+      XCTAssertEqual(service.values, [true, false])
+      XCTAssertTrue(service.isEnabled)
+    }
+  }
+
   private func entries(_ snapshot: DataHubSnapshotDto) -> [String: String] {
     Dictionary(uniqueKeysWithValues: snapshot.entries.map { ($0.key, $0.value) })
   }
@@ -332,4 +376,44 @@ final class RunnerTests: XCTestCase {
     guard let superview = view.superview else { return nil }
     return view.hitTest(view.convert(localPoint, to: superview))
   }
+}
+
+private final class RecordingLoginItemService: MacLoginItemService {
+  var isEnabled = false
+  var values: [Bool] = []
+  var failure: Error?
+
+  func setEnabled(_ enabled: Bool) throws {
+    values.append(enabled)
+    if let failure {
+      throw failure
+    }
+    isEnabled = enabled
+  }
+}
+
+private final class RecordingBinaryMessenger: NSObject, FlutterBinaryMessenger {
+  private(set) var handlers: [String: FlutterBinaryMessageHandler] = [:]
+  private var nextConnection: Int64 = 1
+
+  func send(onChannel channel: String, message: Data?) {}
+
+  func send(
+    onChannel channel: String,
+    message: Data?,
+    binaryReply callback: ((Data?) -> Void)?
+  ) {
+    callback?(nil)
+  }
+
+  func setMessageHandlerOnChannel(
+    _ channel: String,
+    binaryMessageHandler handler: FlutterBinaryMessageHandler?
+  ) -> Int64 {
+    handlers[channel] = handler
+    defer { nextConnection += 1 }
+    return nextConnection
+  }
+
+  func cleanUpConnection(_ connection: Int64) {}
 }
