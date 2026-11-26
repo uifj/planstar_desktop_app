@@ -11,6 +11,7 @@
 `tray_manager` / `launch_at_startup` / `audioplayers` / `file_picker` /
 `shared_preferences` / `flutter_secure_storage` / `path_provider` / `lunar` /
 `lucide_icons_flutter`（全项目图标统一使用 Lucide，不再使用 Material Icons）；
+DataHub、桌面覆盖层与 macOS 登录项使用 Pigeon 类型化原生桥；
 字体统一为 `assets/fonts` 中的 ChillRoundGothic。
 
 ---
