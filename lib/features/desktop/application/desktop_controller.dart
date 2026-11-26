@@ -38,14 +38,13 @@ final class DesktopState {
     bool? widgetActive,
     bool? wallpaperApplied,
     String? wallpaperPath,
-  }) =>
-      DesktopState(
-        message: message ?? this.message,
-        visible: visible ?? this.visible,
-        widgetActive: widgetActive ?? this.widgetActive,
-        wallpaperApplied: wallpaperApplied ?? this.wallpaperApplied,
-        wallpaperPath: wallpaperPath ?? this.wallpaperPath,
-      );
+  }) => DesktopState(
+    message: message ?? this.message,
+    visible: visible ?? this.visible,
+    widgetActive: widgetActive ?? this.widgetActive,
+    wallpaperApplied: wallpaperApplied ?? this.wallpaperApplied,
+    wallpaperPath: wallpaperPath ?? this.wallpaperPath,
+  );
 }
 
 final desktopControllerProvider =
@@ -71,23 +70,26 @@ final class DesktopController extends Notifier<DesktopState> {
     // 必须回写 visible，否则托盘 toggle 的第一次点击方向是反的。
     ref.read(windowGatewayProvider).onCloseIntercepted = markHidden;
     _traySubscription = ref.read(trayActionsProvider).listen(_onTrayAction);
-    _hotkeySubscription = ref.read(hotkeyActionsProvider).listen(_onHotkeyAction);
-    _cancelSettingsChanged =
-        ref.read(domainEventBusProvider).on<SettingsChanged>(_onSettingsChanged);
-    ref.listen<AppSettings>(
-      settingsControllerProvider,
-      (AppSettings? previous, AppSettings next) {
-        if (previous != next) applySettings();
-      },
-    );
-    ref.listen<MonthData>(
-      monthDataProvider,
-      (MonthData? previous, MonthData next) {
-        if (ref.read(settingsControllerProvider).wallpaperAutoRender) {
-          _scheduleRefresh();
-        }
-      },
-    );
+    _hotkeySubscription = ref
+        .read(hotkeyActionsProvider)
+        .listen(_onHotkeyAction);
+    _cancelSettingsChanged = ref
+        .read(domainEventBusProvider)
+        .on<SettingsChanged>(_onSettingsChanged);
+    ref.listen<AppSettings>(settingsControllerProvider, (
+      AppSettings? previous,
+      AppSettings next,
+    ) {
+      if (previous != next) applySettings();
+    });
+    ref.listen<MonthData>(monthDataProvider, (
+      MonthData? previous,
+      MonthData next,
+    ) {
+      if (ref.read(settingsControllerProvider).wallpaperAutoRender) {
+        _scheduleRefresh();
+      }
+    });
     _windowCommands = ref
         .read(multiWindowGatewayProvider)
         .incoming
@@ -126,16 +128,15 @@ final class DesktopController extends Notifier<DesktopState> {
       await restoreSystemWallpaper();
     }
 
-    final signature = '${settings.wallpaperAutoRender}|'
+    final signature =
+        '${settings.wallpaperAutoRender}|'
         '${settings.wallpaperIntervalMinutes}';
     if (signature != _appliedSignature) {
       _appliedSignature = signature;
       _wallpaperTimer?.cancel();
       if (settings.wallpaperAutoRender) {
         _wallpaperTimer = Timer.periodic(
-          Duration(
-            minutes: settings.wallpaperIntervalMinutes.clamp(1, 720),
-          ),
+          Duration(minutes: settings.wallpaperIntervalMinutes.clamp(1, 720)),
           (_) => _refreshWallpaper(),
         );
         _scheduleRefresh();
@@ -164,19 +165,13 @@ final class DesktopController extends Notifier<DesktopState> {
             }
           }
           if (shown) {
-            state = state.copyWith(
-              widgetActive: true,
-              message: '桌面可编辑月历已显示',
-            );
+            state = state.copyWith(widgetActive: true, message: '桌面可编辑月历已显示');
             return;
           }
         }
         final id = await multiWindow.openDesktopWidget();
         _widgetWindowIds.add(id);
-        state = state.copyWith(
-          widgetActive: true,
-          message: '桌面可编辑月历已显示',
-        );
+        state = state.copyWith(widgetActive: true, message: '桌面可编辑月历已显示');
       } catch (error) {
         state = state.copyWith(
           widgetActive: false,
@@ -191,10 +186,7 @@ final class DesktopController extends Notifier<DesktopState> {
       await multiWindow.closeWindow(id);
     }
     // 保留 id，下次显示时复用同一个 engine。
-    state = state.copyWith(
-      widgetActive: false,
-      message: '桌面可编辑月历已隐藏',
-    );
+    state = state.copyWith(widgetActive: false, message: '桌面可编辑月历已隐藏');
   }
 
   void _scheduleRefresh() {
@@ -208,7 +200,9 @@ final class DesktopController extends Notifier<DesktopState> {
   Future<void> _refreshWallpaper() async {
     final settings = ref.read(settingsControllerProvider);
     if (!settings.wallpaperAutoRender) return;
-    final result = await ref.read(wallpaperServiceProvider).refresh(
+    final result = await ref
+        .read(wallpaperServiceProvider)
+        .refresh(
           month: ref.read(monthDataProvider),
           settings: settings,
           today: DateKey.today(ref.read(clockProvider).now()),
@@ -241,9 +235,9 @@ final class DesktopController extends Notifier<DesktopState> {
   /// 托盘右键的一键显示 / 隐藏：改写设置项后由 applySettings 驱动窗口显隐。
   Future<void> setDesktopWidgetEnabled(bool enabled) async {
     final current = ref.read(settingsControllerProvider).desktopWidgetEnabled;
-    await ref.read(settingsControllerProvider.notifier).update(
-          (AppSettings s) => s.copyWith(desktopWidgetEnabled: enabled),
-        );
+    await ref
+        .read(settingsControllerProvider.notifier)
+        .update((AppSettings s) => s.copyWith(desktopWidgetEnabled: enabled));
     // 值相同的时候 update 会短路、不触发 applySettings；但窗口可能已被
     // 子窗口的「收起桌面组件」按钮隐藏，此时必须主动补偿一次同步，
     // 否则托盘「显示桌面日历窗口」点了没反应。

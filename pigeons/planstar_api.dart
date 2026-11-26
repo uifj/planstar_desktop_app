@@ -18,6 +18,7 @@
     cppHeaderOut: 'windows/runner/pigeon/planstar_api.g.h',
     cppSourceOut: 'windows/runner/pigeon/planstar_api.g.cpp',
     cppOptions: CppOptions(namespace: 'planstar::pigeon'),
+    swiftOut: 'macos/Runner/Pigeon/planstar_api.g.swift',
     dartPackageName: 'planstar_desktop_app',
   ),
 )

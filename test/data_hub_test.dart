@@ -1,9 +1,11 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:planstar_desktop_app/core/ports.dart';
 import 'package:planstar_desktop_app/infrastructure/data_hub.dart';
+import 'package:planstar_desktop_app/infrastructure/pigeon/planstar_api.g.dart';
 
 void main() {
   late Directory temp;
@@ -31,14 +33,81 @@ void main() {
     });
 
     test('空 key 表示全量重载', () {
-      expect(const DataChange(key: '', revision: 1, origin: '').isFullReload,
-          isTrue);
       expect(
-        const DataChange(key: 'planstar.notes.v1', revision: 1, origin: 'a')
-            .isFullReload,
+        const DataChange(key: '', revision: 1, origin: '').isFullReload,
+        isTrue,
+      );
+      expect(
+        const DataChange(
+          key: 'planstar.notes.v1',
+          revision: 1,
+          origin: 'a',
+        ).isFullReload,
         isFalse,
       );
     });
+  });
+
+  group('DataHubStore 原生 DataHub', () {
+    for (final platform in [TargetPlatform.macOS, TargetPlatform.windows]) {
+      test('$platform：其他 engine 的 clear 广播会清空本地快照', () async {
+        final previousPlatform = debugDefaultTargetPlatformOverride;
+        debugDefaultTargetPlatformOverride = platform;
+        addTearDown(
+          () => debugDefaultTargetPlatformOverride = previousPlatform,
+        );
+        TestWidgetsFlutterBinding.ensureInitialized();
+        final messenger =
+            TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+        const hostPrefix =
+            'dev.flutter.pigeon.planstar_desktop_app.DataHubHostApi';
+        const eventName =
+            'dev.flutter.pigeon.planstar_desktop_app.DataHubEventsFlutterApi.onDataChanged';
+        final codec = DataHubHostApi.pigeonChannelCodec;
+        final initial = DataHubSnapshotDto(
+          revision: 1,
+          entries: [
+            DataHubEntryDto(key: 'engine.a', value: 'a1'),
+            DataHubEntryDto(key: 'engine.b', value: 'b1'),
+          ],
+        );
+        final hostMethods = <String>['configure'];
+        addTearDown(() {
+          for (final method in hostMethods) {
+            messenger.setMockMessageHandler('$hostPrefix.$method', null);
+          }
+        });
+        messenger.setMockMessageHandler(
+          '$hostPrefix.configure',
+          (_) async => codec.encodeMessage([initial]),
+        );
+
+        final hub = await DataHubStore.create(supportDirectory: temp.path);
+        addTearDown(hub.dispose);
+        expect(await hub.keys(), <String>{'engine.a', 'engine.b'});
+
+        final changeFuture = hub.changes.first.timeout(
+          const Duration(seconds: 3),
+        );
+        await messenger.handlePlatformMessage(
+          eventName,
+          codec.encodeMessage([
+            DataChangeDto(
+              key: '',
+              revision: 2,
+              origin: 'other-engine',
+              deleted: true,
+            ),
+          ]),
+          (_) {},
+        );
+
+        final change = await changeFuture;
+        expect(change.isFullReload, isTrue);
+        expect(change.revision, 2);
+        expect(await hub.keys(), isEmpty);
+      });
+    }
   });
 
   group('DataHubStore 本地降级实现', () {
@@ -74,7 +143,8 @@ void main() {
       final file = File('${temp.path}/$dataHubFileName');
       expect(await file.exists(), isTrue);
       expect(await File('${file.path}.tmp').exists(), isFalse);
-      final decoded = jsonDecode(await file.readAsString()) as Map<String, Object?>;
+      final decoded =
+          jsonDecode(await file.readAsString()) as Map<String, Object?>;
       expect(decoded['revision'], isA<int>());
       final entries = (decoded['entries'] as Map).cast<String, Object?>();
       expect(entries['planstar.calendar.cells.v1'], '中文"引号"与\n换行');
@@ -142,6 +212,37 @@ void main() {
 
       await hub.reload();
       expect(await hub.read('planstar.calendar.cells.v1'), 'refreshed');
+    });
+
+    test('两个实例并发写入不会用旧快照覆盖彼此的键', () async {
+      final first = await DataHubStore.create(
+        forceLocal: true,
+        supportDirectory: temp.path,
+      );
+      final second = await DataHubStore.create(
+        forceLocal: true,
+        supportDirectory: temp.path,
+      );
+      addTearDown(first.dispose);
+      addTearDown(second.dispose);
+
+      await Future.wait<void>(<Future<void>>[
+        first.write('engine.a', 'a1'),
+        second.write('engine.b', 'b1'),
+      ]);
+      await Future.wait<void>(<Future<void>>[
+        second.write('engine.a', 'a2'),
+        first.write('engine.b', 'b2'),
+      ]);
+
+      final decoded =
+          jsonDecode(await File('${temp.path}/$dataHubFileName').readAsString())
+              as Map<String, Object?>;
+      expect(decoded['entries'], <String, String>{
+        'engine.a': 'a2',
+        'engine.b': 'b2',
+      });
+      expect(decoded['revision'], greaterThanOrEqualTo(4));
     });
   });
 }

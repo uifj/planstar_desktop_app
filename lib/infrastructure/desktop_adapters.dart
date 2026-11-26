@@ -18,11 +18,10 @@ import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
 
 import '../core/ports.dart';
+import 'desktop_platform_config.dart';
 
 /// [WindowGateway] 的 window_manager 实现。
-final class WindowManagerGateway
-    with WindowListener
-    implements WindowGateway {
+final class WindowManagerGateway with WindowListener implements WindowGateway {
   WindowManagerGateway({required this.logger});
 
   final AppLogger logger;
@@ -68,34 +67,31 @@ final class WindowManagerGateway
   Future<void> initializeSubWindow(String title, WindowRect rect) async {
     await ensureInitialized();
     if (!_ready) return;
-    unawaited(windowManager.waitUntilReadyToShow(
-      WindowOptions(
-        size: Size(rect.width, rect.height),
-        minimumSize: const Size(280, 260),
-        title: title,
-        titleBarStyle: TitleBarStyle.hidden,
-        skipTaskbar: true,
+    unawaited(
+      windowManager.waitUntilReadyToShow(
+        WindowOptions(
+          size: Size(rect.width, rect.height),
+          minimumSize: const Size(280, 260),
+          title: title,
+          titleBarStyle: TitleBarStyle.hidden,
+          skipTaskbar: true,
+        ),
+        () async {
+          await windowManager.setBounds(
+            Rect.fromLTWH(rect.x, rect.y, rect.width, rect.height),
+          );
+          await windowManager.show();
+          await windowManager.focus();
+        },
       ),
-      () async {
-        await windowManager.setBounds(
-          Rect.fromLTWH(rect.x, rect.y, rect.width, rect.height),
-        );
-        await windowManager.show();
-        await windowManager.focus();
-      },
-    ));
+    );
   }
 
   @override
   Future<WindowRect> bounds() async {
     if (!_ready) return const WindowRect(100, 100, 1320, 860);
     final rect = await windowManager.getBounds();
-    return WindowRect(
-      rect.left,
-      rect.top,
-      rect.width,
-      rect.height,
-    );
+    return WindowRect(rect.left, rect.top, rect.width, rect.height);
   }
 
   @override
@@ -200,7 +196,7 @@ final class TrayManagerGateway implements TrayGateway {
     // Windows 原生层用 LoadImage(IMAGE_ICON, LR_LOADFROMFILE) 加载图标，
     // 只能识别 .ico；传 PNG 会得到 NULL HICON，托盘图标和右键菜单都不出现。
     try {
-      await trayManager.setIcon('assets/app_icons/tray_icon.ico');
+      await trayManager.setIcon(desktopTrayIconAsset(defaultTargetPlatform));
     } catch (error) {
       logger?.warn('设置托盘图标失败', error: error);
     }
@@ -211,10 +207,10 @@ final class TrayManagerGateway implements TrayGateway {
     }
 
     MenuItem item(TrayAction action, String label) => MenuItem(
-          key: action.name,
-          label: label,
-          onClick: (MenuItem _) => onAction(action),
-        );
+      key: action.name,
+      label: label,
+      onClick: (MenuItem _) => onAction(action),
+    );
     // 菜单注册独立于图标：即使图标能力降级，右键菜单仍应可用。
     try {
       await trayManager.setContextMenu(
@@ -299,26 +295,25 @@ final class DesktopMultiWindowGateway implements MultiWindowGateway {
   }
 
   @override
-  Future<String> openNoteWindow(String noteId, {WindowRect? rect}) =>
-      _create(
-        kind: 'note',
-        noteId: noteId,
-        rect: rect ?? const WindowRect(180, 160, 360, 420),
-      );
+  Future<String> openNoteWindow(String noteId, {WindowRect? rect}) => _create(
+    kind: 'note',
+    noteId: noteId,
+    rect: rect ?? const WindowRect(180, 160, 360, 420),
+  );
 
   @override
   Future<String> openCountdownWindow({WindowRect? rect}) => _create(
-        kind: 'countdown',
-        noteId: '',
-        rect: rect ?? const WindowRect(220, 200, 320, 220),
-      );
+    kind: 'countdown',
+    noteId: '',
+    rect: rect ?? const WindowRect(220, 200, 320, 220),
+  );
 
   @override
   Future<String> openDesktopWidget() => _create(
-        kind: 'desktop',
-        noteId: '',
-        rect: const WindowRect(0, 0, 1920, 1080),
-      );
+    kind: 'desktop',
+    noteId: '',
+    rect: const WindowRect(0, 0, 1920, 1080),
+  );
 
   @override
   Future<void> hideCurrentWindow() async {
@@ -343,7 +338,10 @@ final class DesktopMultiWindowGateway implements MultiWindowGateway {
     final controller = await WindowController.create(
       WindowConfiguration(arguments: arguments, hiddenAtLaunch: true),
     );
-    await controller.show();
+    if (kind != 'desktop' ||
+        desktopWindowShownAfterCreate(defaultTargetPlatform)) {
+      await controller.show();
+    }
     return controller.windowId;
   }
 
@@ -447,17 +445,19 @@ final class ScreenRetrieverGateway implements ScreenGateway {
 
   Future<List<ScreenDisplay>> _displays() async {
     final displays = await screenRetriever.getAllDisplays();
-    return displays.map((Display d) {
-      final size = d.visibleSize ?? d.size;
-      final position = d.visiblePosition;
-      return ScreenDisplay(
-        id: d.id,
-        x: position?.dx ?? 0,
-        y: position?.dy ?? 0,
-        width: size.width,
-        height: size.height,
-      );
-    }).toList(growable: false);
+    return displays
+        .map((Display d) {
+          final size = d.visibleSize ?? d.size;
+          final position = d.visiblePosition;
+          return ScreenDisplay(
+            id: d.id,
+            x: position?.dx ?? 0,
+            y: position?.dy ?? 0,
+            width: size.width,
+            height: size.height,
+          );
+        })
+        .toList(growable: false);
   }
 
   @override

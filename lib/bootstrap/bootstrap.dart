@@ -20,6 +20,7 @@ import '../features/reminder/infrastructure/local_notification_gateway.dart';
 import '../infrastructure/app_updater_gateway.dart';
 import '../infrastructure/data_hub.dart';
 import '../infrastructure/desktop_adapters.dart';
+import '../infrastructure/desktop_platform_config.dart';
 import '../infrastructure/desktop_wallpaper_gateway.dart';
 import '../infrastructure/file_gateway.dart';
 import '../infrastructure/storage_adapters.dart';
@@ -40,13 +41,13 @@ final class AppBootstrap {
       level: AppLogger.defaultLevelFor(isReleaseMode: kReleaseMode),
     );
     const clock = SystemClock();
-    final isDesktop = !kIsWeb &&
+    final isDesktop =
+        !kIsWeb &&
         (defaultTargetPlatform == TargetPlatform.windows ||
             defaultTargetPlatform == TargetPlatform.linux ||
             defaultTargetPlatform == TargetPlatform.macOS);
     final isSubWindow = args.length >= 3 && args.first == 'multi_window';
-    final forceDesktopEmbedding =
-        args.contains('--planstar-embed-desktop');
+    final forceDesktopEmbedding = args.contains('--planstar-embed-desktop');
 
     // 单一真相源：所有 engine 通过原生 DataHub 串行读写，类型化回调广播。
     // 不再使用 SharedPreferences —— 它的 Windows 实现每个 isolate 各缓存一份，
@@ -69,8 +70,8 @@ final class AppBootstrap {
     );
 
     final dio = buildDio(
-      baseUrl: config.getString('apiBaseUrl') ??
-          'https://api.planstar.local/v1/',
+      baseUrl:
+          config.getString('apiBaseUrl') ?? 'https://api.planstar.local/v1/',
       enableLogging: false,
     );
     dio.interceptors.add(
@@ -86,28 +87,33 @@ final class AppBootstrap {
     final notificationGateway = FlutterLocalNotificationsGateway(
       logger: logger.child('notify'),
       clock: clock,
-      locationName: config.section('calendar').getString('timezone') ??
-          'Asia/Shanghai',
+      locationName:
+          config.section('calendar').getString('timezone') ?? 'Asia/Shanghai',
     );
     // 仅主窗口需要通知。子窗口（便签 / 倒数日 / 桌面小组件）跳过插件初始化，
     // 省掉每个 engine 重复注册通知回调的启动开销；与窗口、托盘初始化并行。
-    final notificationReady =
-        isSubWindow ? Future<void>.value() : notificationGateway.initialize();
+    final notificationReady = isSubWindow
+        ? Future<void>.value()
+        : notificationGateway.initialize();
 
     final windowGateway = WindowManagerGateway(logger: logger.child('window'));
     final trayGateway = TrayManagerGateway(logger: logger.child('tray'));
-    final multiWindowGateway =
-        DesktopMultiWindowGateway(logger: logger.child('multiwindow'));
+    final multiWindowGateway = DesktopMultiWindowGateway(
+      logger: logger.child('multiwindow'),
+    );
     final autoStartGateway = LaunchAtStartupGateway();
     final appUpdaterGateway = AutoUpdaterGateway();
-    final soundGateway =
-        AudioPlayersSoundGateway(logger: logger.child('sound'));
+    final soundGateway = AudioPlayersSoundGateway(
+      logger: logger.child('sound'),
+    );
     final fileGateway = DesktopFileGateway();
     final desktopWallpaperGateway = PigeonDesktopWallpaperGateway(
       logger: logger.child('wallpaper'),
     );
     final wallpaperImageGateway = LocalWallpaperImageGateway();
-    final screenGateway = ScreenRetrieverGateway(logger: logger.child('screen'));
+    final screenGateway = ScreenRetrieverGateway(
+      logger: logger.child('screen'),
+    );
     final hotkeyGateway = HotkeyManagerGateway(logger: logger.child('hotkey'));
     final trayActions = StreamController<TrayAction>.broadcast();
     final hotkeyActions = StreamController<HotkeyAction>.broadcast();
@@ -124,11 +130,14 @@ final class AppBootstrap {
         }
         // 桌面小组件的窗口由原生 overlay 自己接管（全虚拟屏 / 透明 / 最底），
         // 不能再让 window_manager 去设标题栏与固定尺寸。
-        if (subWindowArguments['kind'] != 'desktop') {
+        if (subWindowArguments['kind'] == 'desktop') {
+          if (defaultTargetPlatform == TargetPlatform.macOS) {
+            await desktopWallpaperGateway.configureOverlay(enable: true);
+          }
+        } else {
           final rect = WindowRect.fromJson(
             Map<String, Object?>.from(
-              (subWindowArguments['rect'] as Map?) ??
-                  const <String, Object?>{},
+              (subWindowArguments['rect'] as Map?) ?? const <String, Object?>{},
             ),
           );
           await windowGateway.initializeSubWindow(
@@ -149,7 +158,7 @@ final class AppBootstrap {
     if (!isSubWindow) {
       await appUpdaterGateway.configure(
         '${config.getString('apiBaseUrl') ?? 'https://api.planstar.local/v1/'}'
-        'update/appcast.xml?platform=windows&channel=stable',
+        'update/appcast.xml?platform=${desktopUpdatePlatform(defaultTargetPlatform)}&channel=stable',
       );
     }
 
@@ -175,12 +184,8 @@ final class AppBootstrap {
         desktopWallpaperGateway,
       ),
       screenGatewayProvider.overrideWithValue(screenGateway),
-      wallpaperImageGatewayProvider.overrideWithValue(
-        wallpaperImageGateway,
-      ),
-      desktopEmbeddedOverrideProvider.overrideWithValue(
-        forceDesktopEmbedding,
-      ),
+      wallpaperImageGatewayProvider.overrideWithValue(wallpaperImageGateway),
+      desktopEmbeddedOverrideProvider.overrideWithValue(forceDesktopEmbedding),
       trayActionsProvider.overrideWithValue(trayActions.stream),
       hotkeyGatewayProvider.overrideWithValue(hotkeyGateway),
       hotkeyActionsProvider.overrideWithValue(hotkeyActions.stream),

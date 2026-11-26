@@ -10,8 +10,8 @@
 /// 的增量。本类同时实现 `KeyValueStore` / `StorageReloader` / `CrossEngineSync`
 /// 三个端口，领域层与各 controller 无需改动。
 ///
-/// 非 Windows 或原生插件缺失时自动降级为 [_LocalBackend]（原子写 + 轮询），
-/// 保证 Linux / macOS / Web / 单元测试可运行。
+/// Windows 与 macOS 使用同进程原生 DataHub；其他平台或原生通道缺失时
+/// 自动降级为 [_LocalBackend]（独占文件锁 + 原子写 + revision 轮询）。
 library;
 
 import 'dart:async';
@@ -25,6 +25,7 @@ import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../core/ports.dart';
+import 'desktop_platform_config.dart';
 import 'pigeon/planstar_api.g.dart';
 
 const String dataHubFileName = 'planstar_data_hub.json';
@@ -62,9 +63,10 @@ final class DataHubStore
     bool forceLocal = false,
     String? supportDirectory,
   }) async {
-    final useNative = !forceLocal &&
+    final useNative =
+        !forceLocal &&
         !kIsWeb &&
-        defaultTargetPlatform == TargetPlatform.windows;
+        desktopUsesNativeDataHub(defaultTargetPlatform);
     if (useNative) {
       try {
         final backend = _NativeBackend(supportDirectory: supportDirectory);
@@ -131,8 +133,8 @@ final class _NativeBackend implements _Backend, DataHubEventsFlutterApi {
   Future<void> initialize() async {
     _origin =
         '${DateTime.now().microsecondsSinceEpoch}-${Random().nextInt(1 << 31)}';
-    final root = supportDirectory ??
-        (await getApplicationSupportDirectory()).path;
+    final root =
+        supportDirectory ?? (await getApplicationSupportDirectory()).path;
     final entries = await _loadInitialEntries(root);
     // 先挂上原生 → Dart 的回调，避免 configure 期间的广播丢失。
     DataHubEventsFlutterApi.setUp(this);
@@ -140,8 +142,10 @@ final class _NativeBackend implements _Backend, DataHubEventsFlutterApi {
       final configured = await _api.configure(
         '$root/$dataHubFileName',
         entries.entries
-            .map((MapEntry<String, String> e) =>
-                DataHubEntryDto(key: e.key, value: e.value))
+            .map(
+              (MapEntry<String, String> e) =>
+                  DataHubEntryDto(key: e.key, value: e.value),
+            )
             .toList(growable: false),
       );
       _adoptSnapshot(configured);
@@ -190,7 +194,11 @@ final class _NativeBackend implements _Backend, DataHubEventsFlutterApi {
     // 必须放在应用 value 之前：自己的写入已由 _applyOk 乐观更新。
     if (origin.isNotEmpty && origin == _origin) return;
     if (deleted) {
-      _entries.remove(key);
+      if (key.isEmpty) {
+        _entries.clear();
+      } else {
+        _entries.remove(key);
+      }
     } else if (value != null) {
       _entries[key] = value;
     }
@@ -241,9 +249,7 @@ final class _NativeBackend implements _Backend, DataHubEventsFlutterApi {
     try {
       return await action();
     } on PlatformException catch (error) {
-      throw StateError(
-        'DataHub $label 失败：${error.message ?? error.code}',
-      );
+      throw StateError('DataHub $label 失败：${error.message ?? error.code}');
     }
   }
 
@@ -272,7 +278,7 @@ final class _NativeBackend implements _Backend, DataHubEventsFlutterApi {
   }
 }
 
-/// 非 Windows / 原生通道缺失：纯 Dart 原子写 + revision 轮询降级。
+/// 非 Windows / 原生通道缺失：跨进程文件锁 + 原子写 + revision 轮询降级。
 final class _LocalBackend implements _Backend {
   _LocalBackend({this.supportDirectory});
 
@@ -282,7 +288,6 @@ final class _LocalBackend implements _Backend {
   final Map<String, String> _entries = <String, String>{};
 
   late File _file;
-  int _revision = 0;
   int _seenRevision = 0;
   Timer? _timer;
   Future<void> _queue = Future<void>.value();
@@ -297,21 +302,11 @@ final class _LocalBackend implements _Backend {
         supportDirectory ?? (await getApplicationSupportDirectory()).path;
     _file = File('$root/$dataHubFileName');
     final entries = await _loadInitialEntries(root);
-    _entries.addAll(entries);
-    // revision 必须续用文件里的值：每个 engine / 每次进程启动都从 0 开始
-    // 会让其它 engine 把本窗口的写入当成旧变更而永久忽略。
-    if (await _file.exists()) {
-      try {
-        final decoded = jsonDecode(await _file.readAsString());
-        if (decoded is Map) {
-          _revision = (decoded['revision'] as num?)?.toInt() ?? 0;
-          _seenRevision = _revision;
-        }
-      } on Object {
-        // 文件损坏时按 0 重新开始，迁移/原子写会重建。
+    await _mutate((Map<String, String> current, int revision) {
+      for (final entry in entries.entries) {
+        current.putIfAbsent(entry.key, () => entry.value);
       }
-    }
-    await _persist(null, null);
+    });
     _timer = Timer.periodic(
       const Duration(milliseconds: 300),
       (_) => unawaited(_poll()),
@@ -331,14 +326,11 @@ final class _LocalBackend implements _Backend {
       final raw = decoded['entries'];
       if (raw is! Map) return;
       final next = raw.map(
-        (Object? k, Object? v) =>
-            MapEntry<String, String>('$k', '$v'),
+        (Object? k, Object? v) => MapEntry<String, String>('$k', '$v'),
       );
       final changedKeys = <String>{
         ..._entries.keys.where((String k) => !next.containsKey(k)),
-        ...next.keys.where(
-          (String k) => _entries[k] != next[k],
-        ),
+        ...next.keys.where((String k) => _entries[k] != next[k]),
       };
       _entries
         ..clear()
@@ -360,38 +352,98 @@ final class _LocalBackend implements _Backend {
     }
   }
 
-  Future<void> _persist(String? key, String? value) async {
-    _revision++;
-    final tmp = File('${_file.path}.tmp');
-    await tmp.writeAsString(
-      jsonEncode(<String, Object?>{
-        'revision': _revision,
-        'entries': _entries,
-      }),
-      flush: true,
-    );
-    await tmp.rename(_file.path);
+  Future<File> _acquireLock() async {
+    final lock = File('${_file.path}.lock');
+    final deadline = DateTime.now().add(const Duration(seconds: 10));
+    while (true) {
+      try {
+        await lock.create(exclusive: true);
+        return lock;
+      } on FileSystemException {
+        if (await lock.exists()) {
+          try {
+            final modified = (await lock.stat()).modified;
+            if (DateTime.now().difference(modified) >
+                const Duration(seconds: 30)) {
+              await lock.delete();
+              continue;
+            }
+          } on FileSystemException {
+            // 另一个 writer 可能刚释放锁，下一轮重新尝试。
+          }
+        }
+        if (DateTime.now().isAfter(deadline)) {
+          throw StateError('DataHub 文件锁等待超时');
+        }
+        await Future<void>.delayed(const Duration(milliseconds: 5));
+      }
+    }
+  }
+
+  Future<void> _mutate(
+    void Function(Map<String, String> entries, int revision) mutation,
+  ) async {
+    final lock = await _acquireLock();
+    try {
+      var diskEntries = <String, String>{};
+      var diskRevision = 0;
+      if (await _file.exists()) {
+        try {
+          final decoded = jsonDecode(await _file.readAsString());
+          if (decoded is Map && decoded['entries'] is Map) {
+            diskEntries = (decoded['entries'] as Map).map(
+              (Object? k, Object? v) => MapEntry<String, String>('$k', '$v'),
+            );
+            diskRevision = (decoded['revision'] as num?)?.toInt() ?? 0;
+          }
+        } on Object {
+          // 损坏文件由本次原子写重建，不复用另一个 engine 的内存快照。
+        }
+      }
+      final revision = diskRevision + 1;
+      mutation(diskEntries, revision);
+      final tmp = File(
+        '${_file.path}.$pid.${DateTime.now().microsecondsSinceEpoch}.tmp',
+      );
+      try {
+        await tmp.writeAsString(
+          jsonEncode(<String, Object?>{
+            'revision': revision,
+            'entries': diskEntries,
+          }),
+          flush: true,
+        );
+        await tmp.rename(_file.path);
+      } finally {
+        if (await tmp.exists()) await tmp.delete();
+      }
+      _entries
+        ..clear()
+        ..addAll(diskEntries);
+      _seenRevision = revision;
+    } finally {
+      if (await lock.exists()) await lock.delete();
+    }
   }
 
   Future<void> _enqueue(String? key, String? value, bool deleted) =>
-      _queue = _queue.then((_) async {
-        if (deleted) {
-          _entries.remove(key);
-        } else if (key != null && value != null) {
-          _entries[key] = value;
-        } else {
-          _entries.clear();
-        }
-        await _persist(key, value);
-        _seenRevision = _revision;
-      });
+      _queue = _queue.then(
+        (_) => _mutate((entries, revision) {
+          if (deleted) {
+            entries.remove(key);
+          } else if (key != null && value != null) {
+            entries[key] = value;
+          } else {
+            entries.clear();
+          }
+        }),
+      );
 
   @override
   Future<String?> read(String key) async => _entries[key];
 
   @override
-  Future<void> write(String key, String value) =>
-      _enqueue(key, value, false);
+  Future<void> write(String key, String value) => _enqueue(key, value, false);
 
   @override
   Future<void> delete(String key) => _enqueue(key, null, true);
@@ -422,8 +474,7 @@ Future<Map<String, String>> _loadInitialEntries(String dir) async {
       final decoded = jsonDecode(await hub.readAsString());
       if (decoded is Map && decoded['entries'] is Map) {
         return (decoded['entries'] as Map).map(
-          (Object? k, Object? v) =>
-              MapEntry<String, String>('$k', '$v'),
+          (Object? k, Object? v) => MapEntry<String, String>('$k', '$v'),
         );
       }
     } on Object {
