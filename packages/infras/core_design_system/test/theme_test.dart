@@ -54,14 +54,30 @@ void main() {
       expect(AppTheme.light().dividerTheme.thickness, 0.5);
     });
 
+    test('按钮最小尺寸不使用无限宽度', () {
+      for (final theme in [AppTheme.light(), AppTheme.dark()]) {
+        final sizes = [
+          theme.filledButtonTheme.style?.minimumSize?.resolve({}),
+          theme.outlinedButtonTheme.style?.minimumSize?.resolve({}),
+        ];
+        for (final size in sizes) {
+          expect(size, isNotNull);
+          expect(size!.width.isFinite, isTrue);
+          expect(size.height, 44);
+        }
+      }
+    });
+
     test('全局字体族来自排版令牌，并覆盖所有 TextTheme 条目', () {
       final theme = AppTheme.light();
       expect(AppTypography.fontFamily, 'ChillRoundGothic');
       expect(theme.textTheme.bodyMedium?.fontFamily, AppTypography.fontFamily);
       expect(theme.textTheme.titleMedium?.fontFamily, AppTypography.fontFamily);
       expect(theme.textTheme.labelSmall?.fontFamily, AppTypography.fontFamily);
-      expect(AppTheme.dark().textTheme.bodySmall?.fontFamily,
-          AppTypography.fontFamily);
+      expect(
+        AppTheme.dark().textTheme.bodySmall?.fontFamily,
+        AppTypography.fontFamily,
+      );
     });
   });
 
@@ -114,5 +130,25 @@ void main() {
       ),
     );
     expect(resolved.price, AppColors.light.price);
+  });
+
+  testWidgets('按钮可在横向无界约束下布局', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light(),
+        home: const Scaffold(
+          body: Row(
+            children: <Widget>[
+              OutlinedButton(onPressed: null, child: Text('今天')),
+              FilledButton(onPressed: null, child: Text('新建任务')),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    expect(tester.takeException(), isNull);
+    expect(tester.getSize(find.text('今天')).width.isFinite, isTrue);
+    expect(tester.getSize(find.text('新建任务')).width.isFinite, isTrue);
   });
 }
