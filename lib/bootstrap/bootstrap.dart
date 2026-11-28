@@ -17,6 +17,9 @@ import 'package:intl/date_symbol_data_local.dart';
 
 import '../app/planstar_app.dart';
 import '../core/ports.dart';
+import '../features/auth/application/auth_providers.dart';
+import '../features/auth/network/planstar_network_interceptor.dart';
+import '../features/auth/network/planstar_request_context.dart';
 import '../features/reminder/infrastructure/local_notification_gateway.dart';
 import '../features/settings/infrastructure/settings_repository.dart';
 import '../infrastructure/app_updater_gateway.dart';
@@ -87,6 +90,22 @@ final class AppBootstrap {
       RetryInterceptor(dio: dio, maxRetries: 2, logger: logger.child('net')),
     );
     final apiClient = ApiClient(dio);
+    final planstarConfig = config.section('planstar');
+    final planstarContext = PlanstarRequestContext();
+    final planstarVersion = planstarConfig.getString('appVersion') ?? '1.0.0';
+    final planstarChannel = planstarConfig.getString('channel') ?? 'desktop';
+    final planstarDio = buildDio(
+      baseUrl:
+          planstarConfig.getString('baseUrl') ?? 'https://api.planstar.top/',
+      enableLogging: false,
+    );
+    planstarDio.interceptors.add(
+      PlanstarNetworkInterceptor(
+        context: planstarContext,
+        userAgent: 'PlanstarDesktop/$planstarVersion ($planstarChannel)',
+      ),
+    );
+    final planstarApiClient = ApiClient(planstarDio);
     final eventBus = DomainEventBus(
       onHandlerError: (Object error, StackTrace stack, DomainEvent event) {
         logger.error('领域事件处理失败：$event', error: error, stackTrace: stack);
@@ -208,6 +227,8 @@ final class AppBootstrap {
       loggerProvider.overrideWithValue(logger),
       configLoaderProvider.overrideWithValue(configLoader),
       apiClientProvider.overrideWithValue(apiClient),
+      planstarApiClientProvider.overrideWithValue(planstarApiClient),
+      planstarRequestContextProvider.overrideWithValue(planstarContext),
       domainEventBusProvider.overrideWithValue(eventBus),
       notificationGatewayProvider.overrideWithValue(notificationGateway),
       windowGatewayProvider.overrideWithValue(windowGateway),

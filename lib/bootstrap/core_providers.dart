@@ -27,7 +27,7 @@ final idGeneratorProvider = Provider<IdGenerator>(
   (Ref ref) => TimestampIdGenerator(),
 );
 
-/// 普通 KV 存储（由 SharedPreferences 适配）。
+/// 普通 KV 存储（由跨 engine 的 DataHub 适配）。
 final keyValueStoreProvider = Provider<KeyValueStore>(
   (Ref ref) => throw UnimplementedError('keyValueStoreProvider 未注入'),
 );

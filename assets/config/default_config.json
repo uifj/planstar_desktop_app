@@ -1,6 +1,12 @@
 {
   "appName": "企划星 · 桌面日历清单",
   "apiBaseUrl": "https://api.planstar.local/v1/",
+  "planstar": {
+    "baseUrl": "https://api.planstar.top/",
+    "clientType": 11,
+    "appVersion": "1.0.0",
+    "channel": "desktop"
+  },
   "cloud": {
     "syncEndpoint": "sync/",
     "subscriptionEndpoint": "subscriptions/",

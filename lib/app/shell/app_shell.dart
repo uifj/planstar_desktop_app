@@ -21,6 +21,8 @@ final class AppShell extends ConsumerWidget {
 
   static const List<_Destination> _destinations = <_Destination>[
     _Destination('/calendar', LucideIcons.calendarDays, 0),
+    _Destination('/projects', LucideIcons.drama, 11),
+    _Destination('/project-ideas', LucideIcons.lightbulb, 10),
     _Destination('/notes', LucideIcons.stickyNote, 1),
     _Destination('/countdown', LucideIcons.hourglass, 2),
     // 课程表 / 订阅暂时隐藏：路由与模块代码保留，仅从导航移除。
@@ -170,6 +172,8 @@ final class AppShell extends ConsumerWidget {
   String _destinationLabel(AppLocalizations l10n, String path) =>
       switch (path) {
         '/calendar' => l10n.navCalendar,
+        '/projects' => l10n.catalogTitle,
+        '/project-ideas' => l10n.ideaNav,
         '/notes' => l10n.commonNotes,
         '/countdown' => l10n.commonCountdowns,
         '/search' => l10n.navSearch,

@@ -9,9 +9,6 @@ class AppLocalizationsZh extends AppLocalizations {
   AppLocalizationsZh([String locale = 'zh']) : super(locale);
 
   @override
-  String get accountAutoLogin => '自动登录';
-
-  @override
   String get accountAutoSyncHourly => '每个整点自动同步';
 
   @override
@@ -19,25 +16,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get accountCloudSyncTitle => '云同步';
-
-  @override
-  String accountDownloadedCount(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '下载 $count 条',
-      one: '下载 1 条',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String get accountEmailOrPhone => '邮箱 / 手机号';
-
-  @override
-  String accountIdentity(String displayName, String email) {
-    return '$displayName（$email）';
-  }
 
   @override
   String accountLastSyncAt(String dateTime) {
@@ -57,9 +35,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get accountNeverSynced => '从未同步';
 
   @override
-  String get accountPassword => '密码';
-
-  @override
   String accountPendingChanges(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
@@ -70,9 +45,6 @@ class AppLocalizationsZh extends AppLocalizations {
     );
     return '$_temp0';
   }
-
-  @override
-  String get accountReadOnlyMember => '只读成员';
 
   @override
   String get accountStatusFailure => '同步失败';
@@ -90,24 +62,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get accountSubtitle => '登录后可以同步和备份日历清单';
 
   @override
-  String get accountTeamAccount => '团队账号';
-
-  @override
   String get accountTitle => '账号';
-
-  @override
-  String accountUploadedCount(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '上传 $count 条',
-      one: '上传 1 条',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String get accountVip => 'VIP';
 
   @override
   String get appTitle => '企划星 · 桌面日历清单';
@@ -886,6 +841,161 @@ class AppLocalizationsZh extends AppLocalizations {
   String get navAnonymousAccount => '未登录';
 
   @override
+  String ideaCreatedAt(String date) {
+    return '创建于 $date';
+  }
+
+  @override
+  String ideaCreator(String name) {
+    return '由 $name 发起';
+  }
+
+  @override
+  String get ideaDetailTitle => '企划详情';
+
+  @override
+  String get ideaEmptyHint => '下拉刷新或稍后重试';
+
+  @override
+  String get ideaEmptyTitle => '暂时没有新的企划';
+
+  @override
+  String get ideaGallery => '企划图片';
+
+  @override
+  String get ideaLoadMore => '加载更多';
+
+  @override
+  String get ideaNav => '企划';
+
+  @override
+  String get ideaNoDescription => '发起人暂未填写详细介绍';
+
+  @override
+  String get ideaNoReasonStats => '暂无反对理由统计';
+
+  @override
+  String ideaOpposeCount(int count) {
+    return '反对 $count';
+  }
+
+  @override
+  String get ideaOpposeReasonHint => '补充说明（选填，最多 100 字）';
+
+  @override
+  String get ideaOpposeReasonNotEnoughInfo => '信息不够充分';
+
+  @override
+  String get ideaOpposeReasonNotExecutable => '方案难以执行';
+
+  @override
+  String get ideaOpposeReasonNotInterested => '不感兴趣';
+
+  @override
+  String get ideaOpposeReasonOther => '其他原因';
+
+  @override
+  String get ideaOpposeReasonTooManySimilar => '同类企划太多';
+
+  @override
+  String get ideaOpposeReasonUnreasonablePricing => '预期定价不合理';
+
+  @override
+  String get ideaOpposeSubmit => '提交反对';
+
+  @override
+  String get ideaOpposeSubtitle => '请选择主要原因，帮助发起人了解你的顾虑';
+
+  @override
+  String get ideaOpposeSuccess => '已提交你的反对意见';
+
+  @override
+  String get ideaOtherReasonRequired => '选择“其他原因”时请填写说明';
+
+  @override
+  String get ideaReasonCountsTitle => '反对理由';
+
+  @override
+  String get ideaRefresh => '刷新';
+
+  @override
+  String get ideaSubtitle => '发现新创意，表达你的支持或顾虑；投票不产生扣费';
+
+  @override
+  String get ideaSupport => '支持';
+
+  @override
+  String ideaSupportCount(int count) {
+    return '支持 $count';
+  }
+
+  @override
+  String get ideaSupportDisclaimer => '档位仅记录未来支持意愿，不会扣除星币，也不会创建订单。';
+
+  @override
+  String ideaSupportRate(int percent) {
+    return '支持率 $percent%';
+  }
+
+  @override
+  String get ideaSupportReasonHint => '说说你的期待（选填，最多 60 字）';
+
+  @override
+  String get ideaSupportReasonCreative => '创意很棒';
+
+  @override
+  String get ideaSupportReasonJoin => '愿意参与';
+
+  @override
+  String get ideaSupportReasonLaunch => '期待上线';
+
+  @override
+  String get ideaSupportSubmit => '提交支持';
+
+  @override
+  String get ideaSupportSubtitle => '选择未来愿意支持的档位，仅表达意愿';
+
+  @override
+  String get ideaSupportSuccess => '已记录你的支持意愿';
+
+  @override
+  String ideaTierCount(int tier, int count) {
+    return '$tier 星币意愿：$count 人';
+  }
+
+  @override
+  String get ideaTierDistributionTitle => '支持意愿分布';
+
+  @override
+  String get ideaTitle => '创意企划';
+
+  @override
+  String get ideaUntitled => '未命名企划';
+
+  @override
+  String get ideaUnknownCreator => '匿名发起人';
+
+  @override
+  String get ideaViewDetail => '查看详情';
+
+  @override
+  String get ideaVoteAlready => '已记录你的表态';
+
+  @override
+  String get ideaVoteLoginRequired => '请先登录后再表态';
+
+  @override
+  String get ideaVoteMyOppose => '我已提交反对意见';
+
+  @override
+  String ideaVoteMySupport(int tier) {
+    return '我已支持：$tier 星币意愿';
+  }
+
+  @override
+  String get ideaVoting => '提交中…';
+
+  @override
   String get navCalendar => '日历';
 
   @override
@@ -1269,6 +1379,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsRestoreDefaults => '恢复默认设置';
 
   @override
+  String get settingsSaveFailed => '设置保存失败，请检查本地存储后重试';
+
+  @override
   String get settingsRestoreSystemWallpaper => '恢复系统原壁纸';
 
   @override
@@ -1536,15 +1649,7 @@ class AppLocalizationsZh extends AppLocalizations {
   }
 
   @override
-  String syncLocalAccount(String message) {
-    return '$message（已切换为本地账号）';
-  }
-
-  @override
   String get syncLoginRequired => '请先登录账号后再同步';
-
-  @override
-  String get syncLoginSuccess => '登录成功';
 
   @override
   String syncSummary(int uploaded, int downloaded) {
@@ -1863,4 +1968,307 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get widgetTextColorTooltip => '选择文字颜色';
+
+  @override
+  String get authLoginTitle => '登录 / 注册';
+
+  @override
+  String get authLoginSubtitle => '使用手机号验证码登录，首次登录将自动创建账号。';
+
+  @override
+  String get authPhoneHint => '手机号';
+
+  @override
+  String get authCodeHint => '6 位验证码';
+
+  @override
+  String get authPasswordHint => '密码（6–20 位）';
+
+  @override
+  String get authSendCode => '获取验证码';
+
+  @override
+  String get authSendingCode => '发送中';
+
+  @override
+  String authResendCode(int seconds) {
+    return '$seconds 秒后重发';
+  }
+
+  @override
+  String get authLoggingIn => '登录中';
+
+  @override
+  String get authLoginAction => '登录 / 注册';
+
+  @override
+  String get authSwitchToPassword => '使用密码登录';
+
+  @override
+  String get authSwitchToCode => '使用验证码登录';
+
+  @override
+  String get authAgreementText => '我已阅读并同意注册协议和隐私政策';
+
+  @override
+  String get authAgreementRequired => '请先阅读并同意注册协议和隐私政策';
+
+  @override
+  String get authPhoneInvalid => '请输入有效的 11 位手机号';
+
+  @override
+  String get authCodeInvalid => '请输入 6 位短信验证码';
+
+  @override
+  String get authPasswordInvalid => '密码长度需为 6–20 位';
+
+  @override
+  String get authCodeSent => '验证码已发送';
+
+  @override
+  String get authNetworkError => '网络连接失败，请检查网络后重试';
+
+  @override
+  String get authTimeoutError => '请求超时，请稍后重试';
+
+  @override
+  String get authStorageError => '无法安全保存登录状态，请检查系统钥匙串';
+
+  @override
+  String get authSessionExpired => '登录状态已失效，请重新登录';
+
+  @override
+  String get authUnknownError => '操作失败，请稍后重试';
+
+  @override
+  String get authAccountLockedTitle => '账号已被锁定';
+
+  @override
+  String get authAccountLockedConfirm => '我知道了';
+
+  @override
+  String get authCaptchaTitle => '图形验证码';
+
+  @override
+  String get authCaptchaHint => '输入图中字符';
+
+  @override
+  String get authCaptchaRefresh => '换一张';
+
+  @override
+  String get authCaptchaCancel => '取消';
+
+  @override
+  String get authCaptchaConfirm => '确定';
+
+  @override
+  String get authCaptchaLoadFailed => '图形验证码加载失败，请点击重试';
+
+  @override
+  String get authNewUserWelcome => '账号已创建，欢迎使用企划星';
+
+  @override
+  String get authBackToAccount => '返回账号页';
+
+  @override
+  String get authRefreshProfile => '刷新资料';
+
+  @override
+  String get authProfileRefreshing => '刷新中';
+
+  @override
+  String get authSignIn => '每日签到';
+
+  @override
+  String get authSigningIn => '签到中';
+
+  @override
+  String authSignInReward(int reward) {
+    return '今日奖励：$reward 星币';
+  }
+
+  @override
+  String authWalletBalance(String balance) {
+    return '星币余额：$balance';
+  }
+
+  @override
+  String authUserId(int id) {
+    return '用户 ID：$id';
+  }
+
+  @override
+  String get authProfileEmpty => '暂无个人简介';
+
+  @override
+  String get authSignedToday => '今日已签到';
+
+  @override
+  String get authLoginPrompt => '登录后可同步账号资料并每日签到。';
+
+  @override
+  String get authGuestName => '未登录';
+
+  @override
+  String get catalogTitle => '企划库';
+
+  @override
+  String get catalogSubtitle => '浏览企划筹资进度、回报档位与项目动态';
+
+  @override
+  String get catalogAllCategories => '全部';
+
+  @override
+  String get catalogSortRecommended => '推荐';
+
+  @override
+  String get catalogSortNewest => '最新';
+
+  @override
+  String get catalogSortEnding => '即将结束';
+
+  @override
+  String get catalogSortAchievement => '筹资最高';
+
+  @override
+  String get catalogLoadMore => '加载更多';
+
+  @override
+  String get catalogEnd => '没有更多企划';
+
+  @override
+  String get catalogEmptyTitle => '暂无企划';
+
+  @override
+  String get catalogEmptyHint => '试试其他分类或刷新企划库。';
+
+  @override
+  String get catalogCredits => '星币';
+
+  @override
+  String catalogSupporters(int count) {
+    return '$count 位支持者';
+  }
+
+  @override
+  String catalogAchievement(int percent) {
+    return '已筹 $percent%';
+  }
+
+  @override
+  String get catalogDetailTitle => '企划详情';
+
+  @override
+  String get catalogDetailEmpty => '企划暂不可用';
+
+  @override
+  String get catalogReadOnlyNotice => '当前为只读预览，桌面端暂不支持支付、选座和创建订单。';
+
+  @override
+  String get catalogStatusPreheating => '预热中';
+
+  @override
+  String get catalogStatusAchieved => '已达成';
+
+  @override
+  String get catalogStatusDelivered => '已交付';
+
+  @override
+  String get catalogStatusFailed => '筹资结束';
+
+  @override
+  String get catalogStatusOngoing => '筹资中';
+
+  @override
+  String get catalogProgressTitle => '筹资进度';
+
+  @override
+  String catalogDaysLeft(int count) {
+    return '剩余 $count 天';
+  }
+
+  @override
+  String get catalogEnded => '已结束';
+
+  @override
+  String get catalogGoalAmount => '目标金额';
+
+  @override
+  String get catalogRaisedAmount => '已筹金额';
+
+  @override
+  String get catalogDeadline => '截止时间';
+
+  @override
+  String get catalogInfoTitle => '企划信息';
+
+  @override
+  String catalogDuration(String duration) {
+    return '时长：$duration';
+  }
+
+  @override
+  String get catalogSoldOut => '已售罄';
+
+  @override
+  String get catalogRewardsTitle => '回报档位';
+
+  @override
+  String catalogDelivery(String date) {
+    return '预计交付：$date';
+  }
+
+  @override
+  String get catalogUpdatesTitle => '项目动态';
+
+  @override
+  String get catalogRiskTitle => '风险与履约';
+
+  @override
+  String get catalogRiskNote => '风险说明';
+
+  @override
+  String get catalogDeliveryPlan => '交付计划';
+
+  @override
+  String get catalogFundUsage => '资金用途';
+
+  @override
+  String get catalogRefundRule => '退款规则';
+
+  @override
+  String catalogReviewsTitle(int count) {
+    return '支持者评价（$count）';
+  }
+
+  @override
+  String get catalogAnonymous => '匿名支持者';
+
+  @override
+  String get catalogFaqTitle => '常见问题';
+
+  @override
+  String get catalogCreatorTitle => '关于创作者';
+
+  @override
+  String catalogCreator(String name) {
+    return '创作者：$name';
+  }
+
+  @override
+  String get catalogCreatorVerified => '认证创作者';
+
+  @override
+  String catalogCreatorStats(int projects, int successful, int rate) {
+    return '$projects 个项目 · $successful 个成功 · 履约率 $rate%';
+  }
+
+  @override
+  String get catalogStoryTitle => '企划故事';
+
+  @override
+  String get catalogGalleryTitle => '项目图片';
+
+  @override
+  String get catalogNoticeTitle => '支持须知';
 }

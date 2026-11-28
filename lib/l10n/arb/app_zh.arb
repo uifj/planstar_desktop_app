@@ -1,9 +1,5 @@
 {
   "@@locale": "zh",
-  "accountAutoLogin": "自动登录",
-  "@accountAutoLogin": {
-    "description": "账号自动登录状态"
-  },
   "accountAutoSyncHourly": "每个整点自动同步",
   "@accountAutoSyncHourly": {
     "description": "每小时自动同步开关"
@@ -15,31 +11,6 @@
   "accountCloudSyncTitle": "云同步",
   "@accountCloudSyncTitle": {
     "description": "云同步区域标题"
-  },
-  "accountDownloadedCount": "{count, plural, =1{下载 1 条} other{下载 {count} 条}}",
-  "@accountDownloadedCount": {
-    "description": "已下载记录数量",
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "accountEmailOrPhone": "邮箱 / 手机号",
-  "@accountEmailOrPhone": {
-    "description": "登录邮箱或手机号输入框标签"
-  },
-  "accountIdentity": "{displayName}（{email}）",
-  "@accountIdentity": {
-    "description": "已登录账号的显示名称和邮箱",
-    "placeholders": {
-      "displayName": {
-        "type": "String"
-      },
-      "email": {
-        "type": "String"
-      }
-    }
   },
   "accountLastSyncAt": "上次同步：{dateTime}",
   "@accountLastSyncAt": {
@@ -66,10 +37,6 @@
   "@accountNeverSynced": {
     "description": "从未同步时的状态"
   },
-  "accountPassword": "密码",
-  "@accountPassword": {
-    "description": "登录密码输入框标签"
-  },
   "accountPendingChanges": "{count, plural, =0{没有待同步变更} =1{待同步变更 1 条} other{待同步变更 {count} 条}}",
   "@accountPendingChanges": {
     "description": "待同步变更数量",
@@ -78,10 +45,6 @@
         "type": "int"
       }
     }
-  },
-  "accountReadOnlyMember": "只读成员",
-  "@accountReadOnlyMember": {
-    "description": "账号只读成员状态"
   },
   "accountStatusFailure": "同步失败",
   "@accountStatusFailure": {
@@ -103,26 +66,9 @@
   "@accountSubtitle": {
     "description": "账号页面说明"
   },
-  "accountTeamAccount": "团队账号",
-  "@accountTeamAccount": {
-    "description": "账号团队账号状态"
-  },
   "accountTitle": "账号",
   "@accountTitle": {
     "description": "账号页面标题"
-  },
-  "accountUploadedCount": "{count, plural, =1{上传 1 条} other{上传 {count} 条}}",
-  "@accountUploadedCount": {
-    "description": "已上传记录数量",
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "accountVip": "VIP",
-  "@accountVip": {
-    "description": "账号 VIP 标识"
   },
   "appTitle": "企划星 · 桌面日历清单",
   "@appTitle": {
@@ -1233,6 +1179,121 @@
   "@navAnonymousAccount": {
     "description": "Localized desktop text: navAnonymousAccount"
   },
+  "ideaCreatedAt": "创建于 {date}",
+  "@ideaCreatedAt": {
+    "description": "创意企划创建时间",
+    "placeholders": {"date": {"type": "String"}}
+  },
+  "ideaCreator": "由 {name} 发起",
+  "@ideaCreator": {
+    "description": "创意企划发起人",
+    "placeholders": {"name": {"type": "String"}}
+  },
+  "ideaDetailTitle": "企划详情",
+  "@ideaDetailTitle": {"description": "创意企划详情页标题"},
+  "ideaEmptyHint": "下拉刷新或稍后重试",
+  "@ideaEmptyHint": {"description": "创意企划空状态提示"},
+  "ideaEmptyTitle": "暂时没有新的企划",
+  "@ideaEmptyTitle": {"description": "创意企划空状态标题"},
+  "ideaGallery": "企划图片",
+  "@ideaGallery": {"description": "企划详情图片区域"},
+  "ideaLoadMore": "加载更多",
+  "@ideaLoadMore": {"description": "加载下一页创意企划"},
+  "ideaNav": "企划",
+  "@ideaNav": {"description": "主导航企划入口"},
+  "ideaNoDescription": "发起人暂未填写详细介绍",
+  "@ideaNoDescription": {"description": "企划详情缺少描述时的占位文案"},
+  "ideaNoReasonStats": "暂无反对理由统计",
+  "@ideaNoReasonStats": {"description": "反对理由统计空状态"},
+  "ideaOpposeCount": "反对 {count}",
+  "@ideaOpposeCount": {
+    "description": "反对票数",
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "ideaOpposeReasonHint": "补充说明（选填，最多 100 字）",
+  "@ideaOpposeReasonHint": {"description": "反对理由补充输入提示"},
+  "ideaOpposeReasonNotEnoughInfo": "信息不够充分",
+  "@ideaOpposeReasonNotEnoughInfo": {"description": "反对理由：信息不足"},
+  "ideaOpposeReasonNotExecutable": "方案难以执行",
+  "@ideaOpposeReasonNotExecutable": {"description": "反对理由：难以执行"},
+  "ideaOpposeReasonNotInterested": "不感兴趣",
+  "@ideaOpposeReasonNotInterested": {"description": "反对理由：不感兴趣"},
+  "ideaOpposeReasonOther": "其他原因",
+  "@ideaOpposeReasonOther": {"description": "反对理由：其他"},
+  "ideaOpposeReasonTooManySimilar": "同类企划太多",
+  "@ideaOpposeReasonTooManySimilar": {"description": "反对理由：同质化"},
+  "ideaOpposeReasonUnreasonablePricing": "预期定价不合理",
+  "@ideaOpposeReasonUnreasonablePricing": {"description": "反对理由：定价问题"},
+  "ideaOpposeSubmit": "提交反对",
+  "@ideaOpposeSubmit": {"description": "提交反对按钮"},
+  "ideaOpposeSubtitle": "请选择主要原因，帮助发起人了解你的顾虑",
+  "@ideaOpposeSubtitle": {"description": "反对投票说明"},
+  "ideaOpposeSuccess": "已提交你的反对意见",
+  "@ideaOpposeSuccess": {"description": "反对投票成功提示"},
+  "ideaOtherReasonRequired": "选择“其他原因”时请填写说明",
+  "@ideaOtherReasonRequired": {"description": "其他反对理由校验提示"},
+  "ideaReasonCountsTitle": "反对理由",
+  "@ideaReasonCountsTitle": {"description": "反对理由统计标题"},
+  "ideaRefresh": "刷新",
+  "@ideaRefresh": {"description": "刷新创意企划列表"},
+  "ideaSubtitle": "发现新创意，表达你的支持或顾虑；投票不产生扣费",
+  "@ideaSubtitle": {"description": "创意企划列表说明"},
+  "ideaSupport": "支持",
+  "@ideaSupport": {"description": "支持按钮"},
+  "ideaSupportCount": "支持 {count}",
+  "@ideaSupportCount": {
+    "description": "支持票数",
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "ideaSupportDisclaimer": "档位仅记录未来支持意愿，不会扣除星币，也不会创建订单。",
+  "@ideaSupportDisclaimer": {"description": "支持投票不扣费说明"},
+  "ideaSupportRate": "支持率 {percent}%",
+  "@ideaSupportRate": {
+    "description": "企划支持率",
+    "placeholders": {"percent": {"type": "int"}}
+  },
+  "ideaSupportReasonHint": "说说你的期待（选填，最多 60 字）",
+  "@ideaSupportReasonHint": {"description": "支持理由输入提示"},
+  "ideaSupportReasonCreative": "创意很棒",
+  "@ideaSupportReasonCreative": {"description": "支持理由快捷标签"},
+  "ideaSupportReasonJoin": "愿意参与",
+  "@ideaSupportReasonJoin": {"description": "支持理由快捷标签"},
+  "ideaSupportReasonLaunch": "期待上线",
+  "@ideaSupportReasonLaunch": {"description": "支持理由快捷标签"},
+  "ideaSupportSubmit": "提交支持",
+  "@ideaSupportSubmit": {"description": "提交支持按钮"},
+  "ideaSupportSubtitle": "选择未来愿意支持的档位，仅表达意愿",
+  "@ideaSupportSubtitle": {"description": "支持投票说明"},
+  "ideaSupportSuccess": "已记录你的支持意愿",
+  "@ideaSupportSuccess": {"description": "支持投票成功提示"},
+  "ideaTierCount": "{tier} 星币意愿：{count} 人",
+  "@ideaTierCount": {
+    "description": "支持意愿档位人数",
+    "placeholders": {"tier": {"type": "int"}, "count": {"type": "int"}}
+  },
+  "ideaTierDistributionTitle": "支持意愿分布",
+  "@ideaTierDistributionTitle": {"description": "支持意愿档位统计标题"},
+  "ideaTitle": "创意企划",
+  "@ideaTitle": {"description": "创意企划列表标题"},
+  "ideaUntitled": "未命名企划",
+  "@ideaUntitled": {"description": "企划标题缺失占位文案"},
+  "ideaUnknownCreator": "匿名发起人",
+  "@ideaUnknownCreator": {"description": "发起人缺失占位文案"},
+  "ideaViewDetail": "查看详情",
+  "@ideaViewDetail": {"description": "企划卡片详情操作"},
+  "ideaVoteAlready": "已记录你的表态",
+  "@ideaVoteAlready": {"description": "重复投票成功提示"},
+  "ideaVoteLoginRequired": "请先登录后再表态",
+  "@ideaVoteLoginRequired": {"description": "未登录投票提示"},
+  "ideaVoteMyOppose": "我已提交反对意见",
+  "@ideaVoteMyOppose": {"description": "当前用户反对状态"},
+  "ideaVoteMySupport": "我已支持：{tier} 星币意愿",
+  "@ideaVoteMySupport": {
+    "description": "当前用户支持状态",
+    "placeholders": {"tier": {"type": "int"}}
+  },
+  "ideaVoting": "提交中…",
+  "@ideaVoting": {"description": "投票提交中状态"},
   "navCalendar": "日历",
   "@navCalendar": {
     "description": "Localized desktop text: navCalendar"
@@ -1790,6 +1851,7 @@
     "description": "重新排程全部提醒按钮"
   },
   "settingsRestoreDefaults": "恢复默认设置",
+  "settingsSaveFailed": "设置保存失败，请检查本地存储后重试",
   "@settingsRestoreDefaults": {
     "description": "恢复默认设置按钮"
   },
@@ -2138,22 +2200,9 @@
       }
     }
   },
-  "syncLocalAccount": "{message}（已切换为本地账号）",
-  "@syncLocalAccount": {
-    "description": "message must be a safe localized category from failureLabel, never server or exception details",
-    "placeholders": {
-      "message": {
-        "type": "String"
-      }
-    }
-  },
   "syncLoginRequired": "请先登录账号后再同步",
   "@syncLoginRequired": {
     "description": "Localized desktop text: syncLoginRequired"
-  },
-  "syncLoginSuccess": "登录成功",
-  "@syncLoginSuccess": {
-    "description": "Localized desktop text: syncLoginSuccess"
   },
   "syncSummary": "上传 {uploaded} 条记录，下载 {downloaded} 条记录。",
   "@syncSummary": {
@@ -2597,5 +2646,435 @@
   "widgetTextColorTooltip": "选择文字颜色",
   "@widgetTextColorTooltip": {
     "description": "Localized desktop text: widgetTextColorTooltip"
+  },
+  "authLoginTitle": "登录 / 注册",
+  "@authLoginTitle": {
+    "description": "Authentication page title"
+  },
+  "authLoginSubtitle": "使用手机号验证码登录，首次登录将自动创建账号。",
+  "@authLoginSubtitle": {
+    "description": "Explains phone-code login and automatic first-login registration"
+  },
+  "authPhoneHint": "手机号",
+  "@authPhoneHint": {
+    "description": "Phone number field label"
+  },
+  "authCodeHint": "6 位验证码",
+  "@authCodeHint": {
+    "description": "SMS verification code field label"
+  },
+  "authPasswordHint": "密码（6–20 位）",
+  "@authPasswordHint": {
+    "description": "Password field label"
+  },
+  "authSendCode": "获取验证码",
+  "@authSendCode": {
+    "description": "Send verification code button"
+  },
+  "authSendingCode": "发送中",
+  "@authSendingCode": {
+    "description": "Verification code request in progress"
+  },
+  "authResendCode": "{seconds} 秒后重发",
+  "@authResendCode": {
+    "description": "Verification code resend cooldown",
+    "placeholders": {
+      "seconds": {"type": "int", "example": "60"}
+    }
+  },
+  "authLoggingIn": "登录中",
+  "@authLoggingIn": {
+    "description": "Login request in progress"
+  },
+  "authLoginAction": "登录 / 注册",
+  "@authLoginAction": {
+    "description": "Submit authentication button"
+  },
+  "authSwitchToPassword": "使用密码登录",
+  "@authSwitchToPassword": {
+    "description": "Switch to password login"
+  },
+  "authSwitchToCode": "使用验证码登录",
+  "@authSwitchToCode": {
+    "description": "Switch to SMS code login"
+  },
+  "authAgreementText": "我已阅读并同意注册协议和隐私政策",
+  "@authAgreementText": {
+    "description": "Registration and privacy agreement checkbox"
+  },
+  "authAgreementRequired": "请先阅读并同意注册协议和隐私政策",
+  "@authAgreementRequired": {
+    "description": "Validation message when agreement is not accepted"
+  },
+  "authPhoneInvalid": "请输入有效的 11 位手机号",
+  "@authPhoneInvalid": {
+    "description": "Phone number validation error"
+  },
+  "authCodeInvalid": "请输入 6 位短信验证码",
+  "@authCodeInvalid": {
+    "description": "SMS code validation error"
+  },
+  "authPasswordInvalid": "密码长度需为 6–20 位",
+  "@authPasswordInvalid": {
+    "description": "Password validation error"
+  },
+  "authCodeSent": "验证码已发送",
+  "@authCodeSent": {
+    "description": "Verification code sent confirmation"
+  },
+  "authNetworkError": "网络连接失败，请检查网络后重试",
+  "@authNetworkError": {
+    "description": "Authentication network failure"
+  },
+  "authTimeoutError": "请求超时，请稍后重试",
+  "@authTimeoutError": {
+    "description": "Authentication request timeout"
+  },
+  "authStorageError": "无法安全保存登录状态，请检查系统钥匙串",
+  "@authStorageError": {
+    "description": "Secure session persistence failure"
+  },
+  "authSessionExpired": "登录状态已失效，请重新登录",
+  "@authSessionExpired": {
+    "description": "Expired authentication session"
+  },
+  "authUnknownError": "操作失败，请稍后重试",
+  "@authUnknownError": {
+    "description": "Unknown authentication failure"
+  },
+  "authAccountLockedTitle": "账号已被锁定",
+  "@authAccountLockedTitle": {
+    "description": "Account locked dialog title"
+  },
+  "authAccountLockedConfirm": "我知道了",
+  "@authAccountLockedConfirm": {
+    "description": "Account locked dialog confirmation"
+  },
+  "authCaptchaTitle": "图形验证码",
+  "@authCaptchaTitle": {
+    "description": "Image captcha dialog title"
+  },
+  "authCaptchaHint": "输入图中字符",
+  "@authCaptchaHint": {
+    "description": "Image captcha input label"
+  },
+  "authCaptchaRefresh": "换一张",
+  "@authCaptchaRefresh": {
+    "description": "Refresh image captcha"
+  },
+  "authCaptchaCancel": "取消",
+  "@authCaptchaCancel": {
+    "description": "Cancel image captcha dialog"
+  },
+  "authCaptchaConfirm": "确定",
+  "@authCaptchaConfirm": {
+    "description": "Submit image captcha"
+  },
+  "authCaptchaLoadFailed": "图形验证码加载失败，请点击重试",
+  "@authCaptchaLoadFailed": {
+    "description": "Image captcha loading failure"
+  },
+  "authNewUserWelcome": "账号已创建，欢迎使用企划星",
+  "@authNewUserWelcome": {
+    "description": "First-login registration confirmation"
+  },
+  "authBackToAccount": "返回账号页",
+  "@authBackToAccount": {
+    "description": "Close authentication page and return to account"
+  },
+  "authRefreshProfile": "刷新资料",
+  "@authRefreshProfile": {
+    "description": "Refresh authenticated user profile"
+  },
+  "authProfileRefreshing": "刷新中",
+  "@authProfileRefreshing": {
+    "description": "Profile refresh in progress"
+  },
+  "authSignIn": "每日签到",
+  "@authSignIn": {
+    "description": "Submit daily sign-in"
+  },
+  "authSigningIn": "签到中",
+  "@authSigningIn": {
+    "description": "Daily sign-in in progress"
+  },
+  "authSignInReward": "今日奖励：{reward} 星币",
+  "@authSignInReward": {
+    "description": "Daily sign-in reward amount",
+    "placeholders": {
+      "reward": {"type": "int", "example": "100"}
+    }
+  },
+  "authWalletBalance": "星币余额：{balance}",
+  "@authWalletBalance": {
+    "description": "Star coin account balance",
+    "placeholders": {
+      "balance": {"type": "String", "example": "12.34"}
+    }
+  },
+  "authUserId": "用户 ID：{id}",
+  "@authUserId": {
+    "description": "Authenticated user identifier",
+    "placeholders": {
+      "id": {"type": "int", "example": "12345"}
+    }
+  },
+  "authProfileEmpty": "暂无个人简介",
+  "@authProfileEmpty": {
+    "description": "Empty user biography"
+  },
+  "authSignedToday": "今日已签到",
+  "@authSignedToday": {
+    "description": "Daily sign-in completion message"
+  },
+  "authLoginPrompt": "登录后可同步账号资料并每日签到。",
+  "@authLoginPrompt": {
+    "description": "Guest account page authentication prompt"
+  },
+  "authGuestName": "未登录",
+  "@authGuestName": {
+    "description": "Guest account display name"
+  },
+  "catalogTitle": "企划库",
+  "@catalogTitle": {
+    "description": "正式企划库页面标题"
+  },
+  "catalogSubtitle": "浏览企划筹资进度、回报档位与项目动态",
+  "@catalogSubtitle": {
+    "description": "正式企划库页面副标题"
+  },
+  "catalogAllCategories": "全部",
+  "@catalogAllCategories": {
+    "description": "清除企划分类筛选"
+  },
+  "catalogSortRecommended": "推荐",
+  "@catalogSortRecommended": {
+    "description": "企划推荐排序"
+  },
+  "catalogSortNewest": "最新",
+  "@catalogSortNewest": {
+    "description": "企划最新排序"
+  },
+  "catalogSortEnding": "即将结束",
+  "@catalogSortEnding": {
+    "description": "企划即将结束排序"
+  },
+  "catalogSortAchievement": "筹资最高",
+  "@catalogSortAchievement": {
+    "description": "企划达成率最高排序"
+  },
+  "catalogLoadMore": "加载更多",
+  "@catalogLoadMore": {
+    "description": "加载下一页企划"
+  },
+  "catalogEnd": "没有更多企划",
+  "@catalogEnd": {
+    "description": "企划列表分页结束"
+  },
+  "catalogEmptyTitle": "暂无企划",
+  "@catalogEmptyTitle": {
+    "description": "企划库空状态标题"
+  },
+  "catalogEmptyHint": "试试其他分类或刷新企划库。",
+  "@catalogEmptyHint": {
+    "description": "企划库空状态提示"
+  },
+  "catalogCredits": "星币",
+  "@catalogCredits": {
+    "description": "企划金额的本地化货币标签"
+  },
+  "catalogSupporters": "{count} 位支持者",
+  "@catalogSupporters": {
+    "description": "企划支持人数",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "catalogAchievement": "已筹 {percent}%",
+  "@catalogAchievement": {
+    "description": "企划筹资达成百分比",
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "catalogDetailTitle": "企划详情",
+  "@catalogDetailTitle": {
+    "description": "企划只读详情页标题"
+  },
+  "catalogDetailEmpty": "企划暂不可用",
+  "@catalogDetailEmpty": {
+    "description": "企划详情缺失空状态"
+  },
+  "catalogReadOnlyNotice": "当前为只读预览，桌面端暂不支持支付、选座和创建订单。",
+  "@catalogReadOnlyNotice": {
+    "description": "明确说明桌面端尚未支持的企划交易能力"
+  },
+  "catalogStatusPreheating": "预热中",
+  "@catalogStatusPreheating": {
+    "description": "企划预热筹资状态"
+  },
+  "catalogStatusAchieved": "已达成",
+  "@catalogStatusAchieved": {
+    "description": "企划已达成筹资状态"
+  },
+  "catalogStatusDelivered": "已交付",
+  "@catalogStatusDelivered": {
+    "description": "企划已交付状态"
+  },
+  "catalogStatusFailed": "筹资结束",
+  "@catalogStatusFailed": {
+    "description": "企划筹资失败状态"
+  },
+  "catalogStatusOngoing": "筹资中",
+  "@catalogStatusOngoing": {
+    "description": "企划筹资进行中状态"
+  },
+  "catalogProgressTitle": "筹资进度",
+  "@catalogProgressTitle": {
+    "description": "企划筹资进度区块标题"
+  },
+  "catalogDaysLeft": "剩余 {count} 天",
+  "@catalogDaysLeft": {
+    "description": "企划筹资剩余天数",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "catalogEnded": "已结束",
+  "@catalogEnded": {
+    "description": "企划筹资已结束"
+  },
+  "catalogGoalAmount": "目标金额",
+  "@catalogGoalAmount": {
+    "description": "企划目标金额指标"
+  },
+  "catalogRaisedAmount": "已筹金额",
+  "@catalogRaisedAmount": {
+    "description": "企划已筹金额指标"
+  },
+  "catalogDeadline": "截止时间",
+  "@catalogDeadline": {
+    "description": "企划筹资截止时间"
+  },
+  "catalogInfoTitle": "企划信息",
+  "@catalogInfoTitle": {
+    "description": "活动场地、场次和阵容区块标题"
+  },
+  "catalogDuration": "时长：{duration}",
+  "@catalogDuration": {
+    "description": "企划或活动时长",
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "catalogSoldOut": "已售罄",
+  "@catalogSoldOut": {
+    "description": "回报档位或场次售罄标签"
+  },
+  "catalogRewardsTitle": "回报档位",
+  "@catalogRewardsTitle": {
+    "description": "企划回报档位区块标题"
+  },
+  "catalogDelivery": "预计交付：{date}",
+  "@catalogDelivery": {
+    "description": "回报档位预计交付时间",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "catalogUpdatesTitle": "项目动态",
+  "@catalogUpdatesTitle": {
+    "description": "企划进度更新区块标题"
+  },
+  "catalogRiskTitle": "风险与履约",
+  "@catalogRiskTitle": {
+    "description": "企划风险与履约区块标题"
+  },
+  "catalogRiskNote": "风险说明",
+  "@catalogRiskNote": {
+    "description": "企划风险说明标签"
+  },
+  "catalogDeliveryPlan": "交付计划",
+  "@catalogDeliveryPlan": {
+    "description": "企划交付计划标签"
+  },
+  "catalogFundUsage": "资金用途",
+  "@catalogFundUsage": {
+    "description": "企划资金用途标签"
+  },
+  "catalogRefundRule": "退款规则",
+  "@catalogRefundRule": {
+    "description": "企划退款规则标签"
+  },
+  "catalogReviewsTitle": "支持者评价（{count}）",
+  "@catalogReviewsTitle": {
+    "description": "企划支持者评价区块标题",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "catalogAnonymous": "匿名支持者",
+  "@catalogAnonymous": {
+    "description": "企划匿名评价作者"
+  },
+  "catalogFaqTitle": "常见问题",
+  "@catalogFaqTitle": {
+    "description": "企划常见问题区块标题"
+  },
+  "catalogCreatorTitle": "关于创作者",
+  "@catalogCreatorTitle": {
+    "description": "企划创作者区块标题"
+  },
+  "catalogCreator": "创作者：{name}",
+  "@catalogCreator": {
+    "description": "企划创作者署名",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "catalogCreatorVerified": "认证创作者",
+  "@catalogCreatorVerified": {
+    "description": "企划认证创作者标记"
+  },
+  "catalogCreatorStats": "{projects} 个项目 · {successful} 个成功 · 履约率 {rate}%",
+  "@catalogCreatorStats": {
+    "description": "企划创作者历史记录",
+    "placeholders": {
+      "projects": {
+        "type": "int"
+      },
+      "successful": {
+        "type": "int"
+      },
+      "rate": {
+        "type": "int"
+      }
+    }
+  },
+  "catalogStoryTitle": "企划故事",
+  "@catalogStoryTitle": {
+    "description": "企划故事区块标题"
+  },
+  "catalogGalleryTitle": "项目图片",
+  "@catalogGalleryTitle": {
+    "description": "企划图片画廊区块标题"
+  },
+  "catalogNoticeTitle": "支持须知",
+  "@catalogNoticeTitle": {
+    "description": "企划支持须知区块标题"
   }
 }

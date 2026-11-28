@@ -34,7 +34,17 @@ final class SettingsPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
     final settings = ref.watch(settingsControllerProvider);
-    final update = ref.read(settingsControllerProvider.notifier).update;
+    final controller = ref.read(settingsControllerProvider.notifier);
+    Future<void> update(
+      AppSettings Function(AppSettings current) transform,
+    ) async {
+      final result = await controller.update(transform);
+      if (!context.mounted || result.isSuccess) return;
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(l10n.settingsSaveFailed)));
+    }
+
     return DefaultTabController(
       length: 7,
       child: Column(
@@ -745,9 +755,8 @@ final class SettingsPage extends ConsumerWidget {
                           ),
                           const SizedBox(height: AppSpacing.sm),
                           OutlinedButton(
-                            onPressed: () => ref
-                                .read(settingsControllerProvider.notifier)
-                                .restoreDefaults(),
+                            onPressed: () =>
+                                update((_) => AppSettings.defaults),
                             child: Text(l10n.settingsRestoreDefaults),
                           ),
                         ],

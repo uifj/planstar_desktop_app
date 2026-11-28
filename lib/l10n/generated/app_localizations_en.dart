@@ -9,9 +9,6 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
-  String get accountAutoLogin => 'Auto sign-in';
-
-  @override
   String get accountAutoSyncHourly => 'Sync automatically every hour';
 
   @override
@@ -19,25 +16,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get accountCloudSyncTitle => 'Cloud sync';
-
-  @override
-  String accountDownloadedCount(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'Downloaded $count items',
-      one: 'Downloaded 1 item',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String get accountEmailOrPhone => 'Email / phone';
-
-  @override
-  String accountIdentity(String displayName, String email) {
-    return '$displayName ($email)';
-  }
 
   @override
   String accountLastSyncAt(String dateTime) {
@@ -57,9 +35,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountNeverSynced => 'Never synced';
 
   @override
-  String get accountPassword => 'Password';
-
-  @override
   String accountPendingChanges(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
@@ -70,9 +45,6 @@ class AppLocalizationsEn extends AppLocalizations {
     );
     return '$_temp0';
   }
-
-  @override
-  String get accountReadOnlyMember => 'Read-only member';
 
   @override
   String get accountStatusFailure => 'Sync failed';
@@ -90,24 +62,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountSubtitle => 'Sign in to sync and back up your calendar lists';
 
   @override
-  String get accountTeamAccount => 'Team account';
-
-  @override
   String get accountTitle => 'Account';
-
-  @override
-  String accountUploadedCount(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'Uploaded $count items',
-      one: 'Uploaded 1 item',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String get accountVip => 'VIP';
 
   @override
   String get appTitle => 'Planstar · Desktop Calendar & Checklist';
@@ -894,6 +849,161 @@ class AppLocalizationsEn extends AppLocalizations {
   String get navAnonymousAccount => 'Signed out';
 
   @override
+  String ideaCreatedAt(String date) {
+    return 'Created $date';
+  }
+
+  @override
+  String ideaCreator(String name) {
+    return 'Proposed by $name';
+  }
+
+  @override
+  String get ideaDetailTitle => 'Project details';
+
+  @override
+  String get ideaEmptyHint => 'Pull to refresh or try again later';
+
+  @override
+  String get ideaEmptyTitle => 'No new projects yet';
+
+  @override
+  String get ideaGallery => 'Project images';
+
+  @override
+  String get ideaLoadMore => 'Load more';
+
+  @override
+  String get ideaNav => 'Projects';
+
+  @override
+  String get ideaNoDescription => 'The proposer has not added a detailed description yet';
+
+  @override
+  String get ideaNoReasonStats => 'No opposition reasons yet';
+
+  @override
+  String ideaOpposeCount(int count) {
+    return 'Oppose $count';
+  }
+
+  @override
+  String get ideaOpposeReasonHint => 'Additional details (optional, up to 100 characters)';
+
+  @override
+  String get ideaOpposeReasonNotEnoughInfo => 'Not enough information';
+
+  @override
+  String get ideaOpposeReasonNotExecutable => 'Difficult to execute';
+
+  @override
+  String get ideaOpposeReasonNotInterested => 'Not interested';
+
+  @override
+  String get ideaOpposeReasonOther => 'Other';
+
+  @override
+  String get ideaOpposeReasonTooManySimilar => 'Too many similar projects';
+
+  @override
+  String get ideaOpposeReasonUnreasonablePricing => 'Expected pricing is unreasonable';
+
+  @override
+  String get ideaOpposeSubmit => 'Submit opposition';
+
+  @override
+  String get ideaOpposeSubtitle => 'Choose the main reason to help the proposer understand your concerns';
+
+  @override
+  String get ideaOpposeSuccess => 'Your opposition has been submitted';
+
+  @override
+  String get ideaOtherReasonRequired => 'Add a reason when selecting Other';
+
+  @override
+  String get ideaReasonCountsTitle => 'Reasons for opposition';
+
+  @override
+  String get ideaRefresh => 'Refresh';
+
+  @override
+  String get ideaSubtitle => 'Discover ideas and share support or concerns; voting never charges you';
+
+  @override
+  String get ideaSupport => 'Support';
+
+  @override
+  String ideaSupportCount(int count) {
+    return 'Support $count';
+  }
+
+  @override
+  String get ideaSupportDisclaimer => 'Tiers only record future willingness to support. No coins are charged and no order is created.';
+
+  @override
+  String ideaSupportRate(int percent) {
+    return 'Support rate $percent%';
+  }
+
+  @override
+  String get ideaSupportReasonHint => 'Share your expectations (optional, up to 60 characters)';
+
+  @override
+  String get ideaSupportReasonCreative => 'Great idea';
+
+  @override
+  String get ideaSupportReasonJoin => 'I would join';
+
+  @override
+  String get ideaSupportReasonLaunch => 'Looking forward to launch';
+
+  @override
+  String get ideaSupportSubmit => 'Submit support';
+
+  @override
+  String get ideaSupportSubtitle => 'Choose a future support tier to express willingness only';
+
+  @override
+  String get ideaSupportSuccess => 'Your support has been recorded';
+
+  @override
+  String ideaTierCount(int tier, int count) {
+    return '$tier-coin tier: $count people';
+  }
+
+  @override
+  String get ideaTierDistributionTitle => 'Support willingness';
+
+  @override
+  String get ideaTitle => 'Project ideas';
+
+  @override
+  String get ideaUntitled => 'Untitled project';
+
+  @override
+  String get ideaUnknownCreator => 'Anonymous proposer';
+
+  @override
+  String get ideaViewDetail => 'View details';
+
+  @override
+  String get ideaVoteAlready => 'Your vote is already recorded';
+
+  @override
+  String get ideaVoteLoginRequired => 'Sign in before voting';
+
+  @override
+  String get ideaVoteMyOppose => 'You submitted an opposition';
+
+  @override
+  String ideaVoteMySupport(int tier) {
+    return 'You supported the $tier-coin tier';
+  }
+
+  @override
+  String get ideaVoting => 'Submitting…';
+
+  @override
   String get navCalendar => 'Calendar';
 
   @override
@@ -1278,6 +1388,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsRestoreDefaults => 'Restore default settings';
 
   @override
+  String get settingsSaveFailed => 'Could not save settings. Check local storage and try again.';
+
+  @override
   String get settingsRestoreSystemWallpaper => 'Restore original system wallpaper';
 
   @override
@@ -1545,15 +1658,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String syncLocalAccount(String message) {
-    return '$message (switched to a local account)';
-  }
-
-  @override
   String get syncLoginRequired => 'Sign in before syncing';
-
-  @override
-  String get syncLoginSuccess => 'Signed in successfully';
 
   @override
   String syncSummary(int uploaded, int downloaded) {
@@ -1872,4 +1977,319 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get widgetTextColorTooltip => 'Choose text color';
+
+  @override
+  String get authLoginTitle => 'Sign in / Sign up';
+
+  @override
+  String get authLoginSubtitle => 'Sign in with your phone number. Your account is created automatically on first sign-in.';
+
+  @override
+  String get authPhoneHint => 'Phone number';
+
+  @override
+  String get authCodeHint => '6-digit code';
+
+  @override
+  String get authPasswordHint => 'Password (6–20 characters)';
+
+  @override
+  String get authSendCode => 'Send code';
+
+  @override
+  String get authSendingCode => 'Sending';
+
+  @override
+  String authResendCode(int seconds) {
+    return 'Resend in ${seconds}s';
+  }
+
+  @override
+  String get authLoggingIn => 'Signing in';
+
+  @override
+  String get authLoginAction => 'Sign in / Sign up';
+
+  @override
+  String get authSwitchToPassword => 'Use password';
+
+  @override
+  String get authSwitchToCode => 'Use SMS code';
+
+  @override
+  String get authAgreementText => 'I have read and agree to the registration agreement and privacy policy';
+
+  @override
+  String get authAgreementRequired => 'Accept the registration agreement and privacy policy to continue';
+
+  @override
+  String get authPhoneInvalid => 'Enter a valid 11-digit phone number';
+
+  @override
+  String get authCodeInvalid => 'Enter the 6-digit SMS code';
+
+  @override
+  String get authPasswordInvalid => 'Password must contain 6–20 characters';
+
+  @override
+  String get authCodeSent => 'Verification code sent';
+
+  @override
+  String get authNetworkError => 'Network connection failed. Check your connection and try again.';
+
+  @override
+  String get authTimeoutError => 'The request timed out. Please try again.';
+
+  @override
+  String get authStorageError => 'The sign-in state could not be saved securely. Check your system keychain.';
+
+  @override
+  String get authSessionExpired => 'Your session has expired. Please sign in again.';
+
+  @override
+  String get authUnknownError => 'Something went wrong. Please try again.';
+
+  @override
+  String get authAccountLockedTitle => 'Account locked';
+
+  @override
+  String get authAccountLockedConfirm => 'Got it';
+
+  @override
+  String get authCaptchaTitle => 'Image verification';
+
+  @override
+  String get authCaptchaHint => 'Enter the characters shown';
+
+  @override
+  String get authCaptchaRefresh => 'Refresh';
+
+  @override
+  String get authCaptchaCancel => 'Cancel';
+
+  @override
+  String get authCaptchaConfirm => 'Confirm';
+
+  @override
+  String get authCaptchaLoadFailed => 'Could not load the image. Tap to retry.';
+
+  @override
+  String get authNewUserWelcome => 'Your account has been created. Welcome to Planstar.';
+
+  @override
+  String get authBackToAccount => 'Back to account';
+
+  @override
+  String get authRefreshProfile => 'Refresh profile';
+
+  @override
+  String get authProfileRefreshing => 'Refreshing';
+
+  @override
+  String get authSignIn => 'Daily check-in';
+
+  @override
+  String get authSigningIn => 'Checking in';
+
+  @override
+  String authSignInReward(int reward) {
+    return 'Today\'s reward: $reward stars';
+  }
+
+  @override
+  String authWalletBalance(String balance) {
+    return 'Star balance: $balance';
+  }
+
+  @override
+  String authUserId(int id) {
+    return 'User ID: $id';
+  }
+
+  @override
+  String get authProfileEmpty => 'No bio yet';
+
+  @override
+  String get authSignedToday => 'Checked in today';
+
+  @override
+  String get authLoginPrompt => 'Sign in to sync your account profile and check in every day.';
+
+  @override
+  String get authGuestName => 'Not signed in';
+
+  @override
+  String get catalogTitle => 'Project catalog';
+
+  @override
+  String get catalogSubtitle => 'Browse funding progress, rewards and project updates';
+
+  @override
+  String get catalogAllCategories => 'All';
+
+  @override
+  String get catalogSortRecommended => 'Recommended';
+
+  @override
+  String get catalogSortNewest => 'Newest';
+
+  @override
+  String get catalogSortEnding => 'Ending soon';
+
+  @override
+  String get catalogSortAchievement => 'Most funded';
+
+  @override
+  String get catalogLoadMore => 'Load more';
+
+  @override
+  String get catalogEnd => 'No more projects';
+
+  @override
+  String get catalogEmptyTitle => 'No projects found';
+
+  @override
+  String get catalogEmptyHint => 'Try another category or refresh the catalog.';
+
+  @override
+  String get catalogCredits => 'Credits';
+
+  @override
+  String catalogSupporters(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count supporters',
+      one: '$count supporter',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String catalogAchievement(int percent) {
+    return '$percent% funded';
+  }
+
+  @override
+  String get catalogDetailTitle => 'Project details';
+
+  @override
+  String get catalogDetailEmpty => 'Project unavailable';
+
+  @override
+  String get catalogReadOnlyNotice => 'Read-only preview. Payment, seat selection and order creation are not available in this desktop version yet.';
+
+  @override
+  String get catalogStatusPreheating => 'Coming soon';
+
+  @override
+  String get catalogStatusAchieved => 'Goal reached';
+
+  @override
+  String get catalogStatusDelivered => 'Delivered';
+
+  @override
+  String get catalogStatusFailed => 'Funding closed';
+
+  @override
+  String get catalogStatusOngoing => 'Funding';
+
+  @override
+  String get catalogProgressTitle => 'Funding progress';
+
+  @override
+  String catalogDaysLeft(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count days left',
+      one: '$count day left',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get catalogEnded => 'Ended';
+
+  @override
+  String get catalogGoalAmount => 'Goal';
+
+  @override
+  String get catalogRaisedAmount => 'Raised';
+
+  @override
+  String get catalogDeadline => 'Deadline';
+
+  @override
+  String get catalogInfoTitle => 'Project information';
+
+  @override
+  String catalogDuration(String duration) {
+    return 'Duration: $duration';
+  }
+
+  @override
+  String get catalogSoldOut => 'Sold out';
+
+  @override
+  String get catalogRewardsTitle => 'Reward tiers';
+
+  @override
+  String catalogDelivery(String date) {
+    return 'Estimated delivery: $date';
+  }
+
+  @override
+  String get catalogUpdatesTitle => 'Project updates';
+
+  @override
+  String get catalogRiskTitle => 'Risk and fulfillment';
+
+  @override
+  String get catalogRiskNote => 'Risk note';
+
+  @override
+  String get catalogDeliveryPlan => 'Delivery plan';
+
+  @override
+  String get catalogFundUsage => 'Use of funds';
+
+  @override
+  String get catalogRefundRule => 'Refund policy';
+
+  @override
+  String catalogReviewsTitle(int count) {
+    return 'Reviews ($count)';
+  }
+
+  @override
+  String get catalogAnonymous => 'Anonymous supporter';
+
+  @override
+  String get catalogFaqTitle => 'Frequently asked questions';
+
+  @override
+  String get catalogCreatorTitle => 'About the creator';
+
+  @override
+  String catalogCreator(String name) {
+    return 'Created by $name';
+  }
+
+  @override
+  String get catalogCreatorVerified => 'Verified creator';
+
+  @override
+  String catalogCreatorStats(int projects, int successful, int rate) {
+    return '$projects projects · $successful successful · $rate% fulfillment';
+  }
+
+  @override
+  String get catalogStoryTitle => 'Project story';
+
+  @override
+  String get catalogGalleryTitle => 'Gallery';
+
+  @override
+  String get catalogNoticeTitle => 'Support notice';
 }

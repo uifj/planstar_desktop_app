@@ -1,25 +1,44 @@
 /// 路由表：`StatefulShellRoute.indexedStack` 让每个页面保留各自状态。
 library;
 
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../features/auth/presentation/login_page.dart';
+import '../features/catalog/domain/show_summary.dart';
+import '../features/catalog/presentation/project_detail_page.dart';
+import '../features/catalog/presentation/projects_page.dart';
 import '../features/sync/presentation/account_page.dart';
 import '../features/calendar/presentation/calendar_page.dart';
 import '../features/countdown/presentation/countdown_page.dart';
 import '../features/history/presentation/history_page.dart';
 import '../features/notes/presentation/notes_page.dart';
+import '../features/project_idea/presentation/project_idea_detail_page.dart';
+import '../features/project_idea/presentation/project_ideas_page.dart';
 import '../features/search/presentation/search_page.dart';
 import '../features/settings/presentation/settings_page.dart';
 import '../features/subscription/presentation/subscription_page.dart';
 import '../features/timetable/presentation/timetable_page.dart';
 import '../features/transfer/presentation/transfer_page.dart';
 import 'shell/app_shell.dart';
+import 'shell/window_title_bar.dart';
 
 final routerProvider = Provider<GoRouter>(
   (Ref ref) => GoRouter(
     initialLocation: '/calendar',
     routes: <RouteBase>[
+      GoRoute(
+        path: '/login',
+        builder: (context, state) => const Scaffold(
+          body: Column(
+            children: <Widget>[
+              WindowTitleBar(),
+              Expanded(child: LoginPage()),
+            ],
+          ),
+        ),
+      ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) =>
             AppShell(navigationShell: navigationShell),
@@ -101,6 +120,41 @@ final routerProvider = Provider<GoRouter>(
               GoRoute(
                 path: '/settings',
                 builder: (context, state) => const SettingsPage(),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: <RouteBase>[
+              GoRoute(
+                path: '/project-ideas',
+                builder: (context, state) => const ProjectIdeasPage(),
+                routes: <RouteBase>[
+                  GoRoute(
+                    path: ':ideaId(\\d+)',
+                    builder: (context, state) => ProjectIdeaDetailPage(
+                      ideaId: int.parse(state.pathParameters['ideaId']!),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: <RouteBase>[
+              GoRoute(
+                path: '/projects',
+                builder: (context, state) => const ProjectsPage(),
+                routes: <RouteBase>[
+                  GoRoute(
+                    path: ':showId',
+                    builder: (context, state) => ProjectDetailPage(
+                      id: state.pathParameters['showId']!,
+                      initial: state.extra is ShowSummary
+                          ? state.extra as ShowSummary
+                          : null,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

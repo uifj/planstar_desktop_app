@@ -10,6 +10,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../bootstrap/core_providers.dart';
+import '../../features/auth/application/auth_providers.dart';
 import '../../features/calendar/application/calendar_controllers.dart';
 import '../../features/reminder/application/reminder_controller.dart';
 import '../../features/settings/application/settings_controller.dart';
@@ -25,7 +26,7 @@ final class WindowTitleBar extends ConsumerWidget {
     final colors = context.appColors;
     final l10n = context.l10n;
     final anchor = ref.watch(monthNavigationProvider);
-    final account = ref.watch(syncControllerProvider).account;
+    final user = ref.watch(authControllerProvider).user;
     final scheduled = ref.watch(reminderControllerProvider).scheduled;
 
     return GestureDetector(
@@ -107,9 +108,9 @@ final class WindowTitleBar extends ConsumerWidget {
             ),
             const SizedBox(width: AppSpacing.sm),
             Text(
-              account.isLoggedIn
-                  ? account.displayName
-                  : l10n.navAnonymousAccount,
+              user?.displayName.isNotEmpty == true
+                  ? user!.displayName
+                  : user?.maskedMobile ?? l10n.navAnonymousAccount,
               style: TextStyle(
                 fontSize: AppTypography.caption,
                 color: colors.textTertiary,

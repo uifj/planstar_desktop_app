@@ -1,9 +1,5 @@
 {
   "@@locale": "en",
-  "accountAutoLogin": "Auto sign-in",
-  "@accountAutoLogin": {
-    "description": "Account automatic sign-in status"
-  },
   "accountAutoSyncHourly": "Sync automatically every hour",
   "@accountAutoSyncHourly": {
     "description": "Hourly automatic synchronization switch"
@@ -15,31 +11,6 @@
   "accountCloudSyncTitle": "Cloud sync",
   "@accountCloudSyncTitle": {
     "description": "Cloud sync section title"
-  },
-  "accountDownloadedCount": "{count, plural, =1{Downloaded 1 item} other{Downloaded {count} items}}",
-  "@accountDownloadedCount": {
-    "description": "Number of downloaded records",
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "accountEmailOrPhone": "Email / phone",
-  "@accountEmailOrPhone": {
-    "description": "Sign-in email or phone field label"
-  },
-  "accountIdentity": "{displayName} ({email})",
-  "@accountIdentity": {
-    "description": "Signed-in account display name and email",
-    "placeholders": {
-      "displayName": {
-        "type": "String"
-      },
-      "email": {
-        "type": "String"
-      }
-    }
   },
   "accountLastSyncAt": "Last sync: {dateTime}",
   "@accountLastSyncAt": {
@@ -66,10 +37,6 @@
   "@accountNeverSynced": {
     "description": "Status when synchronization has never run"
   },
-  "accountPassword": "Password",
-  "@accountPassword": {
-    "description": "Sign-in password field label"
-  },
   "accountPendingChanges": "{count, plural, =0{No pending changes} =1{1 pending change} other{{count} pending changes}}",
   "@accountPendingChanges": {
     "description": "Number of pending changes to sync",
@@ -78,10 +45,6 @@
         "type": "int"
       }
     }
-  },
-  "accountReadOnlyMember": "Read-only member",
-  "@accountReadOnlyMember": {
-    "description": "Account read-only member status"
   },
   "accountStatusFailure": "Sync failed",
   "@accountStatusFailure": {
@@ -103,26 +66,9 @@
   "@accountSubtitle": {
     "description": "Account page description"
   },
-  "accountTeamAccount": "Team account",
-  "@accountTeamAccount": {
-    "description": "Account team status"
-  },
   "accountTitle": "Account",
   "@accountTitle": {
     "description": "Account page title"
-  },
-  "accountUploadedCount": "{count, plural, =1{Uploaded 1 item} other{Uploaded {count} items}}",
-  "@accountUploadedCount": {
-    "description": "Number of uploaded records",
-    "placeholders": {
-      "count": {
-        "type": "int"
-      }
-    }
-  },
-  "accountVip": "VIP",
-  "@accountVip": {
-    "description": "Account VIP badge"
   },
   "appTitle": "Planstar · Desktop Calendar & Checklist",
   "@appTitle": {
@@ -1233,6 +1179,121 @@
   "@navAnonymousAccount": {
     "description": "Localized desktop text: navAnonymousAccount"
   },
+  "ideaCreatedAt": "Created {date}",
+  "@ideaCreatedAt": {
+    "description": "创意企划创建时间",
+    "placeholders": {"date": {"type": "String"}}
+  },
+  "ideaCreator": "Proposed by {name}",
+  "@ideaCreator": {
+    "description": "创意企划发起人",
+    "placeholders": {"name": {"type": "String"}}
+  },
+  "ideaDetailTitle": "Project details",
+  "@ideaDetailTitle": {"description": "创意企划详情页标题"},
+  "ideaEmptyHint": "Pull to refresh or try again later",
+  "@ideaEmptyHint": {"description": "创意企划空状态提示"},
+  "ideaEmptyTitle": "No new projects yet",
+  "@ideaEmptyTitle": {"description": "创意企划空状态标题"},
+  "ideaGallery": "Project images",
+  "@ideaGallery": {"description": "企划详情图片区域"},
+  "ideaLoadMore": "Load more",
+  "@ideaLoadMore": {"description": "加载下一页创意企划"},
+  "ideaNav": "Projects",
+  "@ideaNav": {"description": "主导航企划入口"},
+  "ideaNoDescription": "The proposer has not added a detailed description yet",
+  "@ideaNoDescription": {"description": "企划详情缺少描述时的占位文案"},
+  "ideaNoReasonStats": "No opposition reasons yet",
+  "@ideaNoReasonStats": {"description": "反对理由统计空状态"},
+  "ideaOpposeCount": "Oppose {count}",
+  "@ideaOpposeCount": {
+    "description": "反对票数",
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "ideaOpposeReasonHint": "Additional details (optional, up to 100 characters)",
+  "@ideaOpposeReasonHint": {"description": "反对理由补充输入提示"},
+  "ideaOpposeReasonNotEnoughInfo": "Not enough information",
+  "@ideaOpposeReasonNotEnoughInfo": {"description": "反对理由：信息不足"},
+  "ideaOpposeReasonNotExecutable": "Difficult to execute",
+  "@ideaOpposeReasonNotExecutable": {"description": "反对理由：难以执行"},
+  "ideaOpposeReasonNotInterested": "Not interested",
+  "@ideaOpposeReasonNotInterested": {"description": "反对理由：不感兴趣"},
+  "ideaOpposeReasonOther": "Other",
+  "@ideaOpposeReasonOther": {"description": "反对理由：其他"},
+  "ideaOpposeReasonTooManySimilar": "Too many similar projects",
+  "@ideaOpposeReasonTooManySimilar": {"description": "反对理由：同质化"},
+  "ideaOpposeReasonUnreasonablePricing": "Expected pricing is unreasonable",
+  "@ideaOpposeReasonUnreasonablePricing": {"description": "反对理由：定价问题"},
+  "ideaOpposeSubmit": "Submit opposition",
+  "@ideaOpposeSubmit": {"description": "提交反对按钮"},
+  "ideaOpposeSubtitle": "Choose the main reason to help the proposer understand your concerns",
+  "@ideaOpposeSubtitle": {"description": "反对投票说明"},
+  "ideaOpposeSuccess": "Your opposition has been submitted",
+  "@ideaOpposeSuccess": {"description": "反对投票成功提示"},
+  "ideaOtherReasonRequired": "Add a reason when selecting Other",
+  "@ideaOtherReasonRequired": {"description": "其他反对理由校验提示"},
+  "ideaReasonCountsTitle": "Reasons for opposition",
+  "@ideaReasonCountsTitle": {"description": "反对理由统计标题"},
+  "ideaRefresh": "Refresh",
+  "@ideaRefresh": {"description": "刷新创意企划列表"},
+  "ideaSubtitle": "Discover ideas and share support or concerns; voting never charges you",
+  "@ideaSubtitle": {"description": "创意企划列表说明"},
+  "ideaSupport": "Support",
+  "@ideaSupport": {"description": "支持按钮"},
+  "ideaSupportCount": "Support {count}",
+  "@ideaSupportCount": {
+    "description": "支持票数",
+    "placeholders": {"count": {"type": "int"}}
+  },
+  "ideaSupportDisclaimer": "Tiers only record future willingness to support. No coins are charged and no order is created.",
+  "@ideaSupportDisclaimer": {"description": "支持投票不扣费说明"},
+  "ideaSupportRate": "Support rate {percent}%",
+  "@ideaSupportRate": {
+    "description": "企划支持率",
+    "placeholders": {"percent": {"type": "int"}}
+  },
+  "ideaSupportReasonHint": "Share your expectations (optional, up to 60 characters)",
+  "@ideaSupportReasonHint": {"description": "支持理由输入提示"},
+  "ideaSupportReasonCreative": "Great idea",
+  "@ideaSupportReasonCreative": {"description": "支持理由快捷标签"},
+  "ideaSupportReasonJoin": "I would join",
+  "@ideaSupportReasonJoin": {"description": "支持理由快捷标签"},
+  "ideaSupportReasonLaunch": "Looking forward to launch",
+  "@ideaSupportReasonLaunch": {"description": "支持理由快捷标签"},
+  "ideaSupportSubmit": "Submit support",
+  "@ideaSupportSubmit": {"description": "提交支持按钮"},
+  "ideaSupportSubtitle": "Choose a future support tier to express willingness only",
+  "@ideaSupportSubtitle": {"description": "支持投票说明"},
+  "ideaSupportSuccess": "Your support has been recorded",
+  "@ideaSupportSuccess": {"description": "支持投票成功提示"},
+  "ideaTierCount": "{tier}-coin tier: {count} people",
+  "@ideaTierCount": {
+    "description": "支持意愿档位人数",
+    "placeholders": {"tier": {"type": "int"}, "count": {"type": "int"}}
+  },
+  "ideaTierDistributionTitle": "Support willingness",
+  "@ideaTierDistributionTitle": {"description": "支持意愿档位统计标题"},
+  "ideaTitle": "Project ideas",
+  "@ideaTitle": {"description": "创意企划列表标题"},
+  "ideaUntitled": "Untitled project",
+  "@ideaUntitled": {"description": "企划标题缺失占位文案"},
+  "ideaUnknownCreator": "Anonymous proposer",
+  "@ideaUnknownCreator": {"description": "发起人缺失占位文案"},
+  "ideaViewDetail": "View details",
+  "@ideaViewDetail": {"description": "企划卡片详情操作"},
+  "ideaVoteAlready": "Your vote is already recorded",
+  "@ideaVoteAlready": {"description": "重复投票成功提示"},
+  "ideaVoteLoginRequired": "Sign in before voting",
+  "@ideaVoteLoginRequired": {"description": "未登录投票提示"},
+  "ideaVoteMyOppose": "You submitted an opposition",
+  "@ideaVoteMyOppose": {"description": "当前用户反对状态"},
+  "ideaVoteMySupport": "You supported the {tier}-coin tier",
+  "@ideaVoteMySupport": {
+    "description": "当前用户支持状态",
+    "placeholders": {"tier": {"type": "int"}}
+  },
+  "ideaVoting": "Submitting…",
+  "@ideaVoting": {"description": "投票提交中状态"},
   "navCalendar": "Calendar",
   "@navCalendar": {
     "description": "Localized desktop text: navCalendar"
@@ -1790,6 +1851,7 @@
     "description": "重新排程全部提醒按钮"
   },
   "settingsRestoreDefaults": "Restore default settings",
+  "settingsSaveFailed": "Could not save settings. Check local storage and try again.",
   "@settingsRestoreDefaults": {
     "description": "恢复默认设置按钮"
   },
@@ -2138,22 +2200,9 @@
       }
     }
   },
-  "syncLocalAccount": "{message} (switched to a local account)",
-  "@syncLocalAccount": {
-    "description": "message must be a safe localized category from failureLabel, never server or exception details",
-    "placeholders": {
-      "message": {
-        "type": "String"
-      }
-    }
-  },
   "syncLoginRequired": "Sign in before syncing",
   "@syncLoginRequired": {
     "description": "Localized desktop text: syncLoginRequired"
-  },
-  "syncLoginSuccess": "Signed in successfully",
-  "@syncLoginSuccess": {
-    "description": "Localized desktop text: syncLoginSuccess"
   },
   "syncSummary": "Uploaded {uploaded} records and downloaded {downloaded} records.",
   "@syncSummary": {
@@ -2597,5 +2646,435 @@
   "widgetTextColorTooltip": "Choose text color",
   "@widgetTextColorTooltip": {
     "description": "Localized desktop text: widgetTextColorTooltip"
+  },
+  "authLoginTitle": "Sign in / Sign up",
+  "@authLoginTitle": {
+    "description": "Authentication page title"
+  },
+  "authLoginSubtitle": "Sign in with your phone number. Your account is created automatically on first sign-in.",
+  "@authLoginSubtitle": {
+    "description": "Explains phone-code login and automatic first-login registration"
+  },
+  "authPhoneHint": "Phone number",
+  "@authPhoneHint": {
+    "description": "Phone number field label"
+  },
+  "authCodeHint": "6-digit code",
+  "@authCodeHint": {
+    "description": "SMS verification code field label"
+  },
+  "authPasswordHint": "Password (6–20 characters)",
+  "@authPasswordHint": {
+    "description": "Password field label"
+  },
+  "authSendCode": "Send code",
+  "@authSendCode": {
+    "description": "Send verification code button"
+  },
+  "authSendingCode": "Sending",
+  "@authSendingCode": {
+    "description": "Verification code request in progress"
+  },
+  "authResendCode": "Resend in {seconds}s",
+  "@authResendCode": {
+    "description": "Verification code resend cooldown",
+    "placeholders": {
+      "seconds": {"type": "int", "example": "60"}
+    }
+  },
+  "authLoggingIn": "Signing in",
+  "@authLoggingIn": {
+    "description": "Login request in progress"
+  },
+  "authLoginAction": "Sign in / Sign up",
+  "@authLoginAction": {
+    "description": "Submit authentication button"
+  },
+  "authSwitchToPassword": "Use password",
+  "@authSwitchToPassword": {
+    "description": "Switch to password login"
+  },
+  "authSwitchToCode": "Use SMS code",
+  "@authSwitchToCode": {
+    "description": "Switch to SMS code login"
+  },
+  "authAgreementText": "I have read and agree to the registration agreement and privacy policy",
+  "@authAgreementText": {
+    "description": "Registration and privacy agreement checkbox"
+  },
+  "authAgreementRequired": "Accept the registration agreement and privacy policy to continue",
+  "@authAgreementRequired": {
+    "description": "Validation message when agreement is not accepted"
+  },
+  "authPhoneInvalid": "Enter a valid 11-digit phone number",
+  "@authPhoneInvalid": {
+    "description": "Phone number validation error"
+  },
+  "authCodeInvalid": "Enter the 6-digit SMS code",
+  "@authCodeInvalid": {
+    "description": "SMS code validation error"
+  },
+  "authPasswordInvalid": "Password must contain 6–20 characters",
+  "@authPasswordInvalid": {
+    "description": "Password validation error"
+  },
+  "authCodeSent": "Verification code sent",
+  "@authCodeSent": {
+    "description": "Verification code sent confirmation"
+  },
+  "authNetworkError": "Network connection failed. Check your connection and try again.",
+  "@authNetworkError": {
+    "description": "Authentication network failure"
+  },
+  "authTimeoutError": "The request timed out. Please try again.",
+  "@authTimeoutError": {
+    "description": "Authentication request timeout"
+  },
+  "authStorageError": "The sign-in state could not be saved securely. Check your system keychain.",
+  "@authStorageError": {
+    "description": "Secure session persistence failure"
+  },
+  "authSessionExpired": "Your session has expired. Please sign in again.",
+  "@authSessionExpired": {
+    "description": "Expired authentication session"
+  },
+  "authUnknownError": "Something went wrong. Please try again.",
+  "@authUnknownError": {
+    "description": "Unknown authentication failure"
+  },
+  "authAccountLockedTitle": "Account locked",
+  "@authAccountLockedTitle": {
+    "description": "Account locked dialog title"
+  },
+  "authAccountLockedConfirm": "Got it",
+  "@authAccountLockedConfirm": {
+    "description": "Account locked dialog confirmation"
+  },
+  "authCaptchaTitle": "Image verification",
+  "@authCaptchaTitle": {
+    "description": "Image captcha dialog title"
+  },
+  "authCaptchaHint": "Enter the characters shown",
+  "@authCaptchaHint": {
+    "description": "Image captcha input label"
+  },
+  "authCaptchaRefresh": "Refresh",
+  "@authCaptchaRefresh": {
+    "description": "Refresh image captcha"
+  },
+  "authCaptchaCancel": "Cancel",
+  "@authCaptchaCancel": {
+    "description": "Cancel image captcha dialog"
+  },
+  "authCaptchaConfirm": "Confirm",
+  "@authCaptchaConfirm": {
+    "description": "Submit image captcha"
+  },
+  "authCaptchaLoadFailed": "Could not load the image. Tap to retry.",
+  "@authCaptchaLoadFailed": {
+    "description": "Image captcha loading failure"
+  },
+  "authNewUserWelcome": "Your account has been created. Welcome to Planstar.",
+  "@authNewUserWelcome": {
+    "description": "First-login registration confirmation"
+  },
+  "authBackToAccount": "Back to account",
+  "@authBackToAccount": {
+    "description": "Close authentication page and return to account"
+  },
+  "authRefreshProfile": "Refresh profile",
+  "@authRefreshProfile": {
+    "description": "Refresh authenticated user profile"
+  },
+  "authProfileRefreshing": "Refreshing",
+  "@authProfileRefreshing": {
+    "description": "Profile refresh in progress"
+  },
+  "authSignIn": "Daily check-in",
+  "@authSignIn": {
+    "description": "Submit daily sign-in"
+  },
+  "authSigningIn": "Checking in",
+  "@authSigningIn": {
+    "description": "Daily sign-in in progress"
+  },
+  "authSignInReward": "Today's reward: {reward} stars",
+  "@authSignInReward": {
+    "description": "Daily sign-in reward amount",
+    "placeholders": {
+      "reward": {"type": "int", "example": "100"}
+    }
+  },
+  "authWalletBalance": "Star balance: {balance}",
+  "@authWalletBalance": {
+    "description": "Star coin account balance",
+    "placeholders": {
+      "balance": {"type": "String", "example": "12.34"}
+    }
+  },
+  "authUserId": "User ID: {id}",
+  "@authUserId": {
+    "description": "Authenticated user identifier",
+    "placeholders": {
+      "id": {"type": "int", "example": "12345"}
+    }
+  },
+  "authProfileEmpty": "No bio yet",
+  "@authProfileEmpty": {
+    "description": "Empty user biography"
+  },
+  "authSignedToday": "Checked in today",
+  "@authSignedToday": {
+    "description": "Daily sign-in completion message"
+  },
+  "authLoginPrompt": "Sign in to sync your account profile and check in every day.",
+  "@authLoginPrompt": {
+    "description": "Guest account page authentication prompt"
+  },
+  "authGuestName": "Not signed in",
+  "@authGuestName": {
+    "description": "Guest account display name"
+  },
+  "catalogTitle": "Project catalog",
+  "@catalogTitle": {
+    "description": "Formal project catalog page title"
+  },
+  "catalogSubtitle": "Browse funding progress, rewards and project updates",
+  "@catalogSubtitle": {
+    "description": "Formal project catalog page subtitle"
+  },
+  "catalogAllCategories": "All",
+  "@catalogAllCategories": {
+    "description": "Clear the project category filter"
+  },
+  "catalogSortRecommended": "Recommended",
+  "@catalogSortRecommended": {
+    "description": "Recommended project sorting option"
+  },
+  "catalogSortNewest": "Newest",
+  "@catalogSortNewest": {
+    "description": "Newest project sorting option"
+  },
+  "catalogSortEnding": "Ending soon",
+  "@catalogSortEnding": {
+    "description": "Projects ending soon sorting option"
+  },
+  "catalogSortAchievement": "Most funded",
+  "@catalogSortAchievement": {
+    "description": "Highest funding achievement sorting option"
+  },
+  "catalogLoadMore": "Load more",
+  "@catalogLoadMore": {
+    "description": "Load the next project catalog page"
+  },
+  "catalogEnd": "No more projects",
+  "@catalogEnd": {
+    "description": "Project catalog pagination end"
+  },
+  "catalogEmptyTitle": "No projects found",
+  "@catalogEmptyTitle": {
+    "description": "Empty project catalog title"
+  },
+  "catalogEmptyHint": "Try another category or refresh the catalog.",
+  "@catalogEmptyHint": {
+    "description": "Empty project catalog guidance"
+  },
+  "catalogCredits": "Credits",
+  "@catalogCredits": {
+    "description": "Localized project currency label"
+  },
+  "catalogSupporters": "{count, plural, =1{{count} supporter} other{{count} supporters}}",
+  "@catalogSupporters": {
+    "description": "Project supporter count",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "catalogAchievement": "{percent}% funded",
+  "@catalogAchievement": {
+    "description": "Project funding achievement percentage",
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "catalogDetailTitle": "Project details",
+  "@catalogDetailTitle": {
+    "description": "Read-only project detail page title"
+  },
+  "catalogDetailEmpty": "Project unavailable",
+  "@catalogDetailEmpty": {
+    "description": "Missing project detail empty state"
+  },
+  "catalogReadOnlyNotice": "Read-only preview. Payment, seat selection and order creation are not available in this desktop version yet.",
+  "@catalogReadOnlyNotice": {
+    "description": "Explicit boundary for unsupported project transaction features"
+  },
+  "catalogStatusPreheating": "Coming soon",
+  "@catalogStatusPreheating": {
+    "description": "Project preheating funding status"
+  },
+  "catalogStatusAchieved": "Goal reached",
+  "@catalogStatusAchieved": {
+    "description": "Project achieved funding status"
+  },
+  "catalogStatusDelivered": "Delivered",
+  "@catalogStatusDelivered": {
+    "description": "Project delivered funding status"
+  },
+  "catalogStatusFailed": "Funding closed",
+  "@catalogStatusFailed": {
+    "description": "Project failed funding status"
+  },
+  "catalogStatusOngoing": "Funding",
+  "@catalogStatusOngoing": {
+    "description": "Project ongoing funding status"
+  },
+  "catalogProgressTitle": "Funding progress",
+  "@catalogProgressTitle": {
+    "description": "Project funding progress section title"
+  },
+  "catalogDaysLeft": "{count, plural, =1{{count} day left} other{{count} days left}}",
+  "@catalogDaysLeft": {
+    "description": "Remaining project funding days",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "catalogEnded": "Ended",
+  "@catalogEnded": {
+    "description": "Project funding deadline has ended"
+  },
+  "catalogGoalAmount": "Goal",
+  "@catalogGoalAmount": {
+    "description": "Project funding goal metric label"
+  },
+  "catalogRaisedAmount": "Raised",
+  "@catalogRaisedAmount": {
+    "description": "Project raised amount metric label"
+  },
+  "catalogDeadline": "Deadline",
+  "@catalogDeadline": {
+    "description": "Project funding deadline label"
+  },
+  "catalogInfoTitle": "Project information",
+  "@catalogInfoTitle": {
+    "description": "Venue, schedule and lineup section title"
+  },
+  "catalogDuration": "Duration: {duration}",
+  "@catalogDuration": {
+    "description": "Project or event duration",
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "catalogSoldOut": "Sold out",
+  "@catalogSoldOut": {
+    "description": "Sold-out reward tier or session label"
+  },
+  "catalogRewardsTitle": "Reward tiers",
+  "@catalogRewardsTitle": {
+    "description": "Project reward tiers section title"
+  },
+  "catalogDelivery": "Estimated delivery: {date}",
+  "@catalogDelivery": {
+    "description": "Reward tier estimated delivery time",
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "catalogUpdatesTitle": "Project updates",
+  "@catalogUpdatesTitle": {
+    "description": "Project progress updates section title"
+  },
+  "catalogRiskTitle": "Risk and fulfillment",
+  "@catalogRiskTitle": {
+    "description": "Project risk and fulfillment section title"
+  },
+  "catalogRiskNote": "Risk note",
+  "@catalogRiskNote": {
+    "description": "Project risk note label"
+  },
+  "catalogDeliveryPlan": "Delivery plan",
+  "@catalogDeliveryPlan": {
+    "description": "Project delivery plan label"
+  },
+  "catalogFundUsage": "Use of funds",
+  "@catalogFundUsage": {
+    "description": "Project fund usage label"
+  },
+  "catalogRefundRule": "Refund policy",
+  "@catalogRefundRule": {
+    "description": "Project refund policy label"
+  },
+  "catalogReviewsTitle": "Reviews ({count})",
+  "@catalogReviewsTitle": {
+    "description": "Project reviews section title",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "catalogAnonymous": "Anonymous supporter",
+  "@catalogAnonymous": {
+    "description": "Anonymous project review author"
+  },
+  "catalogFaqTitle": "Frequently asked questions",
+  "@catalogFaqTitle": {
+    "description": "Project FAQ section title"
+  },
+  "catalogCreatorTitle": "About the creator",
+  "@catalogCreatorTitle": {
+    "description": "Project creator section title"
+  },
+  "catalogCreator": "Created by {name}",
+  "@catalogCreator": {
+    "description": "Project creator attribution",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "catalogCreatorVerified": "Verified creator",
+  "@catalogCreatorVerified": {
+    "description": "Verified project creator badge"
+  },
+  "catalogCreatorStats": "{projects} projects · {successful} successful · {rate}% fulfillment",
+  "@catalogCreatorStats": {
+    "description": "Project creator track record",
+    "placeholders": {
+      "projects": {
+        "type": "int"
+      },
+      "successful": {
+        "type": "int"
+      },
+      "rate": {
+        "type": "int"
+      }
+    }
+  },
+  "catalogStoryTitle": "Project story",
+  "@catalogStoryTitle": {
+    "description": "Project story section title"
+  },
+  "catalogGalleryTitle": "Gallery",
+  "@catalogGalleryTitle": {
+    "description": "Project image gallery section title"
+  },
+  "catalogNoticeTitle": "Support notice",
+  "@catalogNoticeTitle": {
+    "description": "Project purchase notice section title"
   }
 }

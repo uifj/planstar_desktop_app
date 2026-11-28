@@ -95,12 +95,6 @@ abstract class AppLocalizations {
     Locale('zh')
   ];
 
-  /// 账号自动登录状态
-  ///
-  /// In zh, this message translates to:
-  /// **'自动登录'**
-  String get accountAutoLogin;
-
   /// 每小时自动同步开关
   ///
   /// In zh, this message translates to:
@@ -118,24 +112,6 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'云同步'**
   String get accountCloudSyncTitle;
-
-  /// 已下载记录数量
-  ///
-  /// In zh, this message translates to:
-  /// **'{count, plural, =1{下载 1 条} other{下载 {count} 条}}'**
-  String accountDownloadedCount(int count);
-
-  /// 登录邮箱或手机号输入框标签
-  ///
-  /// In zh, this message translates to:
-  /// **'邮箱 / 手机号'**
-  String get accountEmailOrPhone;
-
-  /// 已登录账号的显示名称和邮箱
-  ///
-  /// In zh, this message translates to:
-  /// **'{displayName}（{email}）'**
-  String accountIdentity(String displayName, String email);
 
   /// 按当前语言格式化的上次同步时间
   ///
@@ -167,23 +143,11 @@ abstract class AppLocalizations {
   /// **'从未同步'**
   String get accountNeverSynced;
 
-  /// 登录密码输入框标签
-  ///
-  /// In zh, this message translates to:
-  /// **'密码'**
-  String get accountPassword;
-
   /// 待同步变更数量
   ///
   /// In zh, this message translates to:
   /// **'{count, plural, =0{没有待同步变更} =1{待同步变更 1 条} other{待同步变更 {count} 条}}'**
   String accountPendingChanges(int count);
-
-  /// 账号只读成员状态
-  ///
-  /// In zh, this message translates to:
-  /// **'只读成员'**
-  String get accountReadOnlyMember;
 
   /// 同步失败状态
   ///
@@ -215,29 +179,11 @@ abstract class AppLocalizations {
   /// **'登录后可以同步和备份日历清单'**
   String get accountSubtitle;
 
-  /// 账号团队账号状态
-  ///
-  /// In zh, this message translates to:
-  /// **'团队账号'**
-  String get accountTeamAccount;
-
   /// 账号页面标题
   ///
   /// In zh, this message translates to:
   /// **'账号'**
   String get accountTitle;
-
-  /// 已上传记录数量
-  ///
-  /// In zh, this message translates to:
-  /// **'{count, plural, =1{上传 1 条} other{上传 {count} 条}}'**
-  String accountUploadedCount(int count);
-
-  /// 账号 VIP 标识
-  ///
-  /// In zh, this message translates to:
-  /// **'VIP'**
-  String get accountVip;
 
   /// Localized desktop text: appTitle
   ///
@@ -1583,6 +1529,288 @@ abstract class AppLocalizations {
   /// **'未登录'**
   String get navAnonymousAccount;
 
+  /// 创意企划创建时间
+  ///
+  /// In zh, this message translates to:
+  /// **'创建于 {date}'**
+  String ideaCreatedAt(String date);
+
+  /// 创意企划发起人
+  ///
+  /// In zh, this message translates to:
+  /// **'由 {name} 发起'**
+  String ideaCreator(String name);
+
+  /// 创意企划详情页标题
+  ///
+  /// In zh, this message translates to:
+  /// **'企划详情'**
+  String get ideaDetailTitle;
+
+  /// 创意企划空状态提示
+  ///
+  /// In zh, this message translates to:
+  /// **'下拉刷新或稍后重试'**
+  String get ideaEmptyHint;
+
+  /// 创意企划空状态标题
+  ///
+  /// In zh, this message translates to:
+  /// **'暂时没有新的企划'**
+  String get ideaEmptyTitle;
+
+  /// 企划详情图片区域
+  ///
+  /// In zh, this message translates to:
+  /// **'企划图片'**
+  String get ideaGallery;
+
+  /// 加载下一页创意企划
+  ///
+  /// In zh, this message translates to:
+  /// **'加载更多'**
+  String get ideaLoadMore;
+
+  /// 主导航企划入口
+  ///
+  /// In zh, this message translates to:
+  /// **'企划'**
+  String get ideaNav;
+
+  /// 企划详情缺少描述时的占位文案
+  ///
+  /// In zh, this message translates to:
+  /// **'发起人暂未填写详细介绍'**
+  String get ideaNoDescription;
+
+  /// 反对理由统计空状态
+  ///
+  /// In zh, this message translates to:
+  /// **'暂无反对理由统计'**
+  String get ideaNoReasonStats;
+
+  /// 反对票数
+  ///
+  /// In zh, this message translates to:
+  /// **'反对 {count}'**
+  String ideaOpposeCount(int count);
+
+  /// 反对理由补充输入提示
+  ///
+  /// In zh, this message translates to:
+  /// **'补充说明（选填，最多 100 字）'**
+  String get ideaOpposeReasonHint;
+
+  /// 反对理由：信息不足
+  ///
+  /// In zh, this message translates to:
+  /// **'信息不够充分'**
+  String get ideaOpposeReasonNotEnoughInfo;
+
+  /// 反对理由：难以执行
+  ///
+  /// In zh, this message translates to:
+  /// **'方案难以执行'**
+  String get ideaOpposeReasonNotExecutable;
+
+  /// 反对理由：不感兴趣
+  ///
+  /// In zh, this message translates to:
+  /// **'不感兴趣'**
+  String get ideaOpposeReasonNotInterested;
+
+  /// 反对理由：其他
+  ///
+  /// In zh, this message translates to:
+  /// **'其他原因'**
+  String get ideaOpposeReasonOther;
+
+  /// 反对理由：同质化
+  ///
+  /// In zh, this message translates to:
+  /// **'同类企划太多'**
+  String get ideaOpposeReasonTooManySimilar;
+
+  /// 反对理由：定价问题
+  ///
+  /// In zh, this message translates to:
+  /// **'预期定价不合理'**
+  String get ideaOpposeReasonUnreasonablePricing;
+
+  /// 提交反对按钮
+  ///
+  /// In zh, this message translates to:
+  /// **'提交反对'**
+  String get ideaOpposeSubmit;
+
+  /// 反对投票说明
+  ///
+  /// In zh, this message translates to:
+  /// **'请选择主要原因，帮助发起人了解你的顾虑'**
+  String get ideaOpposeSubtitle;
+
+  /// 反对投票成功提示
+  ///
+  /// In zh, this message translates to:
+  /// **'已提交你的反对意见'**
+  String get ideaOpposeSuccess;
+
+  /// 其他反对理由校验提示
+  ///
+  /// In zh, this message translates to:
+  /// **'选择“其他原因”时请填写说明'**
+  String get ideaOtherReasonRequired;
+
+  /// 反对理由统计标题
+  ///
+  /// In zh, this message translates to:
+  /// **'反对理由'**
+  String get ideaReasonCountsTitle;
+
+  /// 刷新创意企划列表
+  ///
+  /// In zh, this message translates to:
+  /// **'刷新'**
+  String get ideaRefresh;
+
+  /// 创意企划列表说明
+  ///
+  /// In zh, this message translates to:
+  /// **'发现新创意，表达你的支持或顾虑；投票不产生扣费'**
+  String get ideaSubtitle;
+
+  /// 支持按钮
+  ///
+  /// In zh, this message translates to:
+  /// **'支持'**
+  String get ideaSupport;
+
+  /// 支持票数
+  ///
+  /// In zh, this message translates to:
+  /// **'支持 {count}'**
+  String ideaSupportCount(int count);
+
+  /// 支持投票不扣费说明
+  ///
+  /// In zh, this message translates to:
+  /// **'档位仅记录未来支持意愿，不会扣除星币，也不会创建订单。'**
+  String get ideaSupportDisclaimer;
+
+  /// 企划支持率
+  ///
+  /// In zh, this message translates to:
+  /// **'支持率 {percent}%'**
+  String ideaSupportRate(int percent);
+
+  /// 支持理由输入提示
+  ///
+  /// In zh, this message translates to:
+  /// **'说说你的期待（选填，最多 60 字）'**
+  String get ideaSupportReasonHint;
+
+  /// 支持理由快捷标签
+  ///
+  /// In zh, this message translates to:
+  /// **'创意很棒'**
+  String get ideaSupportReasonCreative;
+
+  /// 支持理由快捷标签
+  ///
+  /// In zh, this message translates to:
+  /// **'愿意参与'**
+  String get ideaSupportReasonJoin;
+
+  /// 支持理由快捷标签
+  ///
+  /// In zh, this message translates to:
+  /// **'期待上线'**
+  String get ideaSupportReasonLaunch;
+
+  /// 提交支持按钮
+  ///
+  /// In zh, this message translates to:
+  /// **'提交支持'**
+  String get ideaSupportSubmit;
+
+  /// 支持投票说明
+  ///
+  /// In zh, this message translates to:
+  /// **'选择未来愿意支持的档位，仅表达意愿'**
+  String get ideaSupportSubtitle;
+
+  /// 支持投票成功提示
+  ///
+  /// In zh, this message translates to:
+  /// **'已记录你的支持意愿'**
+  String get ideaSupportSuccess;
+
+  /// 支持意愿档位人数
+  ///
+  /// In zh, this message translates to:
+  /// **'{tier} 星币意愿：{count} 人'**
+  String ideaTierCount(int tier, int count);
+
+  /// 支持意愿档位统计标题
+  ///
+  /// In zh, this message translates to:
+  /// **'支持意愿分布'**
+  String get ideaTierDistributionTitle;
+
+  /// 创意企划列表标题
+  ///
+  /// In zh, this message translates to:
+  /// **'创意企划'**
+  String get ideaTitle;
+
+  /// 企划标题缺失占位文案
+  ///
+  /// In zh, this message translates to:
+  /// **'未命名企划'**
+  String get ideaUntitled;
+
+  /// 发起人缺失占位文案
+  ///
+  /// In zh, this message translates to:
+  /// **'匿名发起人'**
+  String get ideaUnknownCreator;
+
+  /// 企划卡片详情操作
+  ///
+  /// In zh, this message translates to:
+  /// **'查看详情'**
+  String get ideaViewDetail;
+
+  /// 重复投票成功提示
+  ///
+  /// In zh, this message translates to:
+  /// **'已记录你的表态'**
+  String get ideaVoteAlready;
+
+  /// 未登录投票提示
+  ///
+  /// In zh, this message translates to:
+  /// **'请先登录后再表态'**
+  String get ideaVoteLoginRequired;
+
+  /// 当前用户反对状态
+  ///
+  /// In zh, this message translates to:
+  /// **'我已提交反对意见'**
+  String get ideaVoteMyOppose;
+
+  /// 当前用户支持状态
+  ///
+  /// In zh, this message translates to:
+  /// **'我已支持：{tier} 星币意愿'**
+  String ideaVoteMySupport(int tier);
+
+  /// 投票提交中状态
+  ///
+  /// In zh, this message translates to:
+  /// **'提交中…'**
+  String get ideaVoting;
+
   /// Localized desktop text: navCalendar
   ///
   /// In zh, this message translates to:
@@ -2279,6 +2507,12 @@ abstract class AppLocalizations {
   /// **'恢复默认设置'**
   String get settingsRestoreDefaults;
 
+  /// No description provided for @settingsSaveFailed.
+  ///
+  /// In zh, this message translates to:
+  /// **'设置保存失败，请检查本地存储后重试'**
+  String get settingsSaveFailed;
+
   /// 恢复系统原始壁纸按钮
   ///
   /// In zh, this message translates to:
@@ -2693,23 +2927,11 @@ abstract class AppLocalizations {
   /// **'同步失败：{message}'**
   String syncFailed(String message);
 
-  /// message must be a safe localized category from failureLabel, never server or exception details
-  ///
-  /// In zh, this message translates to:
-  /// **'{message}（已切换为本地账号）'**
-  String syncLocalAccount(String message);
-
   /// Localized desktop text: syncLoginRequired
   ///
   /// In zh, this message translates to:
   /// **'请先登录账号后再同步'**
   String get syncLoginRequired;
-
-  /// Localized desktop text: syncLoginSuccess
-  ///
-  /// In zh, this message translates to:
-  /// **'登录成功'**
-  String get syncLoginSuccess;
 
   /// Localized desktop text: syncSummary
   ///
@@ -3262,6 +3484,564 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'选择文字颜色'**
   String get widgetTextColorTooltip;
+
+  /// Authentication page title
+  ///
+  /// In zh, this message translates to:
+  /// **'登录 / 注册'**
+  String get authLoginTitle;
+
+  /// Explains phone-code login and automatic first-login registration
+  ///
+  /// In zh, this message translates to:
+  /// **'使用手机号验证码登录，首次登录将自动创建账号。'**
+  String get authLoginSubtitle;
+
+  /// Phone number field label
+  ///
+  /// In zh, this message translates to:
+  /// **'手机号'**
+  String get authPhoneHint;
+
+  /// SMS verification code field label
+  ///
+  /// In zh, this message translates to:
+  /// **'6 位验证码'**
+  String get authCodeHint;
+
+  /// Password field label
+  ///
+  /// In zh, this message translates to:
+  /// **'密码（6–20 位）'**
+  String get authPasswordHint;
+
+  /// Send verification code button
+  ///
+  /// In zh, this message translates to:
+  /// **'获取验证码'**
+  String get authSendCode;
+
+  /// Verification code request in progress
+  ///
+  /// In zh, this message translates to:
+  /// **'发送中'**
+  String get authSendingCode;
+
+  /// Verification code resend cooldown
+  ///
+  /// In zh, this message translates to:
+  /// **'{seconds} 秒后重发'**
+  String authResendCode(int seconds);
+
+  /// Login request in progress
+  ///
+  /// In zh, this message translates to:
+  /// **'登录中'**
+  String get authLoggingIn;
+
+  /// Submit authentication button
+  ///
+  /// In zh, this message translates to:
+  /// **'登录 / 注册'**
+  String get authLoginAction;
+
+  /// Switch to password login
+  ///
+  /// In zh, this message translates to:
+  /// **'使用密码登录'**
+  String get authSwitchToPassword;
+
+  /// Switch to SMS code login
+  ///
+  /// In zh, this message translates to:
+  /// **'使用验证码登录'**
+  String get authSwitchToCode;
+
+  /// Registration and privacy agreement checkbox
+  ///
+  /// In zh, this message translates to:
+  /// **'我已阅读并同意注册协议和隐私政策'**
+  String get authAgreementText;
+
+  /// Validation message when agreement is not accepted
+  ///
+  /// In zh, this message translates to:
+  /// **'请先阅读并同意注册协议和隐私政策'**
+  String get authAgreementRequired;
+
+  /// Phone number validation error
+  ///
+  /// In zh, this message translates to:
+  /// **'请输入有效的 11 位手机号'**
+  String get authPhoneInvalid;
+
+  /// SMS code validation error
+  ///
+  /// In zh, this message translates to:
+  /// **'请输入 6 位短信验证码'**
+  String get authCodeInvalid;
+
+  /// Password validation error
+  ///
+  /// In zh, this message translates to:
+  /// **'密码长度需为 6–20 位'**
+  String get authPasswordInvalid;
+
+  /// Verification code sent confirmation
+  ///
+  /// In zh, this message translates to:
+  /// **'验证码已发送'**
+  String get authCodeSent;
+
+  /// Authentication network failure
+  ///
+  /// In zh, this message translates to:
+  /// **'网络连接失败，请检查网络后重试'**
+  String get authNetworkError;
+
+  /// Authentication request timeout
+  ///
+  /// In zh, this message translates to:
+  /// **'请求超时，请稍后重试'**
+  String get authTimeoutError;
+
+  /// Secure session persistence failure
+  ///
+  /// In zh, this message translates to:
+  /// **'无法安全保存登录状态，请检查系统钥匙串'**
+  String get authStorageError;
+
+  /// Expired authentication session
+  ///
+  /// In zh, this message translates to:
+  /// **'登录状态已失效，请重新登录'**
+  String get authSessionExpired;
+
+  /// Unknown authentication failure
+  ///
+  /// In zh, this message translates to:
+  /// **'操作失败，请稍后重试'**
+  String get authUnknownError;
+
+  /// Account locked dialog title
+  ///
+  /// In zh, this message translates to:
+  /// **'账号已被锁定'**
+  String get authAccountLockedTitle;
+
+  /// Account locked dialog confirmation
+  ///
+  /// In zh, this message translates to:
+  /// **'我知道了'**
+  String get authAccountLockedConfirm;
+
+  /// Image captcha dialog title
+  ///
+  /// In zh, this message translates to:
+  /// **'图形验证码'**
+  String get authCaptchaTitle;
+
+  /// Image captcha input label
+  ///
+  /// In zh, this message translates to:
+  /// **'输入图中字符'**
+  String get authCaptchaHint;
+
+  /// Refresh image captcha
+  ///
+  /// In zh, this message translates to:
+  /// **'换一张'**
+  String get authCaptchaRefresh;
+
+  /// Cancel image captcha dialog
+  ///
+  /// In zh, this message translates to:
+  /// **'取消'**
+  String get authCaptchaCancel;
+
+  /// Submit image captcha
+  ///
+  /// In zh, this message translates to:
+  /// **'确定'**
+  String get authCaptchaConfirm;
+
+  /// Image captcha loading failure
+  ///
+  /// In zh, this message translates to:
+  /// **'图形验证码加载失败，请点击重试'**
+  String get authCaptchaLoadFailed;
+
+  /// First-login registration confirmation
+  ///
+  /// In zh, this message translates to:
+  /// **'账号已创建，欢迎使用企划星'**
+  String get authNewUserWelcome;
+
+  /// Close authentication page and return to account
+  ///
+  /// In zh, this message translates to:
+  /// **'返回账号页'**
+  String get authBackToAccount;
+
+  /// Refresh authenticated user profile
+  ///
+  /// In zh, this message translates to:
+  /// **'刷新资料'**
+  String get authRefreshProfile;
+
+  /// Profile refresh in progress
+  ///
+  /// In zh, this message translates to:
+  /// **'刷新中'**
+  String get authProfileRefreshing;
+
+  /// Submit daily sign-in
+  ///
+  /// In zh, this message translates to:
+  /// **'每日签到'**
+  String get authSignIn;
+
+  /// Daily sign-in in progress
+  ///
+  /// In zh, this message translates to:
+  /// **'签到中'**
+  String get authSigningIn;
+
+  /// Daily sign-in reward amount
+  ///
+  /// In zh, this message translates to:
+  /// **'今日奖励：{reward} 星币'**
+  String authSignInReward(int reward);
+
+  /// Star coin account balance
+  ///
+  /// In zh, this message translates to:
+  /// **'星币余额：{balance}'**
+  String authWalletBalance(String balance);
+
+  /// Authenticated user identifier
+  ///
+  /// In zh, this message translates to:
+  /// **'用户 ID：{id}'**
+  String authUserId(int id);
+
+  /// Empty user biography
+  ///
+  /// In zh, this message translates to:
+  /// **'暂无个人简介'**
+  String get authProfileEmpty;
+
+  /// Daily sign-in completion message
+  ///
+  /// In zh, this message translates to:
+  /// **'今日已签到'**
+  String get authSignedToday;
+
+  /// Guest account page authentication prompt
+  ///
+  /// In zh, this message translates to:
+  /// **'登录后可同步账号资料并每日签到。'**
+  String get authLoginPrompt;
+
+  /// Guest account display name
+  ///
+  /// In zh, this message translates to:
+  /// **'未登录'**
+  String get authGuestName;
+
+  /// 正式企划库页面标题
+  ///
+  /// In zh, this message translates to:
+  /// **'企划库'**
+  String get catalogTitle;
+
+  /// 正式企划库页面副标题
+  ///
+  /// In zh, this message translates to:
+  /// **'浏览企划筹资进度、回报档位与项目动态'**
+  String get catalogSubtitle;
+
+  /// 清除企划分类筛选
+  ///
+  /// In zh, this message translates to:
+  /// **'全部'**
+  String get catalogAllCategories;
+
+  /// 企划推荐排序
+  ///
+  /// In zh, this message translates to:
+  /// **'推荐'**
+  String get catalogSortRecommended;
+
+  /// 企划最新排序
+  ///
+  /// In zh, this message translates to:
+  /// **'最新'**
+  String get catalogSortNewest;
+
+  /// 企划即将结束排序
+  ///
+  /// In zh, this message translates to:
+  /// **'即将结束'**
+  String get catalogSortEnding;
+
+  /// 企划达成率最高排序
+  ///
+  /// In zh, this message translates to:
+  /// **'筹资最高'**
+  String get catalogSortAchievement;
+
+  /// 加载下一页企划
+  ///
+  /// In zh, this message translates to:
+  /// **'加载更多'**
+  String get catalogLoadMore;
+
+  /// 企划列表分页结束
+  ///
+  /// In zh, this message translates to:
+  /// **'没有更多企划'**
+  String get catalogEnd;
+
+  /// 企划库空状态标题
+  ///
+  /// In zh, this message translates to:
+  /// **'暂无企划'**
+  String get catalogEmptyTitle;
+
+  /// 企划库空状态提示
+  ///
+  /// In zh, this message translates to:
+  /// **'试试其他分类或刷新企划库。'**
+  String get catalogEmptyHint;
+
+  /// 企划金额的本地化货币标签
+  ///
+  /// In zh, this message translates to:
+  /// **'星币'**
+  String get catalogCredits;
+
+  /// 企划支持人数
+  ///
+  /// In zh, this message translates to:
+  /// **'{count} 位支持者'**
+  String catalogSupporters(int count);
+
+  /// 企划筹资达成百分比
+  ///
+  /// In zh, this message translates to:
+  /// **'已筹 {percent}%'**
+  String catalogAchievement(int percent);
+
+  /// 企划只读详情页标题
+  ///
+  /// In zh, this message translates to:
+  /// **'企划详情'**
+  String get catalogDetailTitle;
+
+  /// 企划详情缺失空状态
+  ///
+  /// In zh, this message translates to:
+  /// **'企划暂不可用'**
+  String get catalogDetailEmpty;
+
+  /// 明确说明桌面端尚未支持的企划交易能力
+  ///
+  /// In zh, this message translates to:
+  /// **'当前为只读预览，桌面端暂不支持支付、选座和创建订单。'**
+  String get catalogReadOnlyNotice;
+
+  /// 企划预热筹资状态
+  ///
+  /// In zh, this message translates to:
+  /// **'预热中'**
+  String get catalogStatusPreheating;
+
+  /// 企划已达成筹资状态
+  ///
+  /// In zh, this message translates to:
+  /// **'已达成'**
+  String get catalogStatusAchieved;
+
+  /// 企划已交付状态
+  ///
+  /// In zh, this message translates to:
+  /// **'已交付'**
+  String get catalogStatusDelivered;
+
+  /// 企划筹资失败状态
+  ///
+  /// In zh, this message translates to:
+  /// **'筹资结束'**
+  String get catalogStatusFailed;
+
+  /// 企划筹资进行中状态
+  ///
+  /// In zh, this message translates to:
+  /// **'筹资中'**
+  String get catalogStatusOngoing;
+
+  /// 企划筹资进度区块标题
+  ///
+  /// In zh, this message translates to:
+  /// **'筹资进度'**
+  String get catalogProgressTitle;
+
+  /// 企划筹资剩余天数
+  ///
+  /// In zh, this message translates to:
+  /// **'剩余 {count} 天'**
+  String catalogDaysLeft(int count);
+
+  /// 企划筹资已结束
+  ///
+  /// In zh, this message translates to:
+  /// **'已结束'**
+  String get catalogEnded;
+
+  /// 企划目标金额指标
+  ///
+  /// In zh, this message translates to:
+  /// **'目标金额'**
+  String get catalogGoalAmount;
+
+  /// 企划已筹金额指标
+  ///
+  /// In zh, this message translates to:
+  /// **'已筹金额'**
+  String get catalogRaisedAmount;
+
+  /// 企划筹资截止时间
+  ///
+  /// In zh, this message translates to:
+  /// **'截止时间'**
+  String get catalogDeadline;
+
+  /// 活动场地、场次和阵容区块标题
+  ///
+  /// In zh, this message translates to:
+  /// **'企划信息'**
+  String get catalogInfoTitle;
+
+  /// 企划或活动时长
+  ///
+  /// In zh, this message translates to:
+  /// **'时长：{duration}'**
+  String catalogDuration(String duration);
+
+  /// 回报档位或场次售罄标签
+  ///
+  /// In zh, this message translates to:
+  /// **'已售罄'**
+  String get catalogSoldOut;
+
+  /// 企划回报档位区块标题
+  ///
+  /// In zh, this message translates to:
+  /// **'回报档位'**
+  String get catalogRewardsTitle;
+
+  /// 回报档位预计交付时间
+  ///
+  /// In zh, this message translates to:
+  /// **'预计交付：{date}'**
+  String catalogDelivery(String date);
+
+  /// 企划进度更新区块标题
+  ///
+  /// In zh, this message translates to:
+  /// **'项目动态'**
+  String get catalogUpdatesTitle;
+
+  /// 企划风险与履约区块标题
+  ///
+  /// In zh, this message translates to:
+  /// **'风险与履约'**
+  String get catalogRiskTitle;
+
+  /// 企划风险说明标签
+  ///
+  /// In zh, this message translates to:
+  /// **'风险说明'**
+  String get catalogRiskNote;
+
+  /// 企划交付计划标签
+  ///
+  /// In zh, this message translates to:
+  /// **'交付计划'**
+  String get catalogDeliveryPlan;
+
+  /// 企划资金用途标签
+  ///
+  /// In zh, this message translates to:
+  /// **'资金用途'**
+  String get catalogFundUsage;
+
+  /// 企划退款规则标签
+  ///
+  /// In zh, this message translates to:
+  /// **'退款规则'**
+  String get catalogRefundRule;
+
+  /// 企划支持者评价区块标题
+  ///
+  /// In zh, this message translates to:
+  /// **'支持者评价（{count}）'**
+  String catalogReviewsTitle(int count);
+
+  /// 企划匿名评价作者
+  ///
+  /// In zh, this message translates to:
+  /// **'匿名支持者'**
+  String get catalogAnonymous;
+
+  /// 企划常见问题区块标题
+  ///
+  /// In zh, this message translates to:
+  /// **'常见问题'**
+  String get catalogFaqTitle;
+
+  /// 企划创作者区块标题
+  ///
+  /// In zh, this message translates to:
+  /// **'关于创作者'**
+  String get catalogCreatorTitle;
+
+  /// 企划创作者署名
+  ///
+  /// In zh, this message translates to:
+  /// **'创作者：{name}'**
+  String catalogCreator(String name);
+
+  /// 企划认证创作者标记
+  ///
+  /// In zh, this message translates to:
+  /// **'认证创作者'**
+  String get catalogCreatorVerified;
+
+  /// 企划创作者历史记录
+  ///
+  /// In zh, this message translates to:
+  /// **'{projects} 个项目 · {successful} 个成功 · 履约率 {rate}%'**
+  String catalogCreatorStats(int projects, int successful, int rate);
+
+  /// 企划故事区块标题
+  ///
+  /// In zh, this message translates to:
+  /// **'企划故事'**
+  String get catalogStoryTitle;
+
+  /// 企划图片画廊区块标题
+  ///
+  /// In zh, this message translates to:
+  /// **'项目图片'**
+  String get catalogGalleryTitle;
+
+  /// 企划支持须知区块标题
+  ///
+  /// In zh, this message translates to:
+  /// **'支持须知'**
+  String get catalogNoticeTitle;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

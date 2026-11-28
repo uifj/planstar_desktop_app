@@ -4,8 +4,6 @@ library;
 import 'package:core/network.dart';
 import 'package:core/result.dart';
 
-import '../domain/sync_models.dart';
-
 final class SyncSummary {
   const SyncSummary({
     required this.uploaded,
@@ -25,13 +23,6 @@ final class SyncRemoteDataSource {
 
   final ApiClient _api;
   final String _endpoint;
-
-  Future<Result<Account>> login(String email, String password) =>
-      _api.post<Account>(
-        '${_endpoint}login',
-        data: <String, Object?>{'email': email, 'password': password},
-        parser: (Object? data) => Account.fromJson(_asMap(data)),
-      );
 
   Future<Result<SyncSummary>> sync(Map<String, Object?> payload) =>
       _api.post<SyncSummary>(

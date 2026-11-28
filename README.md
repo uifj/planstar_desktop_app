@@ -9,7 +9,7 @@
 技术栈：Clean DDD + 六边形架构 + Riverpod 3 + go_router 17 +
 `flutter_local_notifications` / `window_manager` / `desktop_multi_window` /
 `tray_manager` / `launch_at_startup`（Windows / Linux）/ `audioplayers` / `file_picker` /
-`shared_preferences` / `flutter_secure_storage` / `path_provider` / `lunar` /
+`flutter_secure_storage` / `path_provider` / `lunar` /
 `lucide_icons_flutter`（全项目图标统一使用 Lucide，不再使用 Material Icons）；
 DataHub、桌面覆盖层与 macOS 登录项使用 Pigeon 类型化原生桥；
 字体统一为 `assets/fonts` 中的 ChillRoundGothic。
@@ -106,12 +106,11 @@ lib/
 │   ├── domain_labels.dart                     # 枚举 / 日期 / 倒数日展示文案
 │   └── l10n.dart                              # locale scope + context.l10n
 ├── infrastructure/
-│   ├── storage_adapters.dart                  # SharedPreferences / SecureStorage → core 端口 + 跨 engine reload
+│   ├── storage_adapters.dart                  # flutter_secure_storage → core SecureStore
 │   ├── desktop_adapters.dart                  # window_manager / tray / multi_window / 自启 / 音效
 │   ├── desktop_wallpaper_gateway.dart         # 桌面 overlay 通道适配器
 │   ├── wallpaper_image_gateway.dart           # 壁纸 PNG 落盘 / 底图读取
 │   ├── data_hub.dart                          # 跨 engine 单一真相源（Pigeon HostApi / FlutterApi + 降级）
-│   └── cross_engine_sync.dart                 # 旧文件标记实现（当前未接入）
 │   ├── file_gateway.dart                      # file_picker + dart:io + path_provider
 │   └── json_entity_store.dart                 # 通用 JSON 聚合仓储骨架
 ├── shared/widgets/common.dart                 # AppSectionCard / Setting* / 调色板 / 弹窗骨架
@@ -182,7 +181,13 @@ lib/
     ├── transfer/                              # 数据库 / 文本 / CSV 导入导出
     │   ├── application/transfer_controller.dart
     │   └── presentation/transfer_page.dart
-    ├── sync/                                  # 账号 / 登录 / VIP / 手动与自动同步
+    ├── auth/                                  # 企划星登录 / 注册 / 会话 / 账号接口
+    │   ├── domain/
+    │   ├── network/
+    │   ├── data/
+    │   ├── application/
+    │   └── presentation/login_page.dart
+    ├── sync/                                  # 账号资料 / 每日签到 / 手动与自动同步
     │   ├── domain/sync_models.dart
     │   ├── application/sync_controller.dart
     │   ├── application/cross_engine_sync_controller.dart  # 多 engine 数据同步
@@ -235,6 +240,7 @@ test/widget_test.dart                          # 重复规则 / 提醒 / 设置�
 | `selectedDateProvider` | `Notifier<DateKey?>` | 编辑面板开合 |
 | `monthDataProvider` | `Provider<MonthData>` | 纯函数读模型：网格 + 重复展开 + 农历 + 订阅 + 课程 + 倒数日 |
 | `settingsControllerProvider` | `Notifier<AppSettings>` | 全局设置单一真相源 |
+| `authControllerProvider` | `Notifier<AuthState>` | 会话恢复、验证码登录、密码登录、资料刷新、签到与退出 |
 | `notesControllerProvider` 等 5 个 | `Notifier<AsyncListState<T>>` | 便签 / 倒数日 / 课程表 / 订阅 / 历史 |
 | `searchControllerProvider` | `Notifier<SearchState>` | 关键词 + 范围 + 跨模块命中 |
 | `reminderControllerProvider` | `Notifier<ReminderState>` | 领域事件 → 重排通知；通知点击 → 置顶弹窗 |
@@ -263,9 +269,23 @@ test/widget_test.dart                          # 重复规则 / 提醒 / 设置�
 | `cal_notify_func.lua` 提醒弹窗/提示音 | `reminder/` + `SoundGateway` |
 | `dkappnote` 便签、置顶、独立窗口 | `notes/` + `desktop_multi_window` |
 | `cal_setting_frame.xml` 7 页签设置 | `settings/`（50+ 字段全量映射） |
-| 登录 / VIP / 云同步 | `sync/` |
+| 登录 / 注册 / 账号资料 / 签到 | `auth/` + `sync/account_page.dart` |
+| 手动与自动云同步 | `sync/` |
 | 导入导出（数据库 / 文本 / Excel） | `transfer/` |
 | 托盘、开机自启、隐藏热键、透明度 | `desktop/` + `window_manager` / `tray_manager` |
+
+### 认证与配置持久化
+
+桌面端直接对接企划星客户端契约：`POST v1/user/login` 支持手机号验证码和密码，
+`POST v3/user/sendLoginCode` 发送验证码，`GET v1/user/captcha` 获取图形验证码，
+`GET v1/user` 刷新资料，`POST v1/user/signIn` 每日签到。服务端没有独立注册或退出
+接口；首次成功登录返回 `newUser=true` 即完成注册，退出只清理本地会话。图形验证码
+使用 `psCaptcha` Cookie，登录成功后会话令牌从 `Set-Cookie` / `psSession` 响应头提取。
+
+`psSession` 只写入 `SecureStore`，用户资料与 `dvid` 写入 DataHub；密码不落盘。
+HTTP 401 会清除已登录会话。应用设置继续由 DataHub 持久化，保存操作按 FIFO 串行，
+旧版本配置自动迁移；单个字段损坏时只回退该字段，不丢弃其余有效配置。未登录时
+本地日历仍可完整使用。
 
 ---
 
@@ -363,7 +383,7 @@ test/widget_test.dart                          # 重复规则 / 提醒 / 设置�
    → 主窗口按 key 只重载 calendar 读模型 → 月历刷新
 ```
 
-> Windows 上**不能**用 `SharedPreferences.reload()` 做跨 engine 同步：
+> Windows 上**不能**用旧版 `SharedPreferences.reload()` 做跨 engine 同步：
 > legacy `reload()` 只是重新调用 `getAll()`，而 `shared_preferences_windows`
 > 的 `getAll()` 返回每个 isolate 自己的 `_cachedPreferences`，从不重读磁盘。
 > 非 Windows / macOS 或原生通道不可用时，`DataHubStore` 自动降级为原子写 + 300ms
@@ -445,9 +465,10 @@ Z 序   : 23 / 25 可见窗口（仅 Progman 与系统状态窗在其下）
   `<experimental/coroutine>` 可编译。
 - `analysis_options.yaml`：`flutter_lints`，`flutter analyze` 零问题。
 
-> 云端同步 / 订阅的默认地址是占位符，修改 `assets/config/default_config.json`
-> 中的 `apiBaseUrl` 即可接入真实服务；`ApiClient` 永不抛异常，离线时
-> 全部功能降级为本地存储，不影响主流程。
+> 企划星认证地址由 `assets/config/default_config.json` 的 `planstar.baseUrl`
+> 配置，客户端类型、版本和渠道分别使用 `planstar.clientType`、`appVersion`、
+> `channel`。旧同步 / 订阅 / 更新接口仍使用独立的 `apiBaseUrl`，互不影响。
+> `ApiClient` 永不抛异常，离线时本地功能继续可用，账号接口显示可恢复的错误状态。
 
 ---
 

@@ -7,6 +7,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../bootstrap/core_providers.dart';
+import '../features/auth/application/auth_providers.dart';
 import '../features/desktop/application/desktop_controller.dart';
 import '../features/history/application/history_controller.dart';
 import '../features/reminder/application/reminder_controller.dart';
@@ -32,6 +33,7 @@ final class _PlanstarAppState extends ConsumerState<PlanstarApp> {
     // 触发组合根里的桌面 / 提醒 / 历史控制器，让它们完成初始化与事件订阅。
     Future.microtask(() {
       ref.read(desktopControllerProvider);
+      ref.read(authControllerProvider);
       ref.read(reminderControllerProvider);
       ref.read(historyControllerProvider);
       ref.read(syncControllerProvider);
