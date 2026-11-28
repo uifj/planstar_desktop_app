@@ -59,7 +59,6 @@ final class AppBootstrap {
             defaultTargetPlatform == TargetPlatform.linux ||
             defaultTargetPlatform == TargetPlatform.macOS);
     final isSubWindow = args.length >= 3 && args.first == 'multi_window';
-    final forceDesktopEmbedding = args.contains('--planstar-embed-desktop');
 
     // 单一真相源：所有 engine 通过原生 DataHub 串行读写，类型化回调广播。
     // 不再使用 SharedPreferences —— 它的 Windows 实现每个 isolate 各缓存一份，
@@ -243,7 +242,6 @@ final class AppBootstrap {
       ),
       screenGatewayProvider.overrideWithValue(screenGateway),
       wallpaperImageGatewayProvider.overrideWithValue(wallpaperImageGateway),
-      desktopEmbeddedOverrideProvider.overrideWithValue(forceDesktopEmbedding),
       trayActionsProvider.overrideWithValue(trayActions.stream),
       hotkeyGatewayProvider.overrideWithValue(hotkeyGateway),
       hotkeyActionsProvider.overrideWithValue(hotkeyActions.stream),

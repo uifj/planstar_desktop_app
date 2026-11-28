@@ -397,16 +397,20 @@ void main() {
       await client.post<Object?>('/search', data: <String, Object?>{'q': 'a'}, options: opts);
       expect(store.length, 0, reason: 'POST 默认不缓存');
 
+      final store2 = MemoryLruCacheStore();
       final dio2 = _dioWith(
         adapter,
         NetworkCacheInterceptor(
-          store: MemoryLruCacheStore(),
+          store: store2,
           cacheableMethods: const <String>{'GET', 'POST'},
         ),
       );
       final client2 = ApiClient(dio2, envelope: const PassthroughEnvelope());
       await client2.post<Object?>('/search', data: <String, Object?>{'q': 'a'}, options: opts);
+      expect(store2.length, 1);
+      await client2.post<Object?>('/search', data: <String, Object?>{'q': 'a'}, options: opts);
       expect(adapter.calls, 2);
+      expect(store2.length, 1);
     });
 
     test('规则表命中：/city/list → cacheFirst，无需请求级指定策略', () async {
@@ -428,7 +432,7 @@ void main() {
       expect(adapter.calls, 1);
     });
 
-    test('规则表命中：/seat/ → onlyNetwork，即使显式要缓存也不生效', () async {
+    test('规则表命中：/seat/ → onlyNetwork，不写入缓存', () async {
       final adapter = _CountingAdapter((_) => _json('{"v":1}'));
       final store = MemoryLruCacheStore();
       final dio = _dioWith(
@@ -443,6 +447,7 @@ void main() {
         }),
       );
       expect(store.length, 0);
+      expect(adapter.calls, 1);
     });
   });
 

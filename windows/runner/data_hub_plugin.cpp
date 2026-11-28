@@ -90,9 +90,7 @@ struct MutationResult {
   std::string error;
 };
 
-// Restores the persisted monotonic revision so a restart continues from the
-// on-disk value instead of resetting to 0 (same invariant the Dart fallback
-// backend keeps, see test/audit_fixes_test.dart).
+// Continue the persisted monotonic revision across restarts (see test/data_hub_test.dart).
 int64_t ReadRevisionFromFile(const std::string& path) {
   std::ifstream file(Utf8ToWide(path), std::ios::binary);
   if (!file) return 0;

@@ -133,8 +133,7 @@ List<ShowSummary> _fullPage() => List<ShowSummary>.generate(
   growable: false,
 );
 
-Future<({ProviderContainer container, GoRouter router, _Repository repository})>
-_pump(WidgetTester tester, _Repository repository) async {
+Future<void> _pump(WidgetTester tester, _Repository repository) async {
   await tester.binding.setSurfaceSize(const Size(1200, 900));
   addTearDown(() => tester.binding.setSurfaceSize(null));
   final scope = AppLocalizationScope();
@@ -187,7 +186,6 @@ _pump(WidgetTester tester, _Repository repository) async {
     ),
   );
   await tester.pumpAndSettle();
-  return (container: container, router: router, repository: repository);
 }
 
 void main() {

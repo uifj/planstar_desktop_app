@@ -422,9 +422,6 @@ Alt+F4 都不会退出进程；托盘右键菜单的「退出企划星」是唯�
 上一版若把系统壁纸改成了月历 PNG，新版启动时会依据
 `planstar_wallpaper/original_wallpaper.txt` 自动还原。
 
-也可用启动参数 `--planstar-embed-desktop` 单次强制把主窗口挂进 `WorkerW`
-（旧模式，仅用于兼容验证，不是桌面组件的默认路径）。
-
 **本机实测**（`powershell -File windows\installer\verify_desktop_widget.ps1`）：
 
 ```

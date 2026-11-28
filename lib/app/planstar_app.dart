@@ -63,7 +63,7 @@ final class _PlanstarAppState extends ConsumerState<PlanstarApp> {
       routerConfig: ref.watch(routerProvider),
       builder: (BuildContext context, Widget? child) => AppTheme.withAppFont(
         context,
-        Stack(children: <Widget>[?child, const ReminderOverlay()]),
+        Stack(children: <Widget>[?child, const ReminderOverlayHost()]),
       ),
     );
   }

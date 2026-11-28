@@ -375,22 +375,11 @@ final class ShowSummary {
       ? 'failed'
       : 'ongoing';
 
-  bool get isFundingOpen =>
-      fundingStatusValue == 'preheating' || fundingStatusValue == 'ongoing';
   String get venueLabel => city.isNotEmpty && venue.isNotEmpty
       ? '$city · $venue'
       : city.isNotEmpty
       ? city
       : venue;
-  double get ratingAverage {
-    if (ratingAvg > 0) return ratingAvg;
-    if (reviews.isEmpty) return 0;
-    return reviews.fold<int>(
-          0,
-          (int sum, ProjectReview item) => sum + item.rating,
-        ) /
-        reviews.length;
-  }
 }
 
 enum ProjectSort {

@@ -140,6 +140,3 @@ final screenGatewayProvider = Provider<ScreenGateway>(
 final wallpaperImageGatewayProvider = Provider<WallpaperImageGateway>(
   (Ref ref) => throw UnimplementedError('wallpaperImageGatewayProvider 未注入'),
 );
-
-/// 启动参数 `--planstar-embed-desktop` 的单次覆盖（不写入用户设置）。
-final desktopEmbeddedOverrideProvider = Provider<bool>((Ref ref) => false);

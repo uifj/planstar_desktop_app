@@ -214,6 +214,28 @@ void main() {
       expect(await hub.read('planstar.calendar.cells.v1'), 'refreshed');
     });
 
+    test('重启后写入的 revision 续用磁盘值而非从 0 开始', () async {
+      final first = await DataHubStore.create(
+        forceLocal: true,
+        supportDirectory: temp.path,
+      );
+      await first.write('planstar.notes.v1', 'v1');
+      final file = File('${temp.path}/$dataHubFileName');
+      final decoded = jsonDecode(await file.readAsString()) as Map;
+      final originalRevision = (decoded['revision'] as num).toInt();
+      expect(originalRevision, greaterThan(0));
+      first.dispose();
+
+      final second = await DataHubStore.create(
+        forceLocal: true,
+        supportDirectory: temp.path,
+      );
+      addTearDown(second.dispose);
+      await second.write('planstar.notes.v1', 'v2');
+      final after = jsonDecode(await file.readAsString()) as Map;
+      expect((after['revision'] as num).toInt(), greaterThan(originalRevision));
+    });
+
     test('两个实例并发写入不会用旧快照覆盖彼此的键', () async {
       final first = await DataHubStore.create(
         forceLocal: true,

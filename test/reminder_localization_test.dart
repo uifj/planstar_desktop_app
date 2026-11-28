@@ -139,6 +139,31 @@ Widget _reminderApp(ProviderContainer container, AppLocalizationScope scope) =>
       ),
     );
 
+Widget _reminderBuilderApp(
+  ProviderContainer container,
+  AppLocalizationScope scope,
+) =>
+    UncontrolledProviderScope(
+      container: container,
+      child: ValueListenableBuilder<Locale>(
+        valueListenable: scope,
+        builder: (context, locale, child) => MaterialApp(
+          locale: locale,
+          supportedLocales: supportedLocales,
+          localizationsDelegates: const <LocalizationsDelegate<dynamic>>[
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          builder: (BuildContext context, Widget? child) => Stack(
+            children: <Widget>[?child, const ReminderOverlayHost()],
+          ),
+          home: const Scaffold(body: SizedBox.shrink()),
+        ),
+      ),
+    );
+
 void main() {
   setUpAll(initializeDateFormatting);
 
@@ -197,6 +222,23 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text(scope.localizations.reminderTaskTitle), findsNWidgets(2));
     expect(find.text('提醒事项'), findsNothing);
+  });
+
+  testWidgets('reminder overlay supports MaterialApp builder hosting', (
+    tester,
+  ) async {
+    final scope = AppLocalizationScope();
+    addTearDown(scope.dispose);
+    final gateway = _NotificationGateway();
+    final container = _createContainer(scope, gateway);
+    container.read(reminderControllerProvider);
+    container.read(reminderControllerProvider.notifier).showTestAlert();
+
+    await tester.pumpWidget(_reminderBuilderApp(container, scope));
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(find.text(scope.localizations.reminderTaskTitle), findsNWidgets(2));
   });
 
   testWidgets('event titles remain user content when locale changes', (

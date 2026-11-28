@@ -984,9 +984,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get ideaUnknownCreator => 'Anonymous proposer';
 
   @override
-  String get ideaViewDetail => 'View details';
-
-  @override
   String get ideaVoteAlready => 'Your vote is already recorded';
 
   @override
@@ -1259,9 +1256,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsAutoCheckUpdates => 'Check for updates automatically';
 
   @override
-  String get settingsAutoDelay => 'Automatically postpone unfinished tasks within 30 days';
-
-  @override
   String get settingsBulletStyle => 'Bullet style';
 
   @override
@@ -1347,9 +1341,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsIeProxy => 'Use IE proxy settings';
-
-  @override
-  String get settingsJiyi => 'Show Chinese almanac guidance';
 
   @override
   String get settingsLanguage => 'Language';

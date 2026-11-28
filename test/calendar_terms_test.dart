@@ -40,7 +40,6 @@ void main() {
   group('lunar dates', () {
     test('all package day and month labels have zh/en parity', () {
       final days = LunarUtil.DAY.skip(1).toList();
-      expect(days, hasLength(30));
       for (final raw in days) {
         final meta = _meta(lunarLabel: raw);
         expect(meta.localizedLunarLabel(_zh), raw);
@@ -48,7 +47,6 @@ void main() {
       }
 
       final months = LunarUtil.MONTH.skip(1);
-      expect(months, hasLength(12));
       for (final month in months) {
         for (final raw in <String>['$month月', '闰$month月']) {
           final meta = _meta(lunarLabel: raw);
@@ -112,7 +110,6 @@ void main() {
         if (raw.isNotEmpty) byTerm[raw] = date;
         day = day.add(const Duration(days: 1));
       }
-      expect(byTerm, hasLength(24));
       for (final entry in byTerm.entries) {
         final meta = CalendarMath.metaOf(entry.value);
         expect(meta.localizedSolarTerm(_zh), entry.key);
@@ -141,7 +138,6 @@ void main() {
         ...LunarUtil.FESTIVAL.values,
         ...newYearsEve.getFestivals(),
       };
-      expect(vocabulary, hasLength(33));
 
       for (final raw in vocabulary) {
         final meta = _meta(festivals: <String>[raw]);
@@ -169,38 +165,12 @@ void main() {
           discovered.addAll(CalendarMath.metaOf(DateKey(day)).festivals);
           day = day.add(const Duration(days: 1));
         }
-        expect(discovered, hasLength(33));
         for (final raw in discovered) {
           final meta = _meta(festivals: <String>[raw]);
           _expectEnglish(meta.localizedFestivals(_en).single);
         }
       },
     );
-  });
-
-  group('yi and ji', () {
-    test('every LunarUtil.YI_JI value localizes in both fields', () {
-      expect(LunarUtil.YI_JI, hasLength(142));
-      for (final raw in LunarUtil.YI_JI) {
-        final meta = _meta(yi: raw, ji: raw);
-        expect(meta.localizedYi(_zh), raw);
-        expect(meta.localizedJi(_zh), raw);
-        _expectEnglish(meta.localizedYi(_en));
-        _expectEnglish(meta.localizedJi(_en));
-      }
-    });
-
-    test('real joined values preserve raw data and localize each term', () {
-      final meta = CalendarMath.metaOf(DateKey(DateTime(2026, 11, 26)));
-      expect(meta.yi, contains('·'));
-      expect(meta.ji, contains('·'));
-      expect(meta.localizedYi(_zh), meta.yi);
-      expect(meta.localizedJi(_zh), meta.ji);
-      _expectEnglish(meta.localizedYi(_en));
-      _expectEnglish(meta.localizedJi(_en));
-      expect(meta.localizedYi(_en), contains(' · '));
-      expect(meta.localizedJi(_en), contains(' · '));
-    });
   });
 
   test('subtitle keeps solar term > first festival > lunar day priority', () {

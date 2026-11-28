@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:core/domain.dart';
 import 'package:core/result.dart';
 import 'package:core/storage.dart';
@@ -9,7 +7,6 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
-import 'package:integration_test/integration_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:planstar_desktop_app/bootstrap/core_providers.dart';
 import 'package:planstar_desktop_app/features/auth/application/auth_providers.dart';
@@ -20,7 +17,7 @@ import 'package:planstar_desktop_app/features/sync/presentation/account_page.dar
 import 'package:planstar_desktop_app/l10n/l10n.dart';
 
 final class _AuthRepository implements AuthRepository {
-  static const user = AuthUser(userId: 42, userName: '集成测试用户');
+  static const user = AuthUser(userId: 42, userName: '账号测试用户');
 
   int loginCalls = 0;
   int logoutCalls = 0;
@@ -39,7 +36,7 @@ final class _AuthRepository implements AuthRepository {
     String? captcha,
   }) async {
     loginCalls++;
-    session = AuthSession(user: user, token: 'integration-token');
+    session = AuthSession(user: user, token: 'test-token');
     return Success<AuthSession>(session!);
   }
 
@@ -83,11 +80,9 @@ final class _AuthRepository implements AuthRepository {
 }
 
 void main() {
-  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
-
   setUpAll(initializeDateFormatting);
 
-  testWidgets('guest account opens login and restores profile after logout', (
+  testWidgets('guest account opens login, shows profile, and logs out', (
     WidgetTester tester,
   ) async {
     final repository = _AuthRepository();
@@ -145,7 +140,6 @@ void main() {
       find.byKey(const ValueKey<String>('auth.agreement')),
       findsOneWidget,
     );
-    await _holdForCapture('LOGIN');
 
     await tester.enterText(
       find.byKey(const ValueKey<String>('auth.phone')),
@@ -162,17 +156,10 @@ void main() {
     expect(repository.loginCalls, 1);
     expect(find.text(_AuthRepository.user.displayName), findsOneWidget);
     expect(find.text(l10n.accountCloudSyncTitle), findsOneWidget);
-    await _holdForCapture('ACCOUNT');
 
     await tester.tap(find.text(l10n.accountLogout));
     await tester.pumpAndSettle();
     expect(repository.logoutCalls, 1);
     expect(find.text(l10n.accountLoginOrRegister), findsOneWidget);
   });
-}
-
-Future<void> _holdForCapture(String name) async {
-  if (!Platform.environment.containsKey('PLANSTAR_CAPTURE_DIR')) return;
-  debugPrint('CAPTURE_$name');
-  await Future<void>.delayed(const Duration(seconds: 2));
 }

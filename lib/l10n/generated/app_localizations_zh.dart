@@ -976,9 +976,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get ideaUnknownCreator => '匿名发起人';
 
   @override
-  String get ideaViewDetail => '查看详情';
-
-  @override
   String get ideaVoteAlready => '已记录你的表态';
 
   @override
@@ -1250,9 +1247,6 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsAutoCheckUpdates => '自动检查更新';
 
   @override
-  String get settingsAutoDelay => '未完成任务 30 天内自动顺延';
-
-  @override
   String get settingsBulletStyle => '项目符号';
 
   @override
@@ -1338,9 +1332,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get settingsIeProxy => '使用 IE 代理设置';
-
-  @override
-  String get settingsJiyi => '显示黄历宜忌';
 
   @override
   String get settingsLanguage => '语言';

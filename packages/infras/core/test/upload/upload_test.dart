@@ -295,7 +295,7 @@ void main() {
 
       expect(result.isSuccess, isTrue);
       expect(seen.length, 4);
-      expect(seen.last, 1.0);
+      expect(seen, orderedEquals(<double>[0.25, 0.5, 0.75, 1.0]));
     });
 
     test('节流生效：固定时钟下只有首次与收尾两次回调', () async {

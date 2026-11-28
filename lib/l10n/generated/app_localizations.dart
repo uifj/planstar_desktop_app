@@ -1775,12 +1775,6 @@ abstract class AppLocalizations {
   /// **'匿名发起人'**
   String get ideaUnknownCreator;
 
-  /// 企划卡片详情操作
-  ///
-  /// In zh, this message translates to:
-  /// **'查看详情'**
-  String get ideaViewDetail;
-
   /// 重复投票成功提示
   ///
   /// In zh, this message translates to:
@@ -2249,12 +2243,6 @@ abstract class AppLocalizations {
   /// **'自动检查更新'**
   String get settingsAutoCheckUpdates;
 
-  /// 未完成任务自动顺延开关
-  ///
-  /// In zh, this message translates to:
-  /// **'未完成任务 30 天内自动顺延'**
-  String get settingsAutoDelay;
-
   /// 任务项目符号设置标签
   ///
   /// In zh, this message translates to:
@@ -2429,12 +2417,6 @@ abstract class AppLocalizations {
   /// **'使用 IE 代理设置'**
   String get settingsIeProxy;
 
-  /// 黄历宜忌显示开关
-  ///
-  /// In zh, this message translates to:
-  /// **'显示黄历宜忌'**
-  String get settingsJiyi;
-
   /// 应用语言设置标签
   ///
   /// In zh, this message translates to:
@@ -2507,7 +2489,7 @@ abstract class AppLocalizations {
   /// **'恢复默认设置'**
   String get settingsRestoreDefaults;
 
-  /// No description provided for @settingsSaveFailed.
+  /// 设置写入本地存储失败提示
   ///
   /// In zh, this message translates to:
   /// **'设置保存失败，请检查本地存储后重试'**

@@ -753,7 +753,6 @@ final class _FailingDeleteSecureStore implements SecureStore {
 final class _ControlledRepository implements AuthRepository {
   final loginCompleter = Completer<Result<AuthSession>>();
   final sendCompleter = Completer<Result<SendCodeOutcome>>();
-  Completer<Result<AuthSession>>? nextLoginCompleter;
   Completer<AuthSession?>? restoreCompleter;
   Completer<Result<AuthUser>>? profileCompleter;
   Completer<Result<SignInResult>>? signInStatusCompleter;
@@ -774,7 +773,7 @@ final class _ControlledRepository implements AuthRepository {
     String? captcha,
   }) {
     loginCalls++;
-    return loginCalls == 1 ? loginCompleter.future : nextLoginCompleter!.future;
+    return loginCompleter.future;
   }
 
   @override

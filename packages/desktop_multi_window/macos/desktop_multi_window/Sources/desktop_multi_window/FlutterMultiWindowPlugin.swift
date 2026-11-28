@@ -135,10 +135,6 @@ class MultiWindowManager: NSObject {
         }
     }
 
-    func getAllWindowIds() -> [WindowId] {
-        return Array(windows.keys)
-    }
-
     func getAllWindows() -> [[String: String]] {
         return windows.values.map { window in
             [

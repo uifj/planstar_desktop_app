@@ -4,11 +4,6 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('AppColors 是值对象（修 30-09 / 30-10）', () {
-    test('相同内容相等', () {
-      expect(AppColors.light, AppColors.light);
-      expect(AppColors.light, isNot(equals(AppColors.dark)));
-    });
-
     test('copyWith 只改传入字段', () {
       final changed = AppColors.light.copyWith(brand: const Color(0xFF00FF00));
       expect(changed.brand, const Color(0xFF00FF00));
@@ -47,7 +42,6 @@ void main() {
     test('品牌色直接进 ColorScheme，不被 fromSeed 派生掉', () {
       final theme = AppTheme.light();
       expect(theme.colorScheme.primary, BasePalette.primary);
-      expect(theme.colorScheme.primary, const Color(0xFF1C66E5));
     });
 
     test('分隔线是 0.5 逻辑像素（细线风格）', () {

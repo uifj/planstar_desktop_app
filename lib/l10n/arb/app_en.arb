@@ -1279,8 +1279,6 @@
   "@ideaUntitled": {"description": "企划标题缺失占位文案"},
   "ideaUnknownCreator": "Anonymous proposer",
   "@ideaUnknownCreator": {"description": "发起人缺失占位文案"},
-  "ideaViewDetail": "View details",
-  "@ideaViewDetail": {"description": "企划卡片详情操作"},
   "ideaVoteAlready": "Your vote is already recorded",
   "@ideaVoteAlready": {"description": "重复投票成功提示"},
   "ideaVoteLoginRequired": "Sign in before voting",
@@ -1682,10 +1680,6 @@
   "@settingsAutoCheckUpdates": {
     "description": "自动检查更新开关"
   },
-  "settingsAutoDelay": "Automatically postpone unfinished tasks within 30 days",
-  "@settingsAutoDelay": {
-    "description": "未完成任务自动顺延开关"
-  },
   "settingsBulletStyle": "Bullet style",
   "@settingsBulletStyle": {
     "description": "任务项目符号设置标签"
@@ -1802,10 +1796,6 @@
   "@settingsIeProxy": {
     "description": "IE 代理设置开关"
   },
-  "settingsJiyi": "Show Chinese almanac guidance",
-  "@settingsJiyi": {
-    "description": "黄历宜忌显示开关"
-  },
   "settingsLanguage": "Language",
   "@settingsLanguage": {
     "description": "应用语言设置标签"
@@ -1852,6 +1842,9 @@
   },
   "settingsRestoreDefaults": "Restore default settings",
   "settingsSaveFailed": "Could not save settings. Check local storage and try again.",
+  "@settingsSaveFailed": {
+    "description": "设置写入本地存储失败提示"
+  },
   "@settingsRestoreDefaults": {
     "description": "恢复默认设置按钮"
   },

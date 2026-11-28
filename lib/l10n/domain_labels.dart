@@ -19,9 +19,6 @@ extension DateKeyPresentation on DateKey {
 
   String shortDate(AppLocalizations l10n) =>
       DateFormat.MMMd(l10n.localeName).format(date);
-
-  String localizedWeekday(AppLocalizations l10n) =>
-      DateFormat.EEEE(l10n.localeName).format(date);
 }
 
 String weekdayLong(int weekday, AppLocalizations l10n) => switch (weekday) {

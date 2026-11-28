@@ -31,12 +31,3 @@ abstract class Entity<TId> {
   @override
   String toString() => '$runtimeType($id)';
 }
-
-/// 给 `List<Entity>` 之类的集合用的相等判断工具（例如值对象里含实体列表）。
-bool entityListEquals(List<Entity<Object?>> a, List<Entity<Object?>> b) {
-  if (a.length != b.length) return false;
-  for (var i = 0; i < a.length; i++) {
-    if (a[i] != b[i]) return false;
-  }
-  return true;
-}

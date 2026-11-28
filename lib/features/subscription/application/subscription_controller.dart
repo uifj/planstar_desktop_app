@@ -6,7 +6,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../bootstrap/core_providers.dart';
 import '../../../core/list_state.dart';
-import '../../../core/value_objects.dart';
 import '../../../infrastructure/json_entity_store.dart';
 import '../../../l10n/l10n.dart';
 import '../domain/subscription.dart';
@@ -135,11 +134,4 @@ final class SubscriptionController
     await _repository.delete(id);
     await load();
   }
-
-  /// 供月历读模型使用：所有启用订阅在某天的推送。
-  List<SubscriptionEvent> eventsOn(DateKey date) => state.items
-      .where((Subscription s) => s.enabled)
-      .expand((Subscription s) => s.events)
-      .where((SubscriptionEvent e) => e.date == date)
-      .toList(growable: false);
 }

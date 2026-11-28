@@ -204,8 +204,6 @@ final class AuthFailure {
 
   bool get needsCaptcha => kind == AuthFailureKind.needsCaptcha;
   bool get isAccountLocked => kind == AuthFailureKind.accountLocked;
-  bool get isRetryable =>
-      kind == AuthFailureKind.network || kind == AuthFailureKind.timeout;
 }
 
 int _int(Object? value) => switch (value) {

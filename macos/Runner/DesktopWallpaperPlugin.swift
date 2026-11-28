@@ -26,7 +26,6 @@ enum MacWallpaperLayout {
   struct Display: Equatable {
     let id: UInt32
     let logicalBounds: CGRect
-    let pixelSize: CGSize
     let scale: CGFloat
     let screen: NSScreen?
   }
@@ -402,7 +401,6 @@ final class MacDesktopWallpaperPlugin: NSObject, DesktopWallpaperHostApi {
       return MacWallpaperLayout.Display(
         id: id,
         logicalBounds: bounds,
-        pixelSize: CGSize(width: CGDisplayPixelsWide(id), height: CGDisplayPixelsHigh(id)),
         scale: screen?.backingScaleFactor ?? 1,
         screen: screen
       )

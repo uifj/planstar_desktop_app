@@ -26,8 +26,6 @@ enum CountdownShowType {
   calendarBottom,
   both;
 
-  bool get onDesktop => this == desktopCard || this == both;
-
   bool get onCalendar => this == calendarBottom || this == both;
 
   static CountdownShowType fromName(String? name) =>

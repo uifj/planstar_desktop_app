@@ -352,11 +352,6 @@ final class DesktopController extends Notifier<DesktopState> {
   /// 托盘「退出」专用：绕过关闭拦截强制结束进程。
   void destroy() => ref.read(windowGatewayProvider).destroy();
 
-  Future<void> openNoteWindow(String noteId) => ref
-      .read(multiWindowGatewayProvider)
-      .openNoteWindow(noteId)
-      .then<void>((_) {});
-
   Future<void> openCountdownWindow() => ref
       .read(multiWindowGatewayProvider)
       .openCountdownWindow()

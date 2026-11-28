@@ -153,6 +153,8 @@ final class AppSettings extends ValueObject {
   final bool showFestival;
   final bool showLunar;
   final bool showSolarTerms;
+
+  /// 旧配置兼容字段；当前没有黄历宜忌展示逻辑。
   final bool showJiYi;
   final String holidayArea;
 
@@ -163,6 +165,8 @@ final class AppSettings extends ValueObject {
   final bool completeSort;
   final bool showCompleted;
   final bool showReminderDate;
+
+  /// 旧配置兼容字段；当前没有自动顺延逻辑。
   final bool autoDelay;
   final SoundTone taskCompleteTone;
   final SoundTone reminderTone;
@@ -236,7 +240,6 @@ final class AppSettings extends ValueObject {
     bool? showFestival,
     bool? showLunar,
     bool? showSolarTerms,
-    bool? showJiYi,
     String? holidayArea,
     BulletStyle? bulletStyle,
     double? cellGap,
@@ -244,7 +247,6 @@ final class AppSettings extends ValueObject {
     bool? completeSort,
     bool? showCompleted,
     bool? showReminderDate,
-    bool? autoDelay,
     SoundTone? taskCompleteTone,
     SoundTone? reminderTone,
     double? calendarFontSize,
@@ -300,7 +302,7 @@ final class AppSettings extends ValueObject {
     showFestival: showFestival ?? this.showFestival,
     showLunar: showLunar ?? this.showLunar,
     showSolarTerms: showSolarTerms ?? this.showSolarTerms,
-    showJiYi: showJiYi ?? this.showJiYi,
+    showJiYi: showJiYi,
     holidayArea: holidayArea ?? this.holidayArea,
     bulletStyle: bulletStyle ?? this.bulletStyle,
     cellGap: cellGap ?? this.cellGap,
@@ -308,7 +310,7 @@ final class AppSettings extends ValueObject {
     completeSort: completeSort ?? this.completeSort,
     showCompleted: showCompleted ?? this.showCompleted,
     showReminderDate: showReminderDate ?? this.showReminderDate,
-    autoDelay: autoDelay ?? this.autoDelay,
+    autoDelay: autoDelay,
     taskCompleteTone: taskCompleteTone ?? this.taskCompleteTone,
     reminderTone: reminderTone ?? this.reminderTone,
     calendarFontSize: calendarFontSize ?? this.calendarFontSize,

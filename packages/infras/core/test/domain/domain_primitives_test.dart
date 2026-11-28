@@ -71,13 +71,6 @@ void main() {
     test('构造函数校验非法状态', () {
       expect(() => Nickname('  '), throwsArgumentError);
     });
-
-    test('props 里含集合时深比较', () {
-      expect(
-        Money.sum(<Money>[Money.fromYuan(1), Money.fromYuan(2)]),
-        Money.fromYuan(3),
-      );
-    });
   });
 
   group('AggregateRoot：事件只记不发', () {

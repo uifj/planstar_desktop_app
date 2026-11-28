@@ -111,7 +111,11 @@ void main() {
         recurrence: const RecurrenceRule(kind: RecurrenceKind.ebbinghaus),
       );
       final range = DateRange(origin, origin.addDays(31));
-      expect(RecurrencePolicy.occurrences(event, range).length, 7);
+      expect(RecurrencePolicy.occurrences(event, range), <DateKey>[
+        origin,
+        for (final offset in RecurrenceRule.ebbinghausOffsets)
+          origin.addDays(offset),
+      ]);
     });
   });
 
@@ -138,10 +142,23 @@ void main() {
       expect(legacy.wallpaperAutoRender, isFalse);
     });
 
+    test('更新其他设置时保留无运行时行为的旧配置字段', () {
+      final legacy = AppSettings.fromJson(const <String, Object?>{
+        'showJiYi': true,
+        'autoDelay': true,
+      });
+      final updated = legacy.copyWith(showLunar: false);
+      expect(updated.showJiYi, isTrue);
+      expect(updated.autoDelay, isTrue);
+      expect(updated.toJson()['showJiYi'], isTrue);
+      expect(updated.toJson()['autoDelay'], isTrue);
+    });
+
     test('全量字段往返序列化保持一致', () {
       final settings = AppSettings.defaults.copyWith(
         maxRows: 4,
-        showJiYi: true,
+        showLunar: false,
+        desktopWidgetEnabled: false,
         themeMode: AppThemeMode.dark,
         restDays: const <int>[5, 6],
         desktopEmbedded: true,

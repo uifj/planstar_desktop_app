@@ -9,7 +9,7 @@
 /// |---|---|
 /// | 身份 | [Entity] |
 /// | 一致性边界 | [AggregateRoot] |
-/// | 值对象 | [ValueObject]、[Money]、[Quantity] |
+/// | 值对象 | [ValueObject]、[Money] |
 /// | 领域事件 | [DomainEvent]、[DomainEventBus] |
 /// | 强类型 id | [IdGenerator]（配合 `extension type XxxId(String)`） |
 library;
@@ -20,5 +20,4 @@ export 'src/domain/domain_event_bus.dart';
 export 'src/domain/entity.dart';
 export 'src/domain/id_generator.dart';
 export 'src/domain/money.dart';
-export 'src/domain/quantity.dart';
 export 'src/domain/value_object.dart';

@@ -98,13 +98,6 @@ final class CountdownController
     await load();
   }
 
-  List<CountdownItem> visibleOnCalendar(DateKey today) =>
-      state.items.where((CountdownItem c) => c.showType.onCalendar).toList()
-        ..sort(
-          (CountdownItem a, CountdownItem b) =>
-              a.daysLeft(today).abs().compareTo(b.daysLeft(today).abs()),
-        );
-
   Future<void> openDesktopCard() => ref
       .read(multiWindowGatewayProvider)
       .openCountdownWindow()

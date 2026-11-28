@@ -9,6 +9,24 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../l10n/l10n.dart';
 import '../application/reminder_controller.dart';
 
+final class ReminderOverlayHost extends StatefulWidget {
+  const ReminderOverlayHost({super.key});
+
+  @override
+  State<ReminderOverlayHost> createState() => _ReminderOverlayHostState();
+}
+
+class _ReminderOverlayHostState extends State<ReminderOverlayHost> {
+  late final OverlayEntry _entry = OverlayEntry(
+    builder: (BuildContext context) => const ReminderOverlay(),
+  );
+
+  @override
+  Widget build(BuildContext context) => Overlay(
+    initialEntries: <OverlayEntry>[_entry],
+  );
+}
+
 final class ReminderOverlay extends ConsumerWidget {
   const ReminderOverlay({super.key});
 

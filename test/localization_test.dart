@@ -71,7 +71,6 @@ void main() {
     expect(CalendarEventType.reminder.localizedLabel(en), 'Reminder');
     expect(RecurrenceKind.daily.localizedLabel(en), 'Repeat daily');
     expect(date.fullDate(en), 'November 26, 2026');
-    expect(date.localizedWeekday(en), 'Thursday');
     expect(CalendarEventType.reminder.name, 'reminder');
   });
 

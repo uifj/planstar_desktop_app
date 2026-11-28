@@ -225,14 +225,12 @@ final class RunnerTests: XCTestCase {
     let left = MacWallpaperLayout.Display(
       id: 1,
       logicalBounds: CGRect(x: 0, y: 0, width: 1440, height: 900),
-      pixelSize: CGSize(width: 2880, height: 1800),
       scale: 2,
       screen: nil
     )
     let right = MacWallpaperLayout.Display(
       id: 2,
       logicalBounds: CGRect(x: 1440, y: 0, width: 1920, height: 1080),
-      pixelSize: CGSize(width: 1920, height: 1080),
       scale: 1,
       screen: nil
     )

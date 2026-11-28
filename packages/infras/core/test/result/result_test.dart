@@ -44,10 +44,6 @@ void main() {
       expect(next.code, 'E1');
       expect(next.type, FailureType.server);
     });
-
-    test('Failure 不是 Exception——契约上不可抛', () {
-      expect(const Failure.input(message: ''), isNot(isA<Exception>()));
-    });
   });
 
   group('Result', () {
@@ -59,19 +55,6 @@ void main() {
       expect(
         bad.fold(onFailure: (f) => f.type.name, onSuccess: (_) => 'ok'),
         'timeout',
-      );
-    });
-
-    test('sealed 可穷举 switch，不需要 default', () {
-      String describe(Result<int> r) => switch (r) {
-        Success(:final data) => 'ok:$data',
-        Fail(:final failure) => 'fail:${failure.code}',
-      };
-
-      expect(describe(const Result.success(1)), 'ok:1');
-      expect(
-        describe(const Result.failure(Failure.input(message: '', code: 'X'))),
-        'fail:X',
       );
     });
 

@@ -176,13 +176,6 @@ final class SettingsPage extends ConsumerWidget {
                             ),
                           ),
                           SettingSwitch(
-                            label: l10n.settingsJiyi,
-                            value: settings.showJiYi,
-                            onChanged: (bool v) => update(
-                              (AppSettings s) => s.copyWith(showJiYi: v),
-                            ),
-                          ),
-                          SettingSwitch(
                             label: l10n.settingsWeekNumbers,
                             value: settings.showWeekNumber,
                             onChanged: (bool v) => update(
@@ -255,13 +248,6 @@ final class SettingsPage extends ConsumerWidget {
                             onChanged: (bool v) => update(
                               (AppSettings s) =>
                                   s.copyWith(showReminderDate: v),
-                            ),
-                          ),
-                          SettingSwitch(
-                            label: l10n.settingsAutoDelay,
-                            value: settings.autoDelay,
-                            onChanged: (bool v) => update(
-                              (AppSettings s) => s.copyWith(autoDelay: v),
                             ),
                           ),
                           SettingDropdown<SoundTone>(

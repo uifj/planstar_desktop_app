@@ -52,10 +52,4 @@ final class SettingsController extends Notifier<AppSettings> {
     ref.read(appLocalizationScopeProvider).setLanguage(next.language);
     return ref.read(settingsRepositoryProvider).save(next);
   }
-
-  Future<Result<void>> restoreDefaults() => update((_) => AppSettings.defaults);
-
-  /// 与 `window_manager` / 开机自启联动的副作用由 DesktopController 监听。
-  Future<Result<void>> setStartWithWindow(bool enabled) =>
-      update((AppSettings s) => s.copyWith(startWithWindow: enabled));
 }

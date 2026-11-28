@@ -1,5 +1,9 @@
 # 企划星桌面端：跨 Engine 数据同步根因分析与改造方案
 
+> 历史分析（2026-11-16）：本文保留当时的问题取证与决策过程，不代表当前实现。当前
+> Windows / macOS 已通过 Pigeon 接入原生 DataHub，SharedPreferences 依赖和文件轮询已删除；
+> 当前路径与行为以代码及 ADR-0020 为准。
+
 > 分析对象：`planstar_desktop_app`（Flutter 3.41.9 / Dart 3.11.5，Windows 桌面端）
 > 触发问题：在桌面 overlay 的日历格子内编辑后，主窗口数据不刷新；前序修复（`6af037f` 增加 `ref.keepAlive()`）后问题仍存在。
 > 方法：Dart 层全链路审查 + Windows 原生层审查 + 插件源码核查 + 运行时取证（进程 / 窗口 / 磁盘 / revision）。

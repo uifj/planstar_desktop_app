@@ -11,16 +11,12 @@ final class _FakeAdapter implements HttpClientAdapter {
 
   final ResponseBody Function(RequestOptions options) responder;
 
-  /// 最近一次请求（用于断言 envelope 覆盖等）。
-  RequestOptions? lastRequest;
-
   @override
   Future<ResponseBody> fetch(
     RequestOptions options,
     Stream<Uint8List>? requestStream,
     Future<void>? cancelFuture,
   ) async {
-    lastRequest = options;
     return responder(options);
   }
 
@@ -160,21 +156,6 @@ void main() {
       expect(failure.isRetryable, isFalse);
     });
 
-    test('HTTP 500 → SERVER_ERROR + statusCode，且不重试', () async {
-      final client = _clientWith((_) => _json('{"message":"崩了"}', status: 500));
-      final result = await client.get<Object?>('/x');
-
-      expect(result.failure!.code, 'SERVER_ERROR');
-      expect(result.failure!.statusCode, 500);
-      expect(result.failure!.message, 'SERVER_ERROR');
-      expect(result.failure!.message, isNot(contains('崩了')));
-      expect(
-        (result.failure!.cause as DioException).response?.data,
-        <String, Object?>{'message': '崩了'},
-      );
-      expect(result.failure!.isRetryable, isFalse);
-    });
-
     test('HTTP 401 → unauthorized，isAuthFailure 为真', () async {
       final client = _clientWith((_) => _json('{}', status: 401));
       final result = await client.get<Object?>('/me');
@@ -212,6 +193,7 @@ void main() {
           expect(failure.message, isNot(contains('内部堆栈与密钥')));
           expect(failure.code, 'REMOTE_PRIVATE_CODE');
           expect(failure.cause, isA<DioException>());
+          if (entry.key >= 500) expect(failure.isRetryable, isFalse);
         }
       },
     );

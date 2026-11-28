@@ -61,21 +61,6 @@ final class JsonEntityStore<T extends Object> {
     return _persist(() => _items.writeAll(next), events);
   }
 
-  Future<Result<void>> upsertAll(
-    List<T> items, {
-    List<DomainEvent>? events,
-  }) async {
-    final current = await guardAsync<List<JsonMap>>(() => _items.readAll());
-    if (current case Fail<List<JsonMap>>(:final Failure failure)) {
-      return Fail<void>(failure);
-    }
-    final ids = items.map(_idOf).toSet();
-    final next = List<JsonMap>.of(current.requireData)
-      ..removeWhere((JsonMap json) => ids.contains(json['id']))
-      ..addAll(items.map(_toJson));
-    return _persist(() => _items.writeAll(next), events);
-  }
-
   Future<Result<void>> delete(String id, {List<DomainEvent>? events}) async {
     final current = await guardAsync<List<JsonMap>>(() => _items.readAll());
     if (current case Fail<List<JsonMap>>(:final Failure failure)) {

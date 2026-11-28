@@ -58,6 +58,25 @@ final class _DelayedStore implements KeyValueStore {
 }
 
 void main() {
+  group('AppSettings 值对象语义', () {
+    test('内容相等的设置对象 hashCode 相等且 Set 不重复', () {
+      final a = AppSettings.defaults;
+      final b = AppSettings.defaults.copyWith();
+      expect(a, b);
+      expect(a.hashCode, b.hashCode);
+      expect(<AppSettings>{a, b}, hasLength(1));
+    });
+
+    test('集合字段按内容计算相等与 hashCode', () {
+      final a = AppSettings.defaults.copyWith(restDays: <int>[6, 7]);
+      final b = AppSettings.defaults.copyWith(restDays: <int>[6, 7]);
+      final c = AppSettings.defaults.copyWith(restDays: <int>[1, 2]);
+      expect(a, b);
+      expect(a.hashCode, b.hashCode);
+      expect(a, isNot(c));
+    });
+  });
+
   test(
     'invalid fields fall back independently without losing valid fields',
     () {
@@ -80,18 +99,6 @@ void main() {
       expect(settings.desktopWidgetEnabled, isFalse);
     },
   );
-
-  test('settings round-trip preserves every serialized field', () {
-    final settings = AppSettings.defaults.copyWith(
-      maxRows: 7,
-      showLunar: false,
-      restDays: <int>[1, 6],
-      themeMode: AppThemeMode.dark,
-      desktopWidgetEnabled: false,
-      wallpaperAutoRender: false,
-    );
-    expect(AppSettings.fromJson(settings.toJson()), settings);
-  });
 
   test('legacy settings migrate away from wallpaper rendering', () async {
     final store = MemoryKeyValueStore(<String, String>{

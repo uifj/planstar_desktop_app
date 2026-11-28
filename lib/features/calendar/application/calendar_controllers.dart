@@ -188,27 +188,6 @@ final class CalendarController extends Notifier<CalendarState> {
     await load();
   }
 
-  /// 未完成任务 30 天内自动顺延（旧版 `AutoDelay` / VIP）。
-  Future<void> autoDelayUncompleted(DateKey today) async {
-    final cutoff = today.addDays(-30);
-    for (final event in state.events) {
-      if (event.recurrence.isRecurring ||
-          event.startDate.differenceInDays(cutoff) < 0 ||
-          event.startDate.differenceInDays(today) > 0) {
-        continue;
-      }
-      var hasCompletion = false;
-      for (final date in event.completedDates) {
-        if (date == event.startDate) hasCompletion = true;
-      }
-      if (hasCompletion) continue;
-      await _repository.saveEvent(
-        event.changed(startDate: today, occurredAt: _now),
-      );
-    }
-    await load();
-  }
-
   // ── 单元格编辑 ──────────────────────────────────────────────────────────
 
   DayCell _cellOf(DateKey date) {
@@ -350,8 +329,6 @@ final class MonthNavigation extends Notifier<DateTime> {
     final now = ref.read(clockProvider).now();
     state = DateTime(now.year, now.month, 1);
   }
-
-  void goTo(DateTime date) => state = DateTime(date.year, date.month, 1);
 }
 
 // ── 读模型 ─────────────────────────────────────────────────────────────────
