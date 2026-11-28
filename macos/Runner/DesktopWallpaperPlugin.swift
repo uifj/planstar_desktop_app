@@ -108,7 +108,9 @@ final class MacDesktopWallpaperController {
   }
 
   func configureOverlay(_ enable: Bool, rect: WindowRectDto? = nil) -> Bool {
-    guard let window else { return false }
+    guard let window else {
+      return false
+    }
     if enable == overlay {
       if enable, let rect {
         window.setFrame(

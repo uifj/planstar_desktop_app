@@ -20,32 +20,42 @@ final settingsControllerProvider =
     NotifierProvider<SettingsController, AppSettings>(SettingsController.new);
 
 final class SettingsController extends Notifier<AppSettings> {
+  int _revision = 0;
+  Future<void>? _initialLoad;
+
   @override
   AppSettings build() {
-    Future.microtask(load);
+    _initialLoad = Future.microtask(load);
     return AppSettings.defaults;
   }
 
   Future<void> load() async {
+    final revision = ++_revision;
     final result = await ref.read(settingsRepositoryProvider).load();
+    if (revision != _revision) return;
     if (result case Success<AppSettings>(:final AppSettings data)) {
       state = data;
       ref.read(appLocalizationScopeProvider).setLanguage(data.language);
     }
   }
 
-  /// 原子更新：先改内存状态，再异步落盘（设置项失败不回滚 UI）。
-  Future<void> update(AppSettings Function(AppSettings current) transform) {
+  /// 原子更新：先改内存状态，再异步落盘并返回写入结果。
+  Future<Result<void>> update(
+    AppSettings Function(AppSettings current) transform,
+  ) async {
+    final initialLoad = _initialLoad;
+    if (initialLoad != null) await initialLoad;
     final next = transform(state);
-    if (next == state) return Future<void>.value();
+    if (next == state) return const Success<void>(null);
+    _revision++;
     state = next;
     ref.read(appLocalizationScopeProvider).setLanguage(next.language);
     return ref.read(settingsRepositoryProvider).save(next);
   }
 
-  Future<void> restoreDefaults() => update((_) => AppSettings.defaults);
+  Future<Result<void>> restoreDefaults() => update((_) => AppSettings.defaults);
 
   /// 与 `window_manager` / 开机自启联动的副作用由 DesktopController 监听。
-  Future<void> setStartWithWindow(bool enabled) =>
+  Future<Result<void>> setStartWithWindow(bool enabled) =>
       update((AppSettings s) => s.copyWith(startWithWindow: enabled));
 }

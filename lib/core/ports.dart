@@ -10,7 +10,7 @@ import 'dart:typed_data';
 /// 跨 Flutter engine 的存储缓存刷新。
 ///
 /// `desktop_multi_window` 的每个窗口都是独立 engine / isolate，
-/// `shared_preferences` 各自持有内存缓存，别处的写入不会自动可见。
+/// 旧版 `shared_preferences` 各自持有内存缓存，别处的写入不会自动可见。
 abstract interface class StorageReloader {
   Future<void> reload();
 }
@@ -154,14 +154,6 @@ final class WindowRect {
     (json['width'] as num?)?.toDouble() ?? 360,
     (json['height'] as num?)?.toDouble() ?? 420,
   );
-
-  WindowRect copyWith({double? x, double? y, double? width, double? height}) =>
-      WindowRect(
-        x ?? this.x,
-        y ?? this.y,
-        width ?? this.width,
-        height ?? this.height,
-      );
 }
 
 abstract interface class WindowGateway {
@@ -204,7 +196,6 @@ abstract interface class WindowGateway {
 enum TrayAction {
   show,
   hide,
-  toggle,
   sync,
   settings,
   timetable,

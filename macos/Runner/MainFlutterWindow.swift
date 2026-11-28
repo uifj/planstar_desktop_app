@@ -18,19 +18,20 @@ class MainFlutterWindow: NSWindow {
     )
 
     // 子 engine 不会自动继承主窗口的插件注册。
-    FlutterMultiWindowPlugin.setOnWindowCreatedCallback { controller in
-      self.registerPlatformPlugins(for: controller)
+    FlutterMultiWindowPlugin.setOnWindowCreatedCallback { controller, window in
+      self.registerPlatformPlugins(for: controller, window: window)
     }
 
     super.awakeFromNib()
   }
 
-  private func registerPlatformPlugins(for controller: FlutterViewController) {
+  private func registerPlatformPlugins(for controller: FlutterViewController, window: NSWindow? = nil) {
     RegisterGeneratedPlugins(registry: controller)
     let messenger = controller.registrar(forPlugin: "PlanstarDesktop").messenger
     _ = MacDataHubPlugin(messenger: messenger)
-    if let window = controller.view.window {
-      _ = MacDesktopWallpaperPlugin(window: window, messenger: messenger)
+    let pluginWindow = window ?? controller.view.window
+    if let pluginWindow {
+      _ = MacDesktopWallpaperPlugin(window: pluginWindow, messenger: messenger)
     }
   }
 }

@@ -309,7 +309,7 @@ extension CalendarDayMetaLocalization on CalendarDayMeta {
 
   String localizedJi(AppLocalizations l10n) => _localizedYiJi(ji, l10n);
 
-  /// Same priority as the raw subtitle: solar term > first festival > lunar day.
+  /// 副标题优先级：节气 > 首个节日 > 农历日。
   String localizedSubtitle(
     AppLocalizations l10n, {
     required bool showLunar,

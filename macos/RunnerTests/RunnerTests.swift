@@ -123,10 +123,12 @@ final class RunnerTests: XCTestCase {
     let originalMovable = window.isMovable
 
     let controller = MacDesktopWallpaperController(window: window)
+    window.setIsVisible(false)
     autoreleasepool {
       XCTAssertTrue(controller.configureOverlay(true))
     }
     XCTAssertTrue(controller.isConfigured)
+    XCTAssertTrue(window.isVisible)
     RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.05))
     XCTAssertNotNil(retainedContentController)
 

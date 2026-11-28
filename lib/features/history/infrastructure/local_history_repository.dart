@@ -7,9 +7,8 @@ import '../../../infrastructure/json_entity_store.dart';
 import '../domain/history_entry.dart';
 
 final class LocalHistoryRepository implements HistoryRepository {
-  const LocalHistoryRepository({
-    required JsonEntityStore<HistoryEntry> store,
-  }) : _store = store;
+  const LocalHistoryRepository({required JsonEntityStore<HistoryEntry> store})
+    : _store = store;
 
   final JsonEntityStore<HistoryEntry> _store;
 

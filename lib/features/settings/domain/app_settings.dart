@@ -422,75 +422,90 @@ final class AppSettings extends ValueObject {
   };
 
   factory AppSettings.fromJson(Map<String, Object?> json) => AppSettings(
-    displayMode: CalendarDisplayMode.fromName(json['displayMode'] as String?),
-    maxRows: (json['maxRows'] as num?)?.toInt() ?? 6,
-    maxColumns: (json['maxColumns'] as num?)?.toInt() ?? 1,
-    passedWeeks: (json['passedWeeks'] as num?)?.toInt() ?? 0,
-    showGlassEffect: json['showGlassEffect'] as bool? ?? true,
-    showMonthInterval: json['showMonthInterval'] as bool? ?? true,
-    showWeekNumber: json['showWeekNumber'] as bool? ?? true,
-    showShadow: json['showShadow'] as bool? ?? false,
-    showTitleBar: json['showTitleBar'] as bool? ?? true,
-    showHoliday: json['showHoliday'] as bool? ?? true,
-    showFestival: json['showFestival'] as bool? ?? true,
-    showLunar: json['showLunar'] as bool? ?? true,
-    showSolarTerms: json['showSolarTerms'] as bool? ?? true,
-    showJiYi: json['showJiYi'] as bool? ?? false,
-    holidayArea: json['holidayArea'] as String? ?? 'CN',
-    bulletStyle: BulletStyle.fromName(json['bulletStyle'] as String?),
-    cellGap: (json['cellGap'] as num?)?.toDouble() ?? 2,
-    lineSpacing: (json['lineSpacing'] as num?)?.toDouble() ?? 4,
-    completeSort: json['completeSort'] as bool? ?? false,
-    showCompleted: json['showCompleted'] as bool? ?? true,
-    showReminderDate: json['showReminderDate'] as bool? ?? true,
-    autoDelay: json['autoDelay'] as bool? ?? false,
-    taskCompleteTone: SoundTone.fromName(json['taskCompleteTone'] as String?),
-    reminderTone: SoundTone.fromName(json['reminderTone'] as String?),
-    calendarFontSize: (json['calendarFontSize'] as num?)?.toDouble() ?? 16,
-    contentFontSize: (json['contentFontSize'] as num?)?.toDouble() ?? 14,
-    calendarFontColor:
-        (json['calendarFontColor'] as num?)?.toInt() ?? 0xFF1F2024,
-    contentFontColor: (json['contentFontColor'] as num?)?.toInt() ?? 0xFF1F2024,
+    displayMode: CalendarDisplayMode.fromName(_string(json['displayMode'])),
+    maxRows: _int(json['maxRows']) ?? 6,
+    maxColumns: _int(json['maxColumns']) ?? 1,
+    passedWeeks: _int(json['passedWeeks']) ?? 0,
+    showGlassEffect: _bool(json['showGlassEffect']) ?? true,
+    showMonthInterval: _bool(json['showMonthInterval']) ?? true,
+    showWeekNumber: _bool(json['showWeekNumber']) ?? true,
+    showShadow: _bool(json['showShadow']) ?? false,
+    showTitleBar: _bool(json['showTitleBar']) ?? true,
+    showHoliday: _bool(json['showHoliday']) ?? true,
+    showFestival: _bool(json['showFestival']) ?? true,
+    showLunar: _bool(json['showLunar']) ?? true,
+    showSolarTerms: _bool(json['showSolarTerms']) ?? true,
+    showJiYi: _bool(json['showJiYi']) ?? false,
+    holidayArea: _string(json['holidayArea']) ?? 'CN',
+    bulletStyle: BulletStyle.fromName(_string(json['bulletStyle'])),
+    cellGap: _double(json['cellGap']) ?? 2,
+    lineSpacing: _double(json['lineSpacing']) ?? 4,
+    completeSort: _bool(json['completeSort']) ?? false,
+    showCompleted: _bool(json['showCompleted']) ?? true,
+    showReminderDate: _bool(json['showReminderDate']) ?? true,
+    autoDelay: _bool(json['autoDelay']) ?? false,
+    taskCompleteTone: SoundTone.fromName(_string(json['taskCompleteTone'])),
+    reminderTone: SoundTone.fromName(_string(json['reminderTone'])),
+    calendarFontSize: _double(json['calendarFontSize']) ?? 16,
+    contentFontSize: _double(json['contentFontSize']) ?? 14,
+    calendarFontColor: _int(json['calendarFontColor']) ?? 0xFF1F2024,
+    contentFontColor: _int(json['contentFontColor']) ?? 0xFF1F2024,
     calendarBackgroundColor:
-        (json['calendarBackgroundColor'] as num?)?.toInt() ?? 0xFFFFFFFF,
-    todayBorderColor: (json['todayBorderColor'] as num?)?.toInt() ?? 0xFF1C66E5,
-    titleButtonColor: (json['titleButtonColor'] as num?)?.toInt() ?? 0xFF1C66E5,
-    holidayTextColor: (json['holidayTextColor'] as num?)?.toInt() ?? 0xFFE54545,
-    lunarTextColor: (json['lunarTextColor'] as num?)?.toInt() ?? 0xFF0ABF77,
-    calendarTransparency:
-        (json['calendarTransparency'] as num?)?.toDouble() ?? 1,
-    countdownTransparency:
-        (json['countdownTransparency'] as num?)?.toDouble() ?? 1,
-    noteTransparency: (json['noteTransparency'] as num?)?.toDouble() ?? 1,
-    startOfWeek: (json['startOfWeek'] as num?)?.toInt() ?? 1,
-    firstWeekOffset: (json['firstWeekOffset'] as num?)?.toInt() ?? 0,
-    showRestDays: json['showRestDays'] as bool? ?? true,
-    restDays: (json['restDays'] as List?)?.cast<int>() ?? const <int>[6, 7],
-    showHideHotKey: json['showHideHotKey'] as bool? ?? true,
-    contentHotKey: json['contentHotKey'] as bool? ?? true,
-    noteHotKey: json['noteHotKey'] as bool? ?? true,
-    editCompleteHotKey: json['editCompleteHotKey'] as bool? ?? true,
-    language: json['language'] as String? ?? 'zh_CN',
-    timezone: json['timezone'] as String? ?? 'Asia/Shanghai',
-    searchEngine: json['searchEngine'] as String? ?? 'bing',
-    showHotSearch: json['showHotSearch'] as bool? ?? false,
-    showFloatingButton: json['showFloatingButton'] as bool? ?? false,
-    useProxy: json['useProxy'] as bool? ?? false,
-    startWithWindow: json['startWithWindow'] as bool? ?? false,
-    autoCheckUpdate: json['autoCheckUpdate'] as bool? ?? true,
-    themeMode: AppThemeMode.fromName(json['themeMode'] as String?),
-    wallpaperMode: WallpaperMode.fromName(json['wallpaperMode'] as String?),
-    wallpaperIntervalMinutes:
-        (json['wallpaperIntervalMinutes'] as num?)?.toInt() ?? 30,
-    wallpaperFit: json['wallpaperFit'] as String? ?? 'fill',
-    wallpaperShowAll: json['wallpaperShowAll'] as bool? ?? false,
-    wallpaperImageDirectory: json['wallpaperImageDirectory'] as String? ?? '',
-    wallpaperAutoRender: json['wallpaperAutoRender'] as bool? ?? false,
-    desktopEmbedded: json['desktopEmbedded'] as bool? ?? false,
-    desktopWidgetEnabled: json['desktopWidgetEnabled'] as bool? ?? true,
-    noteLineSpacing: (json['noteLineSpacing'] as num?)?.toDouble() ?? 4,
-    showAllNotes: json['showAllNotes'] as bool? ?? true,
+        _int(json['calendarBackgroundColor']) ?? 0xFFFFFFFF,
+    todayBorderColor: _int(json['todayBorderColor']) ?? 0xFF1C66E5,
+    titleButtonColor: _int(json['titleButtonColor']) ?? 0xFF1C66E5,
+    holidayTextColor: _int(json['holidayTextColor']) ?? 0xFFE54545,
+    lunarTextColor: _int(json['lunarTextColor']) ?? 0xFF0ABF77,
+    calendarTransparency: _double(json['calendarTransparency']) ?? 1,
+    countdownTransparency: _double(json['countdownTransparency']) ?? 1,
+    noteTransparency: _double(json['noteTransparency']) ?? 1,
+    startOfWeek: _int(json['startOfWeek']) ?? 1,
+    firstWeekOffset: _int(json['firstWeekOffset']) ?? 0,
+    showRestDays: _bool(json['showRestDays']) ?? true,
+    restDays: _intList(json['restDays']) ?? const <int>[6, 7],
+    showHideHotKey: _bool(json['showHideHotKey']) ?? true,
+    contentHotKey: _bool(json['contentHotKey']) ?? true,
+    noteHotKey: _bool(json['noteHotKey']) ?? true,
+    editCompleteHotKey: _bool(json['editCompleteHotKey']) ?? true,
+    language: _string(json['language']) ?? 'zh_CN',
+    timezone: _string(json['timezone']) ?? 'Asia/Shanghai',
+    searchEngine: _string(json['searchEngine']) ?? 'bing',
+    showHotSearch: _bool(json['showHotSearch']) ?? false,
+    showFloatingButton: _bool(json['showFloatingButton']) ?? false,
+    useProxy: _bool(json['useProxy']) ?? false,
+    startWithWindow: _bool(json['startWithWindow']) ?? false,
+    autoCheckUpdate: _bool(json['autoCheckUpdate']) ?? true,
+    themeMode: AppThemeMode.fromName(_string(json['themeMode'])),
+    wallpaperMode: WallpaperMode.fromName(_string(json['wallpaperMode'])),
+    wallpaperIntervalMinutes: _int(json['wallpaperIntervalMinutes']) ?? 30,
+    wallpaperFit: _string(json['wallpaperFit']) ?? 'fill',
+    wallpaperShowAll: _bool(json['wallpaperShowAll']) ?? false,
+    wallpaperImageDirectory: _string(json['wallpaperImageDirectory']) ?? '',
+    wallpaperAutoRender: _bool(json['wallpaperAutoRender']) ?? false,
+    desktopEmbedded: _bool(json['desktopEmbedded']) ?? false,
+    desktopWidgetEnabled: _bool(json['desktopWidgetEnabled']) ?? true,
+    noteLineSpacing: _double(json['noteLineSpacing']) ?? 4,
+    showAllNotes: _bool(json['showAllNotes']) ?? true,
   );
+
+  static String? _string(Object? value) => value is String ? value : null;
+
+  static bool? _bool(Object? value) => value is bool ? value : null;
+
+  static int? _int(Object? value) => value is num ? value.toInt() : null;
+
+  static double? _double(Object? value) {
+    if (value is! num) return null;
+    final result = value.toDouble();
+    return result.isFinite ? result : null;
+  }
+
+  static List<int>? _intList(Object? value) => value is List
+      ? <int>[
+          for (final Object? item in value)
+            if (item is num) item.toInt(),
+        ]
+      : null;
 
   /// 全部字段参与相等判断：直接用序列化结果做深比较，新增字段不会漏比。
   @override

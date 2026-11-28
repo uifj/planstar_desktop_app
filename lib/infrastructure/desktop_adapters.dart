@@ -328,6 +328,9 @@ final class DesktopMultiWindowGateway implements MultiWindowGateway {
     try {
       final controller = await WindowController.fromCurrentEngine();
       await controller.setWindowMethodHandler((call) async {
+        if (call.method == 'isOverlay') {
+          return DesktopWallpaperHostApi().isOverlay();
+        }
         if (call.method == 'command') {
           final raw = Map<String, Object?>.from(call.arguments as Map);
           _incoming.add(

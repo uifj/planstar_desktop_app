@@ -100,16 +100,6 @@ final class SettingsChanged extends AppDomainEvent {
   });
 }
 
-final class ReminderFired extends AppDomainEvent {
-  const ReminderFired({
-    required super.aggregateId,
-    required super.occurredAt,
-    required this.title,
-  });
-
-  final String title;
-}
-
 /// 另一个 engine 已经提交了一次写入，本 engine 的读模型已刷新。
 ///
 /// 用于补齐跨 engine 的**本地副作用**（提醒重排、dirty 计数），

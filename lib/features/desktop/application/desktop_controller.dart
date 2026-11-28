@@ -72,7 +72,8 @@ final class DesktopController extends Notifier<DesktopState> {
     ref.keepAlive();
     // 标题栏 X / Alt+F4 由 window_manager 拦截后直接 hide，
     // 必须回写 visible，否则托盘 toggle 的第一次点击方向是反的。
-    ref.read(windowGatewayProvider).onCloseIntercepted = markHidden;
+    final window = ref.read(windowGatewayProvider);
+    window.onCloseIntercepted = markHidden;
     final localizationScope = ref.read(appLocalizationScopeProvider);
     localizationScope.addListener(_onLocaleChanged);
     _traySubscription = ref.read(trayActionsProvider).listen(_onTrayAction);
@@ -108,7 +109,7 @@ final class DesktopController extends Notifier<DesktopState> {
       _windowCommands?.cancel();
       _cancelSettingsChanged?.call();
       localizationScope.removeListener(_onLocaleChanged);
-      ref.read(windowGatewayProvider).onCloseIntercepted = null;
+      window.onCloseIntercepted = null;
     });
     Future.microtask(applySettings);
     return const DesktopState();
@@ -294,8 +295,6 @@ final class DesktopController extends Notifier<DesktopState> {
         show();
       case TrayAction.hide:
         hide();
-      case TrayAction.toggle:
-        state.visible ? hide() : show();
       case TrayAction.sync:
         state = state.copyWith(message: _l10n.traySync);
       case TrayAction.settings:

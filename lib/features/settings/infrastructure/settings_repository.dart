@@ -32,6 +32,7 @@ final class LocalSettingsRepository implements SettingsRepository {
   final KeyValueStore _store;
   final DomainEventBus _bus;
   final Clock _clock;
+  Future<void> _pendingWrites = Future<void>.value();
 
   @override
   Future<Result<AppSettings>> load() async {
@@ -54,7 +55,16 @@ final class LocalSettingsRepository implements SettingsRepository {
   }
 
   @override
-  Future<Result<void>> save(AppSettings settings) async {
+  Future<Result<void>> save(AppSettings settings) {
+    final result = _pendingWrites.then((_) => _write(settings));
+    _pendingWrites = result.then<void>(
+      (_) {},
+      onError: (Object _, StackTrace _) {},
+    );
+    return result;
+  }
+
+  Future<Result<void>> _write(AppSettings settings) async {
     final written = await guardAsync<void>(
       () => _store.writeJson(key, settings.toJson()),
     );

@@ -161,10 +161,11 @@ class DataHub {
       const bool existed = previous != entries_.end();
       const std::string old_value = existed ? previous->second : std::string();
       entries_[key] = value;
-      revision = revision_ + 1;
+      revision = ++revision_;
       if (!PersistLocked()) {
         // Roll back both data and revision: a failed write must not be
         // observed by other engines nor advance the monotonic clock.
+        --revision_;
         if (existed) {
           entries_[key] = old_value;
         } else {
@@ -190,8 +191,9 @@ class DataHub {
       }
       const std::string old_value = previous->second;
       entries_.erase(previous);
-      revision = revision_ + 1;
+      revision = ++revision_;
       if (!PersistLocked()) {
+        --revision_;
         entries_[key] = old_value;
         return MutationResult{false, 0,
                               "persist failed; delete was rolled back"};
@@ -210,8 +212,9 @@ class DataHub {
       std::lock_guard<std::mutex> lock(mutex_);
       const auto previous = entries_;
       entries_.clear();
-      revision = revision_ + 1;
+      revision = ++revision_;
       if (!PersistLocked()) {
+        --revision_;
         entries_ = previous;
         return MutationResult{false, 0, "persist failed; clear was rolled back"};
       }

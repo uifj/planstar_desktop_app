@@ -32,25 +32,9 @@ final class CalendarDayMeta {
   final String yi;
   final String ji;
   final int weekNumber;
-
-  /// 单元格副标题优先级：节气 > 节日 > 农历日。
-  String subtitle({
-    required bool showLunar,
-    required bool showSolarTerms,
-    required bool showFestival,
-  }) {
-    if (showSolarTerms && solarTerm.isNotEmpty) return solarTerm;
-    if (showFestival && festivals.isNotEmpty) return festivals.first;
-    if (showLunar) return lunarLabel;
-    return '';
-  }
 }
 
 abstract final class CalendarMath {
-  /// 一天中的 00:00（去掉时分秒）。
-  static DateTime startOfDay(DateTime value) =>
-      DateTime(value.year, value.month, value.day);
-
   /// 某月第一天。
   static DateTime firstOfMonth(DateTime value) =>
       DateTime(value.year, value.month, 1);
@@ -156,25 +140,5 @@ abstract final class CalendarMath {
     }
     _metaCache[cacheKey] = meta;
     return meta;
-  }
-
-  /// 中文星期表头。
-  static const List<String> weekdayShort = <String>[
-    '一',
-    '二',
-    '三',
-    '四',
-    '五',
-    '六',
-    '日',
-  ];
-
-  /// 按 `startOfWeek` 旋转星期表头。
-  static List<String> weekdayHeaders(int startOfWeek) {
-    final rotated = <String>[];
-    for (var i = 0; i < 7; i++) {
-      rotated.add(weekdayShort[(startOfWeek - 1 + i) % 7]);
-    }
-    return rotated;
   }
 }

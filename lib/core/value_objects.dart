@@ -52,12 +52,6 @@ final class DateKey extends ValueObject {
 
   @override
   String toString() => key;
-
-  String get cnMonth => '$month月';
-  String get cnDate => '$month月$day日';
-  String get cnFull => '$year年$month月$day日';
-  String get cnWeekday =>
-      const <String>['一', '二', '三', '四', '五', '六', '日'][weekday - 1];
 }
 
 /// 闭区间日期范围（搜索 / 导出 / 重复规则展开时使用）。
@@ -79,16 +73,6 @@ final class DateRange extends ValueObject {
 /// 颜色值对象：`int` 形式的 ARGB，避免领域层依赖 `dart:ui`。
 final class EventColor extends ValueObject {
   const EventColor(this.argb);
-
-  /// 从 `#AARRGGBB` / `#RRGGBB` 解析。
-  factory EventColor.fromHex(String hex) {
-    final cleaned = hex.replaceFirst('#', '').toUpperCase();
-    final value = int.tryParse(cleaned, radix: 16);
-    if (value == null) {
-      return EventColor.defaultText;
-    }
-    return EventColor(cleaned.length == 6 ? (0xFF000000 | value) : value);
-  }
 
   /// 旧版 23 色调色板（对齐 `cal_context_menu.xml` 的 23 色）。
   static const List<EventColor> palette = <EventColor>[

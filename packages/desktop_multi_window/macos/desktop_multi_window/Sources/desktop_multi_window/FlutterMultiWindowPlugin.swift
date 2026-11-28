@@ -27,7 +27,7 @@ public class FlutterMultiWindowPlugin: NSObject, FlutterPlugin {
         MultiWindowManager.shared.AttachWindow(window: window, registrar: registrar)
     }
 
-    public typealias OnWindowCreatedCallback = (FlutterViewController) -> Void
+    public typealias OnWindowCreatedCallback = (FlutterViewController, NSWindow) -> Void
     static var onWindowCreatedCallback: OnWindowCreatedCallback?
 
     public static func setOnWindowCreatedCallback(_ callback: @escaping OnWindowCreatedCallback) {
@@ -109,7 +109,7 @@ class MultiWindowManager: NSObject {
         window.setFrame(NSRect(x: 0, y: 0, width: 800, height: 600), display: true)
 
         // orderFront 会同步启动子 engine；必须先注册子 engine 的首帧平台通道。
-        FlutterMultiWindowPlugin.onWindowCreatedCallback?(flutterViewController)
+        FlutterMultiWindowPlugin.onWindowCreatedCallback?(flutterViewController, window)
 
         let registrar = flutterViewController.registrar(forPlugin: "DesktopMultiWindowPlugin")
 
